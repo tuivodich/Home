@@ -86,7 +86,10 @@ service cloud.firestore {
         && (!('discountPercent' in request.resource.data) || 'couponCode' in request.resource.data)
         && exists(/databases/$(database)/documents/rooms/$(request.resource.data.roomId)));
       // Khách chỉ được hủy đặt phòng của mình khi còn "chờ xác nhận".
-      allow update: if isFront() || (signedIn()
+      // Lễ tân chỉ đổi được trạng thái; giá và mã giảm giá chỉ chủ/quản lý sửa được.
+      allow update: if isAdmin()
+        || (isFront() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason']))
+        || (signedIn()
         && resource.data.createdBy == request.auth.uid
         && resource.data.status == 'pending'
         && request.resource.data.status == 'cancelled'

@@ -91,12 +91,12 @@ export default function History() {
       {list.length === 0 && <p>{t("noData")}</p>}
       {list.map((b) => {
         const g = profileOf(b);
-        const exp = b.status === "cancelled" && b.cancelReason === "expired";
+        const label = b.status !== "cancelled" ? t(b.status) : b.cancelReason === "expired" ? t("expiredLabel") : b.cancelReason === "customer" ? t("customerCancelled") : t("cancelled");
         return (
           <div className="card" key={b.id}>
             <div className="row between">
               <strong>{b.guestName}{b.source === "online" && <small> · {t("online")}</small>}</strong>
-              <span className={`tag ${b.status}`}>{exp ? t("expiredLabel") : t(b.status)}</span>
+              <span className={`tag ${b.status}`}>{label}</span>
             </div>
             <div>{roomName(b.roomId)} · {b.checkIn} → {b.checkOut} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>
             <div>{money(b.total)}{b.phone && ` · ${b.phone}`}{b.email && ` · ${b.email}`}</div>

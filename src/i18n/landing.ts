@@ -83,8 +83,12 @@ const vi = {
     fallback: "Đăng nhập không thành công.", inApp: "Nếu bạn mở trang này trong ứng dụng (Zalo, Facebook…) và Google không cho đăng nhập, hãy mở bằng Chrome/Safari.",
   },
   account: {
-    title: "Đặt phòng của tôi", empty: "Bạn chưa có đặt phòng nào.", bookNow: "Đặt phòng ngay", cancel: "Hủy yêu cầu", sure: "Hủy yêu cầu đặt phòng này?",
-    staffLink: "Vào trang quản lý", expired: "Hết hạn", back: "← Về trang chủ", contactToChange: "Để đổi hoặc hủy đặt phòng đã xác nhận, vui lòng liên hệ homestay.",
+    title: "Đặt phòng của tôi", empty: "Bạn chưa có đặt phòng nào.", bookNow: "Đặt phòng ngay", cancel: "Hủy đặt phòng", sure: "Hủy đặt phòng này?",
+    staffLink: "Vào trang quản lý", expired: "Hết hạn", back: "← Về trang chủ", contactToChange: "Đặt phòng đang ở không thể hủy tại đây. Nếu cần hỗ trợ, vui lòng liên hệ homestay.",
+    fullName: "Họ và tên", confirmTitle: "Bạn chắc chắn muốn hủy đặt phòng này?",
+    confirmPending: "Yêu cầu đặt phòng chưa được xác nhận sẽ bị hủy.",
+    confirmConfirmed: "Đặt phòng này đã được homestay xác nhận. Sau khi hủy, phòng sẽ được nhả cho khách khác. Nếu bạn đã đặt cọc hoặc cần hoàn tiền, vui lòng liên hệ homestay.",
+    keep: "Không, giữ lại", doCancel: "Có, hủy đặt phòng", cancelling: "Đang hủy...", cancelFailed: "Không hủy được. Vui lòng thử lại hoặc liên hệ homestay.",
   },
   footer: {
     tagline: "Nghỉ dưỡng giữa vườn xanh, ấm áp như ở nhà.", links: "Khám phá", contact: "Liên hệ",
@@ -180,8 +184,12 @@ const en: Dict = {
     fallback: "Sign-in failed.", inApp: "If you opened this page inside an app (Zalo, Facebook…) and Google refuses to sign in, open it in Chrome/Safari.",
   },
   account: {
-    title: "My bookings", empty: "You have no bookings yet.", bookNow: "Book now", cancel: "Cancel request", sure: "Cancel this booking request?",
-    staffLink: "Go to management", expired: "Expired", back: "← Back to home", contactToChange: "To change or cancel a confirmed booking, please contact the homestay.",
+    title: "My bookings", empty: "You have no bookings yet.", bookNow: "Book now", cancel: "Cancel booking", sure: "Cancel this booking?",
+    staffLink: "Go to management", expired: "Expired", back: "← Back to home", contactToChange: "A booking in progress cannot be cancelled here. If you need help, please contact the homestay.",
+    fullName: "Full name", confirmTitle: "Are you sure you want to cancel this booking?",
+    confirmPending: "This request has not been confirmed yet and will be cancelled.",
+    confirmConfirmed: "This booking has been confirmed by the homestay. Once cancelled, the room is released to other guests. If you paid a deposit or need a refund, please contact the homestay.",
+    keep: "No, keep it", doCancel: "Yes, cancel booking", cancelling: "Cancelling...", cancelFailed: "Could not cancel. Please try again or contact the homestay.",
   },
   footer: {
     tagline: "Rest among the green, warm like home.", links: "Explore", contact: "Contact",

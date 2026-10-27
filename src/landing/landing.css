@@ -237,6 +237,8 @@ html { scroll-behavior: smooth; }
 .lm-off { display: inline-block; background: #fde2e0; color: #b3261e; font-weight: 700; font-size: .78rem; padding: 1px 8px; border-radius: 999px; }
 .lm-modal textarea { resize: vertical; }
 .lm-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lm-danger { color: #b3261e; }
+.lm-danger:disabled, .lm-btn:disabled + .lm-danger { opacity: .6; }
 
 /* Hiện dần khi cuộn */
 .landing .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }

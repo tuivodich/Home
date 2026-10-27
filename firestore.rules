@@ -85,15 +85,18 @@ service cloud.firestore {
               && request.resource.data.originalTotal is number))
         && (!('discountPercent' in request.resource.data) || 'couponCode' in request.resource.data)
         && exists(/databases/$(database)/documents/rooms/$(request.resource.data.roomId)));
-      // Khách chỉ được hủy đặt phòng của mình khi còn "chờ xác nhận".
+      // Khách tự hủy đặt phòng ONLINE của mình khi còn "chờ xác nhận" hoặc "đã xác nhận" (chưa nhận phòng);
+      // chỉ được đổi trạng thái sang "cancelled" (kèm lý do "customer" nếu có).
       // Lễ tân chỉ đổi được trạng thái; giá và mã giảm giá chỉ chủ/quản lý sửa được.
       allow update: if isAdmin()
         || (isFront() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason']))
         || (signedIn()
         && resource.data.createdBy == request.auth.uid
-        && resource.data.status == 'pending'
+        && resource.data.source == 'online'
+        && resource.data.status in ['pending', 'confirmed']
         && request.resource.data.status == 'cancelled'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason'])
+        && (!('cancelReason' in request.resource.data) || request.resource.data.cancelReason == 'customer'));
       allow delete: if isAdmin();
     }
 

@@ -24,7 +24,7 @@ Vai trò: **Chủ** (`owner`), **Quản lý** (`manager`), **Lễ tân** (`recep
 | Xem trang giới thiệu, lịch phòng trống (không cần đăng nhập) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Gửi yêu cầu đặt phòng online, đổi ngày/phòng trước khi gửi, dùng mã giảm giá | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Xem các đặt phòng **của chính mình** (`/account`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Hủy yêu cầu của mình khi còn "Chờ xác nhận" | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Tự hủy đặt phòng online của mình khi còn "Chờ xác nhận" hoặc "Đã xác nhận" (có hộp thoại hỏi lại); không hủy được khi đã "Nhận phòng" | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Xem đặt phòng / hồ sơ khách của người khác | theo vai trò ở trên | | | | | ❌ |
 
 (*) Buồng phòng và Bảo vệ đọc được dữ liệu đặt phòng (tên, điện thoại, email, giá) vì cần biết khách đến/đi. Nếu muốn họ chỉ thấy tên + phòng + ngày thì cần tách dữ liệu; hãy báo để làm.

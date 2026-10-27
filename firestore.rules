@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function role() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : 'none';
+    }
+    function isAdmin() { return signedIn() && role() in ['owner', 'manager']; }
+    function isStaff() { return signedIn() && role() in ['owner', 'manager', 'reception', 'housekeeping', 'security']; }
+    function isFront() { return signedIn() && role() in ['owner', 'manager', 'reception']; }
+
+    // Người đầu tiên đăng nhập (chưa có meta/bootstrap) trở thành chủ homestay.
+    match /meta/bootstrap {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid && (
+        request.resource.data.role == 'pending' ||
+        (request.resource.data.role == 'owner' &&
+          !exists(/databases/$(database)/documents/meta/bootstrap) &&
+          getAfter(/databases/$(database)/documents/meta/bootstrap).data.uid == uid));
+      // Chỉ chủ mới được cấp/thu quyền "owner"; quản lý chỉ chỉnh các vai trò còn lại.
+      allow update, delete: if isAdmin() && uid != request.auth.uid && (
+        role() == 'owner' ||
+        (resource.data.role != 'owner' && (request.method == 'delete' || request.resource.data.role != 'owner')));
+    }
+
+    match /settings/{id} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+    match /rooms/{id} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+    match /bookings/{id} {
+      allow read: if isStaff();
+      allow create, update: if isFront();
+      allow delete: if isAdmin();
+    }
+    match /guests/{id} {
+      allow read, create, update: if isFront();
+      allow delete: if isAdmin();
+    }
+  }
+}

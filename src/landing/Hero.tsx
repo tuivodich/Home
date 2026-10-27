@@ -4,7 +4,7 @@ import { todayStr } from "../lib/format";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
 import { useTheme } from "../lib/theme";
-import ForestScene, { Fireflies } from "./ForestScene";
+import ForestScene, { Drift, Fireflies } from "./ForestScene";
 
 export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; search: Search; setSearch: (s: Search) => void }) {
   const L = useL();
@@ -17,7 +17,7 @@ export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; sear
 
   return (
     <section id="home" className="lp-hero">
-      <div className="lp-scene"><ForestScene theme={theme} id="hero" />{effects && <Fireflies />}</div>
+      <div className="lp-scene"><ForestScene theme={theme} id="hero" />{effects && <><Fireflies /><Drift /></>}</div>
       <div className="lp-wrap lp-hero-in">
         <div className="lp-hero-l reveal">
           <span className="lp-eyebrow">{L.hero.eyebrow}</span>

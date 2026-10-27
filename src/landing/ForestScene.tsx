@@ -43,3 +43,8 @@ export const Fireflies = memo(function Fireflies({ count = 16 }: { count?: numbe
     </div>
   );
 });
+
+/** Sương trôi chậm (Sương mai, Hoàng hôn); CSS chỉ bật cho hai giao diện này và tắt khi giảm chuyển động. */
+export const Drift = memo(function Drift() {
+  return <div className="lp-drift" aria-hidden="true"><i /><i /><i /></div>;
+});

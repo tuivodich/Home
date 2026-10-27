@@ -23,6 +23,11 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Chỉ **chủ/quản lý** đổi được ở *Cài đặt → Giao diện website* (lưu trong `settings/app`: `theme`, `themeAuto`, `effects`; luật Firestore kiểm tra giá trị hợp lệ). Khu quản lý của nhân viên giữ nguyên giao diện.
 - Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
 
+## Chấm công và ca làm nhân viên
+- **Nhân viên** (mọi vai trò nhân viên): *Nhân sự → Chấm công*: bấm **Vào ca / Ra ca** (giờ lấy từ máy chủ, không lùi giờ được), xem ca hôm nay, lịch 7 ngày tới và các lượt gần đây (có báo đi muộn).
+- **Chủ/quản lý**: *Nhân sự → Lịch ca* (danh mục ca kể cả ca qua đêm, xếp ca theo tuần, sao chép từ tuần trước) và *Bảng chấm công* (tổng hợp tháng: ngày công, giờ làm, đi muộn, vắng; chi tiết từng lượt; sửa/thêm/xóa; xuất CSV mở bằng Excel). Đi muộn = vào ca trễ hơn 10 phút so với giờ bắt đầu ca (`GRACE_MIN` trong `src/lib/hr.ts`).
+- Chưa tính lương; chưa xác minh vị trí (GPS) nên nhân viên có thể bấm hộ nhau — chủ/quản lý đối chiếu khi cần.
+
 ## Bot Telegram
 Thông báo yêu cầu đặt phòng / khách hủy / cảm nhận mới, nút Xác nhận–Từ chối ngay trong Telegram, lệnh nhân viên `/homnay` `/cho`; khách tra `/trong` `/phong` `/lienhe` (có chống spam) và bấm sang website đặt phòng. Hướng dẫn thiết lập: [`docs/telegram-bot.md`](docs/telegram-bot.md).
 

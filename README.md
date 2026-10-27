@@ -19,7 +19,7 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Thông tin liên hệ hiển thị ở footer chỉnh trong `src/lib/siteConfig.ts`.
 
 ## Giao diện website
-- Trang công khai có 4 giao diện: **Đêm rừng thông** (mặc định), **Sương mai** (sáng) và **Hoàng hôn tím sương** (đã có); **Đêm Noel tuyết trắng** sắp có (kèm tự chuyển theo mùa).
+- Trang công khai có 4 giao diện: **Đêm rừng thông** (mặc định), **Sương mai**, **Hoàng hôn tím sương** và **Đêm Noel tuyết trắng** (dây đèn, tuyết rơi, cây thông Noel, người tuyết, nút đỏ). Bật "Tự chuyển sang Noel" ở Cài đặt để trang tự dùng giao diện Noel từ 01/12 đến 05/01 mỗi năm.
 - Chỉ **chủ/quản lý** đổi được ở *Cài đặt → Giao diện website* (lưu trong `settings/app`: `theme`, `themeAuto`, `effects`; luật Firestore kiểm tra giá trị hợp lệ). Khu quản lý của nhân viên giữ nguyên giao diện.
 - Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
 

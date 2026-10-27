@@ -95,7 +95,7 @@ export default function Settings() {
         </label>
         <label className="check">
           <input type="checkbox" checked={site.themeAuto} disabled={!READY_THEMES.includes("noel")} onChange={(e) => setDoc(doc(db, "settings", "app"), { themeAuto: e.target.checked }, { merge: true })} />
-          <span>{vi ? "Tự chuyển sang Noel từ 01/12 đến 05/01 (sắp có)" : "Switch to Christmas automatically 1 Dec – 5 Jan (coming soon)"}</span>
+          <span>{vi ? "Tự chuyển sang Noel từ 01/12 đến 05/01 (ngoài mùa dùng giao diện đã chọn)" : "Switch to Christmas automatically 1 Dec – 5 Jan (otherwise your chosen theme)"}</span>
         </label>
       </div>
       <div className="card">

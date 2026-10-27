@@ -17,16 +17,24 @@ export default function Guests() {
   const [f, setF] = useState<Omit<Guest, "id" | "docImagePath">>({ ...empty });
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
+    setUploadErr("");
     try {
       const gRef = await addDoc(collection(db, "guests"), { ...f, docImagePath: "" });
       if (file) {
         const path = `guests/${gRef.id}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-        await uploadBytes(ref(storage, path), file, { contentType: file.type });
-        await updateDoc(gRef, { docImagePath: path });
+        try {
+          await uploadBytes(ref(storage, path), file, { contentType: file.type });
+          await updateDoc(gRef, { docImagePath: path });
+        } catch (ex) {
+          // Khách đã được lưu, chỉ ảnh bị lỗi: báo rõ để người dùng biết và gửi lại mã lỗi.
+          console.error("upload failed", ex);
+          setUploadErr(`${t("uploadFailed")}: ${(ex as { code?: string }).code ?? ""} ${(ex as Error).message}`);
+        }
       }
       setF({ ...empty });
       setFile(null);
@@ -61,6 +69,7 @@ export default function Guests() {
           </select>
         </label>
         <label>{t("docImage")}<input type="file" accept="image/*" capture="environment" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
+        {uploadErr && <p className="error">{uploadErr}</p>}
         <button type="submit" disabled={busy}>{busy ? t("uploading") : t("add")}</button>
       </form>
 

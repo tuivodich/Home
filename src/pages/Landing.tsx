@@ -23,7 +23,13 @@ function LandingBody() {
   const { data: busy } = useCollection<Busy>("busy");
   const rooms = useMemo(() => [...roomsRaw].sort((a, b) => a.name.localeCompare(b.name, "vi", { numeric: true })), [roomsRaw]);
 
-  const [search, setSearch] = useState<Search>({ checkIn: todayStr(), checkOut: addDays(todayStr(), 1), roomId: "", guests: 2 });
+  // Mở từ bot Telegram (/?checkIn=...&checkOut=...#booking): điền sẵn ngày nếu hợp lệ, ngược lại dùng đêm nay.
+  const [search, setSearch] = useState<Search>(() => {
+    const ok = (v: string | null) => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
+    const a = params.get("checkIn"), b = params.get("checkOut");
+    const valid = ok(a) && ok(b) && a! >= todayStr() && b! > a!;
+    return { checkIn: valid ? a! : todayStr(), checkOut: valid ? b! : addDays(todayStr(), 1), roomId: "", guests: 2 };
+  });
   const [bookRoomId, setBookRoomId] = useState("");
   const wanted = useRef("");
 

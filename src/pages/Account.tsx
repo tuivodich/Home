@@ -8,6 +8,7 @@ import { useMoney } from "../lib/useRate";
 import { useI18n, useL } from "../i18n";
 import { fmtDate, nightsBetween, todayStr } from "../lib/format";
 import { isStaffRole, type Booking, type Room } from "../lib/types";
+import { tgNotify } from "../lib/telegram";
 import { useSiteTheme } from "../lib/theme";
 import "../landing/landing.css";
 
@@ -49,6 +50,7 @@ export default function Account() {
       w.delete(doc(db, "busy", confirming.id));
       if (confirming.slotId) w.delete(doc(db, "pend", confirming.slotId));
       await w.commit();
+      tgNotify("cancel", confirming.id);
       setConfirming(null);
     } catch (ex) {
       console.error("cancel failed", ex);

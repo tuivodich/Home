@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { doc, onSnapshot, setDoc, writeBatch } from "firebase/firestore";
+import { deleteDoc, doc, onSnapshot, setDoc, writeBatch } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
 import { DEFAULT_USD_RATE } from "../lib/format";
+import { tgLinkCode, tgSetup } from "../lib/telegram";
 import { PALETTES, sceneSvg } from "../landing/forest";
 import { READY_THEMES, THEME_IDS, THEME_INFO, parseSettings, DEFAULT_MAX_PENDING, DEFAULT_SETTINGS, type SiteSettings, type ThemeId } from "../lib/theme";
 import { ROLES, isStaffRole, type Role, type UserDoc } from "../lib/types";
@@ -20,6 +21,19 @@ export default function Settings() {
   const { data: users } = useCollection<UserDoc & { id: string }>("users", profile?.role === "owner" || profile?.role === "manager");
 
   const isOwner = profile?.role === "owner";
+  // Bot Telegram: kết nối bot (chủ), liên kết chat của tôi, danh sách chat đang nhận thông báo.
+  const { data: tgChats } = useCollection<{ id: string; email?: string; name?: string; type?: string; role?: string }>("tgChats", profile?.role === "owner" || profile?.role === "manager");
+  const [tgMsg, setTgMsg] = useState("");
+  const [tgErr, setTgErr] = useState("");
+  const [tgLink, setTgLink] = useState<{ link: string; code: string } | null>(null);
+  const [tgBusy, setTgBusy] = useState(false);
+  const tgRun = async (f: () => Promise<void>) => {
+    setTgBusy(true); setTgMsg(""); setTgErr("");
+    try { await f(); } catch (ex) {
+      console.error("telegram", ex);
+      setTgErr((ex as { message?: string }).message?.replace(/^.*?: /, "") || (vi ? "Có lỗi, vui lòng thử lại." : "Something went wrong, please try again."));
+    } finally { setTgBusy(false); }
+  };
   // Vai trò chọn nhưng chưa lưu: chỉ áp dụng khi bấm "Lưu lại".
   const [draft, setDraft] = useState<Record<string, Role>>({});
   const [savingRoles, setSavingRoles] = useState(false);
@@ -97,6 +111,31 @@ export default function Settings() {
           <input type="checkbox" checked={site.themeAuto} disabled={!READY_THEMES.includes("noel")} onChange={(e) => setDoc(doc(db, "settings", "app"), { themeAuto: e.target.checked }, { merge: true })} />
           <span>{vi ? "Tự chuyển sang Noel từ 01/12 đến 05/01 (ngoài mùa dùng giao diện đã chọn)" : "Switch to Christmas automatically 1 Dec – 5 Jan (otherwise your chosen theme)"}</span>
         </label>
+      </div>
+      <div className="card" id="telegram">
+        <h3>{vi ? "Bot Telegram" : "Telegram bot"}</h3>
+        <small>{vi
+          ? "Nhận thông báo yêu cầu đặt phòng mới / khách hủy / cảm nhận mới ngay trên Telegram, bấm nút Xác nhận hoặc Từ chối ngay trong tin nhắn. Lệnh: /homnay, /cho, /trong."
+          : "Get new booking requests, cancellations and reviews on Telegram, and confirm or reject right from the message. Commands: /homnay, /cho, /trong."}</small>
+        <div className="rolebar">
+          {isOwner && <button type="button" className="ghost" disabled={tgBusy} onClick={() => tgRun(async () => { const r = await tgSetup(); setTgMsg(vi ? `Đã kết nối bot @${r.username}.` : `Bot @${r.username} connected.`); })}>{vi ? "Kết nối bot" : "Connect bot"}</button>}
+          <button type="button" disabled={tgBusy} onClick={() => tgRun(async () => { setTgLink(await tgLinkCode()); })}>{vi ? "Liên kết Telegram của tôi" : "Link my Telegram"}</button>
+        </div>
+        {tgLink && (
+          <p className="info">
+            <a href={tgLink.link} target="_blank" rel="noreferrer">{vi ? "Mở Telegram để liên kết" : "Open Telegram to link"}</a>
+            {" · "}{vi ? "hoặc gửi cho bot" : "or send the bot"}: <code>/start {tgLink.code}</code> ({vi ? "hiệu lực 30 phút" : "valid for 30 minutes"})
+          </p>
+        )}
+        {tgMsg && <p className="ok-msg" role="status">{tgMsg}</p>}
+        {tgErr && <p className="error">{tgErr}</p>}
+        {tgChats.length > 0 && <h4>{vi ? "Chat đang nhận thông báo" : "Chats receiving notifications"}</h4>}
+        {tgChats.map((c) => (
+          <div className="row between" key={c.id}>
+            <span>{c.name || c.id}{c.email ? ` · ${c.email}` : ""}{c.type && c.type !== "private" ? ` · ${vi ? "nhóm" : "group"}` : ""}</span>
+            <button type="button" className="ghost danger" onClick={() => confirm(t("sure")) && deleteDoc(doc(db, "tgChats", c.id))}>{vi ? "Gỡ" : "Remove"}</button>
+          </div>
+        ))}
       </div>
       <div className="card">
         <h3>{t("staffAccounts")}</h3>

@@ -185,6 +185,12 @@ service cloud.firestore {
       allow delete: if isAdmin() || (signedIn() && resource.data.createdBy == request.auth.uid);
     }
 
+    // Bot Telegram: danh sách chat đã liên kết (chủ/quản lý xem và gỡ). Mã liên kết, nhật ký gửi và ghi dữ liệu do Cloud Functions
+    // (Admin SDK, bỏ qua luật) đảm nhiệm nên khách/nhân viên không đọc hay ghi trực tiếp được.
+    match /tgChats/{chatId} {
+      allow read, delete: if isAdmin();
+    }
+
     match /guests/{id} {
       allow read, create, update: if isFront();
       allow delete: if isAdmin();

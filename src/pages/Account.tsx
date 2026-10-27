@@ -8,12 +8,14 @@ import { useMoney } from "../lib/useRate";
 import { useI18n, useL } from "../i18n";
 import { nightsBetween, todayStr } from "../lib/format";
 import { isStaffRole, type Booking, type Room } from "../lib/types";
+import { useSiteTheme } from "../lib/theme";
 import "../landing/landing.css";
 
 export default function Account() {
   const L = useL();
   const { t, lang, setLang } = useI18n();
   const { user, profile, loading, logout } = useAuth();
+  const siteTheme = useSiteTheme();
   const { money } = useMoney();
   const { data: rooms } = useCollection<Room>("rooms");
   const [mine, setMine] = useState<Booking[]>([]);
@@ -54,7 +56,7 @@ export default function Account() {
   };
 
   return (
-    <div className="landing lp-account">
+    <div className="landing lp-account" data-theme={siteTheme.theme} data-fx={siteTheme.effects ? "on" : "off"}>
       <div className="lp-wrap">
         <div className="lp-account-bar">
           <Link to="/" className="lp-pill">{L.account.back}</Link>

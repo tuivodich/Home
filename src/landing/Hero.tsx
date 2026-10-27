@@ -2,10 +2,12 @@ import { useL } from "../i18n";
 import { todayStr } from "../lib/format";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
-import HeroArt from "./HeroArt";
+import { useTheme } from "../lib/theme";
+import ForestScene, { Fireflies } from "./ForestScene";
 
 export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; search: Search; setSearch: (s: Search) => void }) {
   const L = useL();
+  const { theme, effects } = useTheme();
   const go = (e: React.FormEvent) => {
     e.preventDefault();
     document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
@@ -14,7 +16,8 @@ export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; sear
 
   return (
     <section id="home" className="lp-hero">
-      <div className="lp-hero-split">
+      <div className="lp-scene"><ForestScene theme={theme} id="hero" />{effects && <Fireflies />}</div>
+      <div className="lp-wrap lp-hero-in">
         <div className="lp-hero-l reveal">
           <span className="lp-eyebrow">{L.hero.eyebrow}</span>
           <h1>{L.hero.title1} <em>{L.hero.title2}</em></h1>
@@ -24,8 +27,7 @@ export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; sear
             <a className="lp-btn ghost" href="#about">{L.hero.cta2}</a>
           </div>
         </div>
-        <div className="lp-hero-r">
-          <div className="lp-arch reveal"><HeroArt /></div>
+        <div className="lp-hero-badges">
           <div className="lp-float f1">{L.hero.badge1}</div>
           <div className="lp-float f2">{L.hero.badge2}</div>
         </div>

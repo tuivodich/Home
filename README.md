@@ -17,6 +17,11 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - **Tự từ chối** yêu cầu online còn "Chờ xác nhận" khi đã qua ngày nhận phòng (bật/tắt ở *Cài đặt*; chạy khi có nhân viên lễ tân trở lên mở trang quản lý).
 - Thông tin liên hệ hiển thị ở footer chỉnh trong `src/lib/siteConfig.ts`.
 
+## Giao diện website
+- Trang công khai có 4 giao diện: **Đêm rừng thông** (mặc định, đã có), Sương mai, Hoàng hôn tím sương, Đêm Noel tuyết trắng (3 giao diện sau sẽ ra mắt ở các đợt tiếp theo).
+- Chỉ **chủ/quản lý** đổi được ở *Cài đặt → Giao diện website* (lưu trong `settings/app`: `theme`, `themeAuto`, `effects`; luật Firestore kiểm tra giá trị hợp lệ). Khu quản lý của nhân viên giữ nguyên giao diện.
+- Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
+
 ## Chạy thử
 ```bash
 npm install

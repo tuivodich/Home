@@ -31,9 +31,14 @@ service cloud.firestore {
     }
 
     // Công khai: tên phòng, giá, tỷ giá — không chứa dữ liệu cá nhân.
+    // Cài đặt chung (tỷ giá, giao diện website…): ai cũng đọc, chỉ chủ/quản lý ghi.
+    // Giao diện: chỉ nhận các mã hợp lệ, hiệu ứng / tự động theo mùa là true/false.
     match /settings/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel'])
+        && (!('themeAuto' in request.resource.data) || request.resource.data.themeAuto is bool)
+        && (!('effects' in request.resource.data) || request.resource.data.effects is bool);
     }
     match /rooms/{id} {
       allow read: if true;

@@ -12,7 +12,7 @@ import { useAuthUi } from "../layout/authUi";
 export default function Header() {
   const L = useL();
   const M = L.menu;
-  const { lang, setLang } = useI18n();
+  const { lang, setLang, t } = useI18n();
   const { user, profile, logout } = useAuth();
   const { open: openAuth } = useAuthUi();
   const [menu, setMenu] = useState(false);
@@ -26,7 +26,10 @@ export default function Header() {
   const infoItems: DdItem[] = [
     { label: M.reviews, to: "/reviews" }, { label: M.faq, to: "/faq" }, { label: M.privacy, to: "/privacy" }, { label: M.contact, to: "/#contact" },
   ];
+  // Dòng đầu menu Tài khoản: tên (hoặc email) và vai trò, vd. "admin@gmail.com (Chủ)".
+  const who = `${profile?.name || user?.displayName || user?.email || ""} (${t(profile?.role ?? "customer")})`;
   const accountItems: DdItem[] = [
+    { label: who, heading: true },
     { label: L.myBookings, to: "/account" },
     ...(staff ? [{ label: L.manage, to: "/app" }] : []),
     { label: L.reviews.write, to: "/reviews" },

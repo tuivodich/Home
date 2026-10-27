@@ -20,7 +20,7 @@ export interface Booking {
 export interface Busy { id: string; roomId: string; checkIn: string; checkOut: string; status: BookingStatus }
 export interface Guest {
   id: string; fullName: string; docType: "cccd" | "passport" | "license" | "other"; docNumber: string;
-  nationality: string; dob: string; phone: string; email?: string; bookingId: string; docImagePath: string;
+  nationality: string; dob: string; phone: string; email?: string; bookingId: string; docImagePath: string; note?: string;
 }
 
 /** Mã giảm giá dùng một lần: id của tài liệu chính là mã. */

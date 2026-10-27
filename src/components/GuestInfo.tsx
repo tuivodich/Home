@@ -14,6 +14,7 @@ export default function GuestInfo({ g, large }: { g: Guest; large?: boolean }) {
         {g.dob && <div>{t("dob")}: {fmtDate(g.dob)}</div>}
         {g.phone && <div>{t("phone")}: {g.phone}</div>}
         {g.email && <div>{t("email")}: {g.email}</div>}
+        {g.note && <div className="guestnote">📝 {g.note}</div>}
       </div>
       <GuestImage path={g.docImagePath} large={large} />
     </div>

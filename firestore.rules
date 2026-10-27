@@ -30,10 +30,11 @@ service cloud.firestore {
         (request.resource.data.role == 'owner' &&
           !exists(/databases/$(database)/documents/meta/bootstrap) &&
           getAfter(/databases/$(database)/documents/meta/bootstrap).data.uid == uid));
-      // Chỉ chủ mới được cấp/thu quyền "owner"; quản lý chỉ chỉnh các vai trò còn lại.
+      // Chủ: đổi/xóa vai trò của bất kỳ ai khác mình. Quản lý: chỉ chỉnh các vai trò dưới quản lý
+      // (lễ tân, buồng phòng, bảo vệ, khách) — không cấp "Chủ"/"Quản lý" và không đụng tài khoản Chủ/Quản lý.
       allow update, delete: if isAdmin() && uid != request.auth.uid && (
         role() == 'owner' ||
-        (resource.data.role != 'owner' && (request.method == 'delete' || request.resource.data.role != 'owner')));
+        (!(resource.data.role in ['owner', 'manager']) && (request.method == 'delete' || !(request.resource.data.role in ['owner', 'manager']))));
     }
 
     // Công khai: tên phòng, giá, tỷ giá — không chứa dữ liệu cá nhân.
@@ -173,6 +174,10 @@ service cloud.firestore {
       allow update: if (isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
           && request.resource.data.status in ['pending', 'approved', 'rejected'])
+        // Chỉ Chủ được sửa nội dung cảm nhận (kể cả đã duyệt); trạng thái giữ nguyên.
+        || (isOwner()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'rating', 'comment'])
+          && okReview(request.resource.data))
         || (signedIn() && resource.data.createdBy == request.auth.uid
           && request.resource.data.status == 'pending'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'rating', 'comment', 'status'])

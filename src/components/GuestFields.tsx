@@ -5,9 +5,9 @@ import { normDocNumber, normName } from "../lib/format";
 import type { Guest } from "../lib/types";
 
 export interface GuestForm {
-  fullName: string; docType: Guest["docType"]; docNumber: string; nationality: string; dob: string; phone: string; email: string;
+  fullName: string; docType: Guest["docType"]; docNumber: string; nationality: string; dob: string; phone: string; email: string; note: string;
 }
-export const emptyGuestForm: GuestForm = { fullName: "", docType: "cccd", docNumber: "", nationality: "Việt Nam", dob: "", phone: "", email: "" };
+export const emptyGuestForm: GuestForm = { fullName: "", docType: "cccd", docNumber: "", nationality: "Việt Nam", dob: "", phone: "", email: "", note: "" };
 
 /** Số giấy tờ là duy nhất: `other` = khách khác tên cùng số (cần cảnh báo đỏ), `same` = cùng tên (khách cũ). */
 export function conflictsFor(guests: Guest[], docType: string, docNumber: string, fullName: string, selfId?: string) {
@@ -59,7 +59,7 @@ export default function GuestFields({ value: v, onChange, guests, selfId, onFile
 
   const pick = (g: Guest) => {
     // Giữ lại điện thoại/email đã điền sẵn (ví dụ từ đặt phòng) thay vì ghi đè bằng của lần trước.
-    onChange({ ...v, fullName: g.fullName, docType: g.docType, docNumber: g.docNumber, nationality: g.nationality, dob: g.dob, phone: v.phone || g.phone, email: v.email || g.email || "" });
+    onChange({ ...v, fullName: g.fullName, docType: g.docType, docNumber: g.docNumber, nationality: g.nationality, dob: g.dob, phone: v.phone || g.phone, email: v.email || g.email || "", note: v.note || g.note || "" });
     setShow(false);
   };
 
@@ -96,6 +96,9 @@ export default function GuestFields({ value: v, onChange, guests, selfId, onFile
       <label>{t("email")}<input type="email" value={v.email} onChange={(e) => set({ email: e.target.value })} /></label>
       <label>{t("docImage")}{hasPhoto && <small>{t("keepPhotoHint")}</small>}
         <input key={fileKey ?? "new"} type="file" accept="image/*" capture="environment" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+      </label>
+      <label>{t("guestNote")}
+        <textarea rows={3} maxLength={500} placeholder={t("guestNoteHint")} value={v.note} onChange={(e) => set({ note: e.target.value })} />
       </label>
     </>
   );

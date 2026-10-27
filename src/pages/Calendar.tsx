@@ -81,7 +81,9 @@ export default function CalendarPage() {
               <div>{open.checkIn} → {open.checkOut} ({nightsBetween(open.checkIn, open.checkOut)} {t("nights")})</div>
               <div>{t("numGuests")}: {open.guests}</div>
               {open.phone && <div>{t("phone")}: {open.phone}</div>}
+              {open.email && <div>{t("email")}: {open.email}</div>}
               <div>{t("total")}: {money(open.total)}</div>
+              {open.couponCode && <div>🏷 {t("couponApplied")} {open.couponCode} (−{open.discountPercent}%)</div>}
               {open.note && <div>{t("note")}: {open.note}</div>}
             </div>
             <h4>{t("roomInfo")}</h4>

@@ -33,3 +33,10 @@ export function nightsBetween(a: string, b: string): number {
 export function overlaps(aIn: string, aOut: string, bIn: string, bOut: string): boolean {
   return aIn < bOut && bIn < aOut;
 }
+
+/** So khớp tên không phân biệt hoa thường, dấu và khoảng trắng thừa. */
+export const normName = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/đ/g, "d").replace(/\s+/g, " ").trim();
+
+/** Chuẩn hóa số giấy tờ: bỏ khoảng trắng, dấu chấm, gạch ngang; viết hoa. */
+export const normDocNumber = (s: string) => s.replace(/[\s.-]/g, "").toUpperCase();

@@ -5,6 +5,11 @@ import { site } from "../lib/siteConfig";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
 import Icon from "./Icon";
+import HashLink from "../components/HashLink";
+import Stars from "../components/Stars";
+import { useApprovedReviews } from "../lib/reviews";
+import { fmtDate } from "../lib/pages";
+import { useI18n } from "../i18n";
 
 export function Stats() {
   const L = useL();
@@ -117,6 +122,39 @@ export function HowItWorks() {
   );
 }
 
+/** Cảm nhận đã được duyệt: 3 cảm nhận mới nhất, kèm liên kết xem tất cả và gửi cảm nhận. */
+export function Testimonials() {
+  const L = useL();
+  const { lang } = useI18n();
+  const { reviews, avg, loading } = useApprovedReviews();
+  const shown = reviews.slice(0, 3);
+  return (
+    <section id="reviews" className="lp-section alt">
+      <div className="lp-wrap">
+        <div className="lp-head reveal">
+          <span className="lp-eyebrow">{L.reviews.homeEyebrow}</span>
+          <h2>{L.reviews.homeTitle}</h2>
+          {reviews.length > 0 && <p><Stars value={avg} label={L.reviews.stars} /> <strong>{avg.toFixed(1)}</strong> · {reviews.length} {L.reviews.count}</p>}
+        </div>
+        {!loading && shown.length === 0 && <p className="lp-center lp-muted">{L.reviews.homeEmpty}</p>}
+        <div className="lp-reviews">
+          {shown.map((r) => (
+            <figure key={r.id} className="lp-review reveal">
+              <Stars value={r.rating} label={L.reviews.stars} />
+              <blockquote>{r.comment}</blockquote>
+              <figcaption><strong>{r.name}</strong>{r.createdAt && <small> · {fmtDate(r.createdAt, lang)}</small>}</figcaption>
+            </figure>
+          ))}
+        </div>
+        <div className="lp-center lp-review-cta">
+          {reviews.length > 0 && <Link className="lp-btn ghost" to="/reviews">{L.reviews.all}</Link>}
+          <Link className="lp-btn primary" to="/reviews#write">{L.reviews.write}</Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function Footer() {
   const L = useL();
   const rows: [string, string, string?][] = [
@@ -131,13 +169,17 @@ export function Footer() {
     <footer id="contact" className="lp-footer">
       <div className="lp-wrap lp-footer-in">
         <div>
-          <div className="lp-brand light"><span className="lp-logo">🏡</span><span>{site.name}</span></div>
+          <div className="lp-brand light"><span className="lp-logo"><img src="/favicon.svg" alt="" width="38" height="38" /></span><span>{site.name}</span></div>
           <p className="lp-muted-l">{L.footer.tagline}</p>
         </div>
         <div>
           <h4>{L.footer.links}</h4>
-          <a href="#about">{L.nav.about}</a><a href="#rooms">{L.nav.rooms}</a>
-          <a href="#features">{L.nav.features}</a><a href="#booking">{L.nav.booking}</a>
+          <HashLink to="/#about">{L.menu.about}</HashLink><HashLink to="/#rooms">{L.menu.rooms}</HashLink>
+          <HashLink to="/#features">{L.menu.features}</HashLink><HashLink to="/#booking">{L.menu.availability}</HashLink>
+        </div>
+        <div>
+          <h4>{L.footer.info}</h4>
+          <Link to="/reviews">{L.menu.reviews}</Link><Link to="/faq">{L.menu.faq}</Link><Link to="/privacy">{L.menu.privacy}</Link>
         </div>
         <div>
           <h4>{L.footer.contact}</h4>

@@ -25,6 +25,10 @@ Vai trò: **Chủ** (`owner`), **Quản lý** (`manager`), **Lễ tân** (`recep
 | Gửi yêu cầu đặt phòng online, đổi ngày/phòng trước khi gửi, dùng mã giảm giá | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Xem các đặt phòng **của chính mình** (`/account`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Tự hủy đặt phòng online của mình khi còn "Chờ xác nhận" hoặc "Đã xác nhận" (có hộp thoại hỏi lại); không hủy được khi đã "Nhận phòng" | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Xem Chính sách quyền riêng tư, Hỏi & Đáp, Cảm nhận đã duyệt (không cần đăng nhập) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Sửa nội dung** Chính sách quyền riêng tư và Hỏi & Đáp (ngay trên trang) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Gửi cảm nhận (mỗi tài khoản một cảm nhận, tự sửa/xóa của mình; sửa thì phải duyệt lại) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Duyệt / từ chối / xóa** cảm nhận của khách (mục Nội dung → Cảm nhận khách) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Xem đặt phòng / hồ sơ khách của người khác | theo vai trò ở trên | | | | | ❌ |
 
 (*) Buồng phòng và Bảo vệ đọc được dữ liệu đặt phòng (tên, điện thoại, email, giá) vì cần biết khách đến/đi. Nếu muốn họ chỉ thấy tên + phòng + ngày thì cần tách dữ liệu; hãy báo để làm.

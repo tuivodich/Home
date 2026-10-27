@@ -116,6 +116,37 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.discountPercent == resource.data.percent);
     }
 
+    // Nội dung các trang (Chính sách quyền riêng tư, Hỏi & Đáp): ai cũng đọc, chỉ chủ/quản lý sửa.
+    match /pages/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Cảm nhận của khách: mỗi tài khoản một cảm nhận (id = uid). Chỉ hiện công khai khi chủ/quản lý duyệt.
+    // Khách sửa cảm nhận của mình thì quay lại "pending" để duyệt lại.
+    match /reviews/{uid} {
+      function okReview(d) {
+        return d.name is string && d.name.size() >= 1 && d.name.size() <= 80
+          && d.rating is int && d.rating >= 1 && d.rating <= 5
+          && d.comment is string && d.comment.size() >= 10 && d.comment.size() <= 600;
+      }
+      allow get: if (signedIn() && request.auth.uid == uid) || isAdmin() || resource.data.status == 'approved';
+      allow list: if isAdmin() || resource.data.status == 'approved' || (signedIn() && resource.data.createdBy == request.auth.uid);
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'rating', 'comment', 'status', 'createdBy', 'createdAt'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdBy == request.auth.uid
+        && okReview(request.resource.data);
+      allow update: if (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status in ['pending', 'approved', 'rejected'])
+        || (signedIn() && resource.data.createdBy == request.auth.uid
+          && request.resource.data.status == 'pending'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'rating', 'comment', 'status'])
+          && okReview(request.resource.data));
+      allow delete: if isAdmin() || (signedIn() && resource.data.createdBy == request.auth.uid);
+    }
+
     match /guests/{id} {
       allow read, create, update: if isFront();
       allow delete: if isAdmin();

@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "../lib/firebase";
 import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
-import type { Booking, Guest } from "../lib/types";
+import GuestInfo from "../components/GuestInfo";
+import type { Booking, Guest, Room } from "../lib/types";
 
 const empty = { fullName: "", docType: "cccd", docNumber: "", nationality: "Việt Nam", dob: "", phone: "", bookingId: "" } as const;
 
@@ -12,6 +13,7 @@ export default function Guests() {
   const { t } = useI18n();
   const { data: guests } = useCollection<Guest>("guests");
   const { data: bookings } = useCollection<Booking>("bookings");
+  const { data: rooms } = useCollection<Room>("rooms");
   const [f, setF] = useState<Omit<Guest, "id" | "docImagePath">>({ ...empty });
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -30,8 +32,6 @@ export default function Guests() {
       setFile(null);
     } finally { setBusy(false); }
   };
-
-  const view = async (g: Guest) => window.open(await getDownloadURL(ref(storage, g.docImagePath)), "_blank", "noopener");
 
   const remove = async (g: Guest) => {
     if (!confirm(t("sure"))) return;
@@ -67,11 +67,12 @@ export default function Guests() {
       {guests.length === 0 && <p>{t("noData")}</p>}
       {guests.map((g) => (
         <div className="card" key={g.id}>
-          <strong>{g.fullName}</strong>
-          <div>{t(g.docType)}: {g.docNumber} · {g.nationality}</div>
-          <div>{g.dob} {g.phone && `· ${g.phone}`}</div>
+          <GuestInfo g={g} />
+          {(() => {
+            const bk = bookings.find((x) => x.id === g.bookingId);
+            return bk ? <div>🛏 {rooms.find((r) => r.id === bk.roomId)?.name ?? "?"} · {bk.checkIn} → {bk.checkOut}</div> : null;
+          })()}
           <div className="row">
-            {g.docImagePath && <button className="ghost" onClick={() => view(g)}>{t("viewImage")}</button>}
             <button className="ghost danger" onClick={() => remove(g)}>{t("delete")}</button>
           </div>
         </div>

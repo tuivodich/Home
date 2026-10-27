@@ -27,6 +27,8 @@ const dict = {
     owner: "Chủ", manager: "Quản lý", reception: "Lễ tân", housekeeping: "Buồng phòng", security: "Bảo vệ", pending: "Chờ duyệt",
     loading: "Đang tải...", error: "Có lỗi xảy ra", noData: "Chưa có dữ liệu", addDefaultRooms: "Tạo sẵn 5 phòng mẫu",
     from: "Từ", days: "ngày", sure: "Bạn chắc chắn chứ?",
+    bookingDetails: "Chi tiết đặt phòng", roomInfo: "Thông tin phòng", linkedGuests: "Khách lưu trú", noLinkedGuests: "Chưa có khách nào được liên kết với đặt phòng này.",
+    linkGuest: "Liên kết khách đã nhập", noImage: "Chưa có ảnh giấy tờ", imageError: "Không tải được ảnh", openFull: "Bấm để xem ảnh lớn", bookedRoom: "Phòng đặt",
   },
   en: {
     appName: "Wooden House Homestay",
@@ -52,6 +54,8 @@ const dict = {
     owner: "Owner", manager: "Manager", reception: "Reception", housekeeping: "Housekeeping", security: "Security", pending: "Pending",
     loading: "Loading...", error: "Something went wrong", noData: "No data yet", addDefaultRooms: "Create 5 sample rooms",
     from: "From", days: "days", sure: "Are you sure?",
+    bookingDetails: "Booking details", roomInfo: "Room info", linkedGuests: "Guests", noLinkedGuests: "No guest is linked to this booking yet.",
+    linkGuest: "Link an entered guest", noImage: "No document photo", imageError: "Could not load photo", openFull: "Click to view full size", bookedRoom: "Booked room",
   },
 } as const;
 

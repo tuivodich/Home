@@ -37,3 +37,12 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
 .cal th.today { background: var(--accent); color: #fff; }
 .cal td.busy { background: #bfdbfe; color: #1e3a8a; } .cal td.busy.checked_in { background: #bbf7d0; color: #14532d; }
 .cal td.maint { background: repeating-linear-gradient(45deg, var(--line), var(--line) 4px, transparent 4px, transparent 8px); }
+.cal td.busy { padding: 2px; }
+.namebtn { width: 100%; background: transparent; color: inherit; padding: 4px; font-size: .75rem; line-height: 1.2; white-space: normal; word-break: break-word; text-decoration: underline; }
+.cal th, .cal td { min-width: 64px; }
+.guestinfo { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.docimg { width: 120px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); display: block; }
+.docimg.large { width: 100%; max-width: 320px; height: auto; max-height: 240px; object-fit: contain; }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; z-index: 10; }
+.modal { max-width: 520px; width: 100%; margin: 4vh 0; }
+.modal h3, .modal h4 { margin: 0; }

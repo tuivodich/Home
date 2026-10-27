@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import DateInput from "../components/DateInput";
 import { useL } from "../i18n";
 import { useMoney } from "../lib/useRate";
 import { addDays, nightsBetween, todayStr } from "../lib/format";
@@ -39,11 +40,11 @@ export default function Availability({ rooms, busy, search, setSearch, onBook }:
         <div className="lp-panel reveal">
           <div className="lp-filters">
             <label>{L.search.checkIn}
-              <input type="date" min={todayStr()} value={search.checkIn}
-                onChange={(e) => { const v = e.target.value; set({ checkIn: v, checkOut: search.checkOut <= v ? addDays(v, 1) : search.checkOut }); if (v) setStart(v); }} />
+              <DateInput min={todayStr()} value={search.checkIn}
+                onChange={(v) => { set({ checkIn: v, checkOut: search.checkOut <= v ? addDays(v, 1) : search.checkOut }); if (v) setStart(v); }} />
             </label>
             <label>{L.search.checkOut}
-              <input type="date" min={addDays(search.checkIn || todayStr(), 1)} value={search.checkOut} onChange={(e) => set({ checkOut: e.target.value })} />
+              <DateInput min={addDays(search.checkIn || todayStr(), 1)} value={search.checkOut} onChange={(v) => set({ checkOut: v })} />
             </label>
             <label>{L.search.room}
               <select value={search.roomId} onChange={(e) => set({ roomId: e.target.value })}>

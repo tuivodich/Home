@@ -6,7 +6,7 @@ import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useMoney } from "../lib/useRate";
 import { useI18n, useL } from "../i18n";
-import { nightsBetween, todayStr } from "../lib/format";
+import { fmtDate, nightsBetween, todayStr } from "../lib/format";
 import { isStaffRole, type Booking, type Room } from "../lib/types";
 import { useSiteTheme } from "../lib/theme";
 import "../landing/landing.css";
@@ -82,7 +82,7 @@ export default function Account() {
             <div>
               <strong>{rooms.find((r) => r.id === b.roomId)?.name ?? "?"}</strong>
               <div>{L.account.fullName}: <b>{b.guestName}</b></div>
-              <div>{b.checkIn} → {b.checkOut} · {nightsBetween(b.checkIn, b.checkOut)} {L.booking.nights}</div>
+              <div>{fmtDate(b.checkIn)} → {fmtDate(b.checkOut)} · {nightsBetween(b.checkIn, b.checkOut)} {L.booking.nights}</div>
               <div className="lp-muted">{money(b.total)} · 👤 {b.guests}</div>
               {b.couponCode && <div className="lp-muted lp-small">🏷 {b.couponCode} (−{b.discountPercent}%)</div>}
             </div>
@@ -105,7 +105,7 @@ export default function Account() {
             <div className="lm-summary">
               <strong>{rooms.find((r) => r.id === confirming.roomId)?.name ?? "?"}</strong>
               <div>{L.account.fullName}: {confirming.guestName}</div>
-              <div>{confirming.checkIn} → {confirming.checkOut} · {nightsBetween(confirming.checkIn, confirming.checkOut)} {L.booking.nights}</div>
+              <div>{fmtDate(confirming.checkIn)} → {fmtDate(confirming.checkOut)} · {nightsBetween(confirming.checkIn, confirming.checkOut)} {L.booking.nights}</div>
               <div>{money(confirming.total)}</div>
             </div>
             <p className="lm-muted">{confirming.status === "confirmed" ? L.account.confirmConfirmed : L.account.confirmPending}</p>

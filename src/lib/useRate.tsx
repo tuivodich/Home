@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
-import { DEFAULT_USD_RATE, formatMoney } from "./format";
+import { DEFAULT_USD_RATE, usdText } from "./format";
+
+/** Số tiền VNĐ (chữ "VNĐ" nhỏ hơn) kèm quy đổi USD. */
+export function Money({ vnd, rate = DEFAULT_USD_RATE }: { vnd: number; rate?: number }) {
+  return <>{new Intl.NumberFormat("vi-VN").format(Math.round(vnd))} <span className="cur">VNĐ</span> ({usdText(vnd, rate)})</>;
+}
 
 /** Trả về hàm `money(vnd)` hiển thị VNĐ kèm quy đổi USD theo tỷ giá trong Cài đặt. */
 export function useMoney() {
@@ -10,5 +15,5 @@ export function useMoney() {
     const r = s.data()?.usdRate;
     if (typeof r === "number" && r > 0) setRate(r);
   }, () => {}), []);
-  return { rate, money: (vnd: number) => formatMoney(vnd, rate) };
+  return { rate, money: (vnd: number) => <Money vnd={vnd} rate={rate} /> };
 }

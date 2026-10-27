@@ -1,3 +1,4 @@
+import { fmtDate } from "../lib/format";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
@@ -116,7 +117,7 @@ export default function Guests() {
         <label>{t("booking")}
           <select value={bookingId} onChange={(e) => setBookingId(e.target.value)}>
             <option value="">{t("none2")}</option>
-            {bookings.filter((b) => b.status !== "cancelled").map((b) => <option key={b.id} value={b.id}>{b.guestName} · {b.checkIn}</option>)}
+            {bookings.filter((b) => b.status !== "cancelled").map((b) => <option key={b.id} value={b.id}>{b.guestName} · {fmtDate(b.checkIn)}</option>)}
           </select>
         </label>
         {uploadErr && <p className="error">{uploadErr}</p>}
@@ -137,7 +138,7 @@ export default function Guests() {
           <div className="card" key={g.id}>
             <GuestInfo g={g} />
             {clash.length > 0 && <p className="warn">{t("dupOther")}: {clash.map((x) => x.fullName).join(", ")}</p>}
-            {bk && <div>🛏 {rooms.find((r) => r.id === bk.roomId)?.name ?? "?"} · {bk.checkIn} → {bk.checkOut}</div>}
+            {bk && <div>🛏 {rooms.find((r) => r.id === bk.roomId)?.name ?? "?"} · {fmtDate(bk.checkIn)} → {fmtDate(bk.checkOut)}</div>}
             <div className="row">
               <button className="ghost" onClick={() => startEdit(g)}>{t("edit")}</button>
               {isAdmin && <button className="ghost danger" onClick={() => remove(g)}>{t("delete")}</button>}

@@ -8,6 +8,7 @@ service cloud.firestore {
     }
     function isAdmin() { return signedIn() && role() in ['owner', 'manager']; }
     function isStaff() { return signedIn() && role() in ['owner', 'manager', 'reception', 'housekeeping', 'security']; }
+    function isOwner() { return signedIn() && role() == 'owner'; }
     function isFront() { return signedIn() && role() in ['owner', 'manager', 'reception']; }
 
     // Người đầu tiên đăng nhập (chưa có meta/bootstrap) trở thành chủ homestay.
@@ -90,18 +91,20 @@ service cloud.firestore {
               && request.resource.data.originalTotal is number))
         && (!('discountPercent' in request.resource.data) || 'couponCode' in request.resource.data)
         && exists(/databases/$(database)/documents/rooms/$(request.resource.data.roomId)));
+      // Đặt phòng đã trả phòng / đã hủy chỉ CHỦ mới được sửa lại (hoàn tác trả phòng, khôi phục): quản lý, lễ tân thì không.
       // Khách tự hủy đặt phòng ONLINE của mình khi còn "chờ xác nhận" hoặc "đã xác nhận" (chưa nhận phòng);
       // chỉ được đổi trạng thái sang "cancelled" (kèm lý do "customer" nếu có).
       // Lễ tân chỉ đổi được trạng thái; giá và mã giảm giá chỉ chủ/quản lý sửa được.
-      allow update: if isAdmin()
-        || (isFront() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason']))
-        || (signedIn()
-        && resource.data.createdBy == request.auth.uid
-        && resource.data.source == 'online'
-        && resource.data.status in ['pending', 'confirmed']
-        && request.resource.data.status == 'cancelled'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason'])
-        && (!('cancelReason' in request.resource.data) || request.resource.data.cancelReason == 'customer'));
+      allow update: if isOwner()
+        || (!(resource.data.status in ['checked_out', 'cancelled']) && (isAdmin()
+          || (isFront() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason']))
+          || (signedIn()
+            && resource.data.createdBy == request.auth.uid
+            && resource.data.source == 'online'
+            && resource.data.status in ['pending', 'confirmed']
+            && request.resource.data.status == 'cancelled'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason'])
+            && (!('cancelReason' in request.resource.data) || request.resource.data.cancelReason == 'customer'))));
       allow delete: if isAdmin();
     }
 

@@ -59,7 +59,7 @@ export default function Rooms() {
           </select>
         </label>
         <label>{t("capacity")}<input type="number" min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: +e.target.value })} /></label>
-        <label>{t("pricePerNight")} (₫)<input type="number" min={0} step={10000} value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></label>
+        <label>{t("pricePerNight")} (VNĐ)<input type="number" min={0} step={10000} value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></label>
         <label>{t("status")}
           <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Room["status"] })}>
             <option value="active">{t("active")}</option><option value="maintenance">{t("maintenance")}</option>

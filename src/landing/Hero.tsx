@@ -1,4 +1,5 @@
 import { useL } from "../i18n";
+import DateInput from "../components/DateInput";
 import { todayStr } from "../lib/format";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
@@ -34,10 +35,10 @@ export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; sear
       </div>
       <form className="lp-wrap lp-quick reveal" onSubmit={go}>
         <label>{L.search.checkIn}
-          <input type="date" min={todayStr()} value={search.checkIn} onChange={(e) => set({ checkIn: e.target.value })} required />
+          <DateInput min={todayStr()} value={search.checkIn} onChange={(v) => set({ checkIn: v })} required />
         </label>
         <label>{L.search.checkOut}
-          <input type="date" min={search.checkIn} value={search.checkOut} onChange={(e) => set({ checkOut: e.target.value })} required />
+          <DateInput min={search.checkIn} value={search.checkOut} onChange={(v) => set({ checkOut: v })} required />
         </label>
         <label>{L.search.room}
           <select value={search.roomId} onChange={(e) => set({ roomId: e.target.value })}>

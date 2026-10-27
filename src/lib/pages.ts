@@ -34,4 +34,4 @@ export const saveFaq = (items: FaqItem[]) =>
   setDoc(doc(db, "pages", "faq"), { items, updatedAt: serverTimestamp() });
 
 export const fmtDate = (ts?: { seconds: number }, lang: "vi" | "en" = "vi") =>
-  ts ? new Date(ts.seconds * 1000).toLocaleDateString(lang === "vi" ? "vi-VN" : "en-GB") : "";
+  ts ? new Date(ts.seconds * 1000).toLocaleDateString("en-GB") : "";

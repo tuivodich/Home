@@ -1,4 +1,6 @@
+import { fmtDate, toDateStr } from "../lib/format";
 import { useMemo, useState, type FormEvent } from "react";
+import DateInput from "../components/DateInput";
 import { Timestamp, deleteDoc, doc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useCollection } from "../lib/useCollection";
@@ -56,7 +58,7 @@ export default function Coupons() {
   const who = (c: Coupon) => {
     const email = users.find((u) => u.id === c.usedBy)?.email ?? "";
     const bk = bookings.find((x) => x.id === c.bookingId);
-    return [email, bk && `${bk.guestName} (${bk.checkIn})`].filter(Boolean).join(" · ");
+    return [email, bk && `${bk.guestName} (${fmtDate(bk.checkIn)})`].filter(Boolean).join(" · ");
   };
 
   return (
@@ -69,7 +71,7 @@ export default function Coupons() {
           <label>{t("couponQty")}<input type="number" min={1} max={50} required value={qty} onChange={(e) => setQty(Math.max(1, Math.min(50, +e.target.value || 1)))} /></label>
         </div>
         <label>{t("couponNote")}<input maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} /></label>
-        <label>{t("couponExpiry")}<input type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} /></label>
+        <label>{t("couponExpiry")}<DateInput value={expiry} onChange={(v) => setExpiry(v)} /></label>
         <button type="submit" disabled={busy}>{t("couponCreate")}</button>
       </form>
 
@@ -80,7 +82,7 @@ export default function Coupons() {
             <strong className="couponcode">{c.id}</strong>
             <span className={`tag ${c.used ? "cancelled" : "confirmed"}`}>{status(c)}</span>
           </div>
-          <div>−{c.percent}%{c.note && ` · ${c.note}`}{c.expiresAt && ` · ≤ ${new Date(c.expiresAt.toMillis()).toLocaleDateString()}`}</div>
+          <div>−{c.percent}%{c.note && ` · ${c.note}`}{c.expiresAt && ` · ≤ ${fmtDate(toDateStr(new Date(c.expiresAt.toMillis())))}`}</div>
           {c.used && <small>{t("usedBy")}: {who(c) || "—"}</small>}
           <div className="row">
             {!c.used && <button className="ghost" onClick={() => copy(c.id)}>{copied === c.id ? t("copied") : t("copy")}</button>}

@@ -14,7 +14,8 @@ Vai trò: **Chủ** (`owner`), **Quản lý** (`manager`), **Lễ tân** (`recep
 | Lịch phòng: xem hồ sơ khách + ảnh CCCD trong chi tiết | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Đặt phòng: tạo mới, chuyển Chờ xác nhận ⇄ Đã xác nhận ⇄ Nhận phòng, Trả phòng, Hủy/Từ chối | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Đặt phòng: **Sửa giá**, áp **mã giảm giá** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Lịch sử & thống kê (Đã trả phòng, Đã hủy), hoàn tác trả phòng, khôi phục | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Lịch sử & thống kê (Đã trả phòng, Đã hủy) — chỉ xem | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Hoàn tác trả phòng, khôi phục đặt phòng đã hủy (luật Firestore chặn cả quản lý) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Khách lưu trú: xem, thêm, sửa, tải ảnh giấy tờ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Khách lưu trú: **xóa** hồ sơ (kèm ảnh) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Mã giảm giá: tạo, xem danh sách, xóa | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |

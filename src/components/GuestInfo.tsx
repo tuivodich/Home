@@ -12,6 +12,7 @@ export default function GuestInfo({ g, large }: { g: Guest; large?: boolean }) {
         <div>{t("nationality")}: {g.nationality}</div>
         {g.dob && <div>{t("dob")}: {g.dob}</div>}
         {g.phone && <div>{t("phone")}: {g.phone}</div>}
+        {g.email && <div>{t("email")}: {g.email}</div>}
       </div>
       <GuestImage path={g.docImagePath} large={large} />
     </div>

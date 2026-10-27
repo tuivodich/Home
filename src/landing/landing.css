@@ -227,3 +227,13 @@ html { scroll-behavior: smooth; }
   .lp-float, .lm-modal, .lm-overlay { animation: none; }
   html { scroll-behavior: auto; }
 }
+
+/* Ghi chú bảo mật + mã giảm giá trong hộp thoại đặt phòng */
+.lm-secret { color: #c62828; font-style: italic; font-size: .72rem; font-weight: 500; }
+.lm-coupon { display: flex; gap: 8px; }
+.lm-coupon input { text-transform: uppercase; letter-spacing: .04em; }
+.lm-ghost { flex: none; font: inherit; font-weight: 600; padding: 0 16px; border-radius: 12px; border: 1.5px solid var(--forest); background: #fff; color: var(--forest); cursor: pointer; }
+.lm-ghost:hover { background: var(--leaf); }
+.lm-ok { color: #1c6b34; margin: 6px 0 0; font-size: .88rem; font-weight: 600; }
+.lm-off { display: inline-block; background: #fde2e0; color: #b3261e; font-weight: 700; font-size: .78rem; padding: 1px 8px; border-radius: 999px; }
+.lm-modal textarea { resize: vertical; }

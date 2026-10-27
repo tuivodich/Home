@@ -63,6 +63,9 @@ const vi = {
     doneTitle: "Đã gửi yêu cầu!", doneText: "Homestay sẽ xem và liên hệ xác nhận với bạn. Bạn có thể theo dõi trong mục “Đặt phòng của tôi”.",
     clash: "Rất tiếc, phòng vừa được người khác giữ chỗ trong khoảng ngày này. Vui lòng chọn ngày hoặc phòng khác.",
     err: "Không gửi được yêu cầu. Vui lòng thử lại.", viewMine: "Xem đặt phòng của tôi",
+    secret: "(Thông tin này được bảo mật và không công khai)", email: "Email liên hệ", coupon: "Mã giảm giá", couponPh: "Nhập mã (nếu có)", apply: "Áp dụng", remove: "Bỏ mã",
+    couponOk: "Đã áp dụng giảm", couponGone: "Mã không tồn tại.", couponUsed: "Mã này đã được sử dụng.", couponExpired: "Mã này đã hết hạn.",
+    couponRace: "Mã giảm giá vừa được dùng hoặc không còn hiệu lực. Vui lòng bỏ mã hoặc thử mã khác.", original: "Giá gốc", total: "Thành tiền",
   },
   auth: {
     title: "Đăng nhập để đặt phòng", titleRegister: "Tạo tài khoản", sub: "Chỉ mất vài giây.",
@@ -80,7 +83,7 @@ const vi = {
   },
   account: {
     title: "Đặt phòng của tôi", empty: "Bạn chưa có đặt phòng nào.", bookNow: "Đặt phòng ngay", cancel: "Hủy yêu cầu", sure: "Hủy yêu cầu đặt phòng này?",
-    staffLink: "Vào trang quản lý", back: "← Về trang chủ", contactToChange: "Để đổi hoặc hủy đặt phòng đã xác nhận, vui lòng liên hệ homestay.",
+    staffLink: "Vào trang quản lý", expired: "Hết hạn", back: "← Về trang chủ", contactToChange: "Để đổi hoặc hủy đặt phòng đã xác nhận, vui lòng liên hệ homestay.",
   },
   footer: {
     tagline: "Nghỉ dưỡng giữa vườn xanh, ấm áp như ở nhà.", links: "Khám phá", contact: "Liên hệ",
@@ -156,6 +159,9 @@ const en: Dict = {
     doneTitle: "Request sent!", doneText: "The homestay will review it and get in touch to confirm. Track it under “My bookings”.",
     clash: "Sorry, this room was just taken for those dates. Please pick other dates or another room.",
     err: "Could not send the request. Please try again.", viewMine: "View my bookings",
+    secret: "(This information is kept private and never shown publicly)", email: "Contact email", coupon: "Discount code", couponPh: "Enter code (if any)", apply: "Apply", remove: "Remove code",
+    couponOk: "Discount applied", couponGone: "Code not found.", couponUsed: "This code has already been used.", couponExpired: "This code has expired.",
+    couponRace: "The discount code was just used or is no longer valid. Remove it or try another code.", original: "Original price", total: "Total",
   },
   auth: {
     title: "Sign in to book", titleRegister: "Create an account", sub: "It only takes a few seconds.",
@@ -173,7 +179,7 @@ const en: Dict = {
   },
   account: {
     title: "My bookings", empty: "You have no bookings yet.", bookNow: "Book now", cancel: "Cancel request", sure: "Cancel this booking request?",
-    staffLink: "Go to management", back: "← Back to home", contactToChange: "To change or cancel a confirmed booking, please contact the homestay.",
+    staffLink: "Go to management", expired: "Expired", back: "← Back to home", contactToChange: "To change or cancel a confirmed booking, please contact the homestay.",
   },
   footer: {
     tagline: "Rest among the green, warm like home.", links: "Explore", contact: "Contact",

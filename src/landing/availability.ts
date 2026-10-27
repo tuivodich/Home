@@ -1,4 +1,4 @@
-import { addDays } from "../lib/format";
+import { addDays, todayStr } from "../lib/format";
 import type { Busy, Room } from "../lib/types";
 
 export type Cell = "free" | "booked" | "held" | "maint";
@@ -11,6 +11,8 @@ export function nightState(room: Room, busy: Busy[], d: string): Cell {
   let held = false;
   for (const b of busy) {
     if (b.roomId !== room.id || b.status === "cancelled") continue;
+    // Yêu cầu chưa xác nhận mà đã qua ngày nhận phòng thì không còn giữ chỗ (sẽ bị tự từ chối).
+    if (b.status === "pending" && b.checkIn < todayStr()) continue;
     if (b.checkIn <= d && d < b.checkOut) {
       if (b.status !== "pending") return "booked";
       held = true;

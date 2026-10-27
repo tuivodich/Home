@@ -50,3 +50,16 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
 .tag.pending { background: #fdeccb; color: #8a5a00; }
 .cal td.busy.pending { background: #fde7a8; color: #7a5200; }
 .shell > main a { color: var(--accent); font-weight: 600; }
+.couponcode { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: .05em; }
+.card.coupon.used { opacity: .65; }
+.warn { color: var(--danger); font-weight: 600; margin: 0; }
+.info { color: #1e4f8a; margin: 0; font-size: .9rem; }
+.suggest { position: relative; }
+.suggest ul { position: absolute; z-index: 5; left: 0; right: 0; top: 100%; margin: 2px 0 0; padding: 4px; list-style: none; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,.15); max-height: 260px; overflow-y: auto; }
+.suggest li { padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
+.suggest li:hover { background: var(--bg); }
+.suggest li small { white-space: nowrap; }
+.overdue { color: #b45309; font-weight: 600; margin: 0; font-size: .9rem; }
+.linkbtn { display: inline-block; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; text-decoration: none; color: var(--fg) !important; font-weight: 500 !important; }
+.check { flex-direction: row !important; align-items: center; gap: 8px; color: var(--fg) !important; font-size: 1rem !important; }
+.check input { width: auto; }

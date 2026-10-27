@@ -9,6 +9,7 @@ import Bookings from "./pages/Bookings";
 import Guests from "./pages/Guests";
 import Rooms from "./pages/Rooms";
 import Settings from "./pages/Settings";
+import Coupons from "./pages/Coupons";
 
 export default function StaffShell() {
   const { user, profile, loading, logout } = useAuth();
@@ -35,6 +36,7 @@ export default function StaffShell() {
         <NavLink to="/app/calendar">{t("calendar")}</NavLink>
         {front && <NavLink to="/app/bookings">{t("bookings")}</NavLink>}
         {front && <NavLink to="/app/guests">{t("guests")}</NavLink>}
+        {admin && <NavLink to="/app/coupons">{t("coupons")}</NavLink>}
         {admin && <NavLink to="/app/rooms">{t("rooms")}</NavLink>}
         {admin && <NavLink to="/app/settings">{t("settings")}</NavLink>}
       </nav>
@@ -44,6 +46,7 @@ export default function StaffShell() {
           <Route path="calendar" element={<CalendarPage />} />
           {front && <Route path="bookings" element={<Bookings />} />}
           {front && <Route path="guests" element={<Guests />} />}
+          {admin && <Route path="coupons" element={<Coupons />} />}
           {admin && <Route path="rooms" element={<Rooms />} />}
           {admin && <Route path="settings" element={<Settings />} />}
           <Route path="*" element={<Navigate to="/app" replace />} />

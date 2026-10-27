@@ -62,7 +62,8 @@ service cloud.firestore {
       allow read: if isStaff() || (signedIn() && resource.data.createdBy == request.auth.uid);
       allow create: if isFront() || (signedIn()
         && request.resource.data.keys().hasOnly(['roomId', 'guestName', 'phone', 'email', 'checkIn', 'checkOut',
-                                                  'guests', 'total', 'status', 'note', 'source', 'createdBy'])
+                                                  'guests', 'total', 'status', 'note', 'source', 'createdBy',
+                                                  'couponCode', 'discountPercent', 'originalTotal'])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.source == 'online'
@@ -74,6 +75,15 @@ service cloud.firestore {
         && request.resource.data.note is string && request.resource.data.note.size() <= 500
         && request.resource.data.guests is int && request.resource.data.guests >= 1 && request.resource.data.guests <= 30
         && request.resource.data.total is number
+        && request.resource.data.email is string && request.resource.data.email.size() <= 200
+        // Giảm giá chỉ hợp lệ khi mã vừa được dùng trong CÙNG lần ghi, thuộc về chính khách này, đúng phần trăm.
+        && (!('couponCode' in request.resource.data) || (
+              getAfter(/databases/$(database)/documents/coupons/$(request.resource.data.couponCode)).data.used == true
+              && getAfter(/databases/$(database)/documents/coupons/$(request.resource.data.couponCode)).data.usedBy == request.auth.uid
+              && getAfter(/databases/$(database)/documents/coupons/$(request.resource.data.couponCode)).data.bookingId == id
+              && request.resource.data.discountPercent == getAfter(/databases/$(database)/documents/coupons/$(request.resource.data.couponCode)).data.percent
+              && request.resource.data.originalTotal is number))
+        && (!('discountPercent' in request.resource.data) || 'couponCode' in request.resource.data)
         && exists(/databases/$(database)/documents/rooms/$(request.resource.data.roomId)));
       // Khách chỉ được hủy đặt phòng của mình khi còn "chờ xác nhận".
       allow update: if isFront() || (signedIn()
@@ -82,6 +92,22 @@ service cloud.firestore {
         && request.resource.data.status == 'cancelled'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
       allow delete: if isAdmin();
+    }
+
+    // Mã giảm giá dùng 1 lần do chủ/quản lý tạo. Khách chỉ được xem MỘT mã khi biết đúng mã (không liệt kê được).
+    match /coupons/{code} {
+      allow get: if signedIn();
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (signedIn()
+        && resource.data.used == false
+        && request.resource.data.used == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'usedBy', 'usedAt', 'bookingId'])
+        && request.resource.data.usedBy == request.auth.uid
+        && (!('expiresAt' in resource.data) || resource.data.expiresAt > request.time)
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.couponCode == code
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.createdBy == request.auth.uid
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.discountPercent == resource.data.percent);
     }
 
     match /guests/{id} {

@@ -11,10 +11,12 @@ export default function Settings() {
   const { t } = useI18n();
   const { user, profile } = useAuth();
   const [rate, setRate] = useState(DEFAULT_USD_RATE);
+  const [autoReject, setAutoReject] = useState(true);
   const { data: users } = useCollection<UserDoc & { id: string }>("users", profile?.role === "owner" || profile?.role === "manager");
 
   useEffect(() => onSnapshot(doc(db, "settings", "app"), (s) => {
     if (typeof s.data()?.usdRate === "number") setRate(s.data()!.usdRate);
+    setAutoReject(s.data()?.autoRejectPending !== false);
   }, () => {}), []);
 
   return (
@@ -26,6 +28,13 @@ export default function Settings() {
         </label>
         <small>{t("usdRateHint")}</small>
         <button onClick={() => setDoc(doc(db, "settings", "app"), { usdRate: rate }, { merge: true })}>{t("save")}</button>
+      </div>
+      <div className="card">
+        <label className="check">
+          <input type="checkbox" checked={autoReject} onChange={(e) => setDoc(doc(db, "settings", "app"), { autoRejectPending: e.target.checked }, { merge: true })} />
+          <span>{t("autoReject")}</span>
+        </label>
+        <small>{t("autoRejectHint")}</small>
       </div>
       <div className="card">
         <h3>{t("staffAccounts")}</h3>

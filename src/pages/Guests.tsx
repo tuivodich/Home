@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { deleteObject, ref, uploadBytes } from "firebase/storage";
@@ -6,12 +6,9 @@ import { db, storage } from "../lib/firebase";
 import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
-import { normDocNumber, normName } from "../lib/format";
 import GuestInfo from "../components/GuestInfo";
+import GuestFields, { conflictsFor, emptyGuestForm, type GuestForm } from "../components/GuestFields";
 import type { Booking, Guest, Room } from "../lib/types";
-
-type Form = Omit<Guest, "id" | "docImagePath">;
-const empty: Form = { fullName: "", docType: "cccd", docNumber: "", nationality: "Việt Nam", dob: "", phone: "", email: "", bookingId: "" };
 
 export default function Guests() {
   const { t } = useI18n();
@@ -21,14 +18,15 @@ export default function Guests() {
   const { data: guests } = useCollection<Guest>("guests");
   const { data: bookings } = useCollection<Booking>("bookings");
   const { data: rooms } = useCollection<Room>("rooms");
-  const [f, setF] = useState<Form>({ ...empty });
+  const [f, setF] = useState<GuestForm>({ ...emptyGuestForm });
+  const [bookingId, setBookingId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [editing, setEditing] = useState<Guest | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploadErr, setUploadErr] = useState("");
   const [notice, setNotice] = useState("");
   const [prefill, setPrefill] = useState("");
-  const [showSuggest, setShowSuggest] = useState(false);
+  const andCheckIn = useRef(false);
 
   // Mở từ nút "Hồ sơ khách" ở đặt phòng: điền sẵn họ tên, điện thoại, email và gắn với đặt phòng.
   useEffect(() => {
@@ -37,44 +35,15 @@ export default function Guests() {
     const b = bookings.find((x) => x.id === bid);
     if (!b) return;
     setEditing(null);
-    setF({ ...empty, fullName: b.guestName, phone: b.phone, email: b.email ?? "", bookingId: b.id });
+    setF({ ...emptyGuestForm, fullName: b.guestName, phone: b.phone, email: b.email ?? "" });
+    setBookingId(b.id);
     setPrefill(b.guestName);
     setParams({}, { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [params, bookings, setParams]);
 
-  // Gợi ý khách đã có (theo họ tên hoặc số giấy tờ), mỗi người một dòng.
-  const suggestions = useMemo(() => {
-    const q = normName(f.fullName);
-    const qd = normDocNumber(f.fullName);
-    if (!showSuggest || editing || !q) return [];
-    const seen = new Set<string>();
-    const out: Guest[] = [];
-    for (const g of [...guests].sort((a, b) => a.fullName.localeCompare(b.fullName, "vi"))) {
-      const key = g.docType + normDocNumber(g.docNumber);
-      if (seen.has(key)) continue;
-      if (normName(g.fullName).includes(q) || (qd.length >= 3 && normDocNumber(g.docNumber).includes(qd))) {
-        seen.add(key);
-        out.push(g);
-        if (out.length >= 6) break;
-      }
-    }
-    return out;
-  }, [guests, f.fullName, showSuggest, editing]);
-
-  // Số giấy tờ là duy nhất: nếu đã có ở một khách khác tên thì cảnh báo (vẫn cho lưu).
-  const conflictsFor = (docType: string, docNumber: string, fullName: string, selfId?: string) => {
-    const n = normDocNumber(docNumber);
-    if (n.length < 4) return { other: [] as Guest[], same: [] as Guest[] };
-    const hits = guests.filter((g) => g.id !== selfId && g.docType === docType && normDocNumber(g.docNumber) === n);
-    return { other: hits.filter((g) => normName(g.fullName) !== normName(fullName)), same: hits.filter((g) => normName(g.fullName) === normName(fullName)) };
-  };
-  const live = conflictsFor(f.docType, f.docNumber, f.fullName, editing?.id);
-
-  const pick = (g: Guest) => {
-    setF({ ...f, fullName: g.fullName, docType: g.docType, docNumber: g.docNumber, nationality: g.nationality, dob: g.dob, phone: f.phone || g.phone, email: f.email || g.email });
-    setShowSuggest(false);
-  };
+  const linkedBooking = bookings.find((b) => b.id === bookingId);
+  const live = conflictsFor(guests, f.docType, f.docNumber, f.fullName, editing?.id);
 
   const uploadPhoto = async (guestId: string, gRef: ReturnType<typeof doc>, old: string) => {
     if (!file) return;
@@ -91,10 +60,12 @@ export default function Guests() {
     }
   };
 
-  const reset = () => { setF({ ...empty }); setFile(null); setEditing(null); setPrefill(""); };
+  const reset = () => { setF({ ...emptyGuestForm }); setBookingId(""); setFile(null); setEditing(null); setPrefill(""); };
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
+    const checkInAfter = andCheckIn.current;
+    andCheckIn.current = false;
     setBusy(true);
     setUploadErr("");
     setNotice("");
@@ -102,20 +73,23 @@ export default function Guests() {
       const warn = live.other.length ? `${t("dupSaved")}: ${live.other.map((g) => g.fullName).join(", ")} (${f.docNumber})` : "";
       if (editing) {
         const gRef = doc(db, "guests", editing.id);
-        await updateDoc(gRef, { ...f });
+        await updateDoc(gRef, { ...f, bookingId });
         await uploadPhoto(editing.id, gRef, editing.docImagePath);
       } else {
-        const gRef = await addDoc(collection(db, "guests"), { ...f, docImagePath: "" });
+        const gRef = await addDoc(collection(db, "guests"), { ...f, bookingId, docImagePath: "" });
         await uploadPhoto(gRef.id, gRef, "");
       }
+      // Hồ sơ đã có → cho nhận phòng ngay nếu đặt phòng đang ở trạng thái "Đã xác nhận".
+      if (checkInAfter && linkedBooking?.status === "confirmed") await updateDoc(doc(db, "bookings", linkedBooking.id), { status: "checked_in" });
       setNotice(warn);
       reset();
     } finally { setBusy(false); }
   };
 
   const startEdit = (g: Guest) => {
-    const { id: _id, docImagePath: _p, ...rest } = g;
-    setF({ ...empty, ...rest });
+    const { id: _id, docImagePath: _p, bookingId: bid, ...rest } = g;
+    setF({ ...emptyGuestForm, ...rest, email: rest.email ?? "" });
+    setBookingId(bid);
     setFile(null);
     setEditing(g);
     setPrefill("");
@@ -137,45 +111,20 @@ export default function Guests() {
       <form className="card" onSubmit={save}>
         {editing && <strong>✏️ {t("edit")}: {editing.fullName}</strong>}
         {prefill && <p className="info">{t("prefillFromBooking")} {prefill}.</p>}
-        <label className="suggest">{t("fullName")}
-          <input required autoComplete="off" value={f.fullName}
-            onChange={(e) => { setF({ ...f, fullName: e.target.value }); setShowSuggest(true); }}
-            onFocus={() => setShowSuggest(true)} onBlur={() => setTimeout(() => setShowSuggest(false), 150)} />
-          {suggestions.length > 0 && (
-            <ul>
-              <li style={{ cursor: "default" }}><small>{t("suggestGuests")}</small></li>
-              {suggestions.map((g) => (
-                <li key={g.id} onMouseDown={(e) => { e.preventDefault(); pick(g); }}>
-                  <span>{g.fullName}</span><small>{t(g.docType)}: {g.docNumber}</small>
-                </li>
-              ))}
-            </ul>
-          )}
-        </label>
-        <label>{t("docType")}
-          <select value={f.docType} onChange={(e) => setF({ ...f, docType: e.target.value as Guest["docType"] })}>
-            {(["cccd", "passport", "license", "other"] as const).map((k) => <option key={k} value={k}>{t(k)}</option>)}
-          </select>
-        </label>
-        <label>{t("docNumber")}<input required value={f.docNumber} onChange={(e) => setF({ ...f, docNumber: e.target.value })} /></label>
-        {live.other.length > 0 && (
-          <p className="warn">{t("dupOther")}: {live.other.map((g) => `${g.fullName} (${t(g.docType)} ${g.docNumber})`).join("; ")}</p>
-        )}
-        {live.other.length === 0 && live.same.length > 0 && <p className="info">{t("dupSame")}</p>}
-        <label>{t("nationality")}<input value={f.nationality} onChange={(e) => setF({ ...f, nationality: e.target.value })} /></label>
-        <label>{t("dob")}<input type="date" value={f.dob} onChange={(e) => setF({ ...f, dob: e.target.value })} /></label>
-        <label>{t("phone")}<input type="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></label>
-        <label>{t("email")}<input type="email" value={f.email ?? ""} onChange={(e) => setF({ ...f, email: e.target.value })} /></label>
+        <GuestFields value={f} onChange={setF} guests={guests} selfId={editing?.id} file={file} onFile={setFile}
+          fileKey={editing?.id ?? "new"} hasPhoto={!!editing?.docImagePath} noSuggest={!!editing} />
         <label>{t("booking")}
-          <select value={f.bookingId} onChange={(e) => setF({ ...f, bookingId: e.target.value })}>
+          <select value={bookingId} onChange={(e) => setBookingId(e.target.value)}>
             <option value="">{t("none2")}</option>
             {bookings.filter((b) => b.status !== "cancelled").map((b) => <option key={b.id} value={b.id}>{b.guestName} · {b.checkIn}</option>)}
           </select>
         </label>
-        <label>{t("docImage")}{editing?.docImagePath && <small>{t("keepPhotoHint")}</small>}<input key={editing?.id ?? "new"} type="file" accept="image/*" capture="environment" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
         {uploadErr && <p className="error">{uploadErr}</p>}
         <div className="row">
           <button type="submit" disabled={busy}>{busy ? t("uploading") : editing ? t("save") : t("add")}</button>
+          {linkedBooking?.status === "confirmed" && (
+            <button type="submit" disabled={busy} onClick={() => { andCheckIn.current = true; }}>{t("saveAndCheckIn")}</button>
+          )}
           {(editing || prefill) && <button type="button" className="ghost" onClick={reset}>{t("cancel")}</button>}
         </div>
       </form>
@@ -183,7 +132,7 @@ export default function Guests() {
       {guests.length === 0 && <p>{t("noData")}</p>}
       {guests.map((g) => {
         const bk = bookings.find((x) => x.id === g.bookingId);
-        const clash = conflictsFor(g.docType, g.docNumber, g.fullName, g.id).other;
+        const clash = conflictsFor(guests, g.docType, g.docNumber, g.fullName, g.id).other;
         return (
           <div className="card" key={g.id}>
             <GuestInfo g={g} />

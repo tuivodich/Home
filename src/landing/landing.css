@@ -1,0 +1,229 @@
+/* Trang giới thiệu + trang tài khoản khách. Mọi thứ nằm trong .landing để không ảnh hưởng khu quản lý. */
+.landing {
+  --forest: #1f4d3a; --moss: #3b7a57; --leaf: #e8f3ea; --wood: #8a5a2b; --sand: #f7f1e6; --cream: #fffaf1;
+  --ink: #23201a; --muted: #6c6458; --sun: #f0a630; --line: #eadfcc; --radius: 20px;
+  --shadow: 0 10px 30px rgba(31, 77, 58, .12);
+  font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--cream); color: var(--ink); min-height: 100vh; line-height: 1.6;
+  color-scheme: light;
+}
+html { scroll-behavior: smooth; }
+.landing h1, .landing h2, .landing h3, .landing h4 { margin: 0; line-height: 1.2; }
+.landing h1, .landing h2 { font-family: "Playfair Display", Georgia, serif; letter-spacing: -.01em; }
+.landing a { color: inherit; }
+.landing section[id] { scroll-margin-top: 76px; }
+.lp-wrap { width: min(1160px, 100% - 32px); margin-inline: auto; }
+.lp-center { text-align: center; }
+.lp-muted { color: var(--muted); }
+.lp-small { font-size: .85rem; }
+.lp-spacer { flex: 1; }
+
+/* Điều khiển dùng chung */
+.landing input, .landing select, .landing textarea {
+  font: inherit; color: var(--ink); background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 100%;
+}
+.landing input:focus, .landing select:focus, .landing textarea:focus { outline: 3px solid rgba(59, 122, 87, .25); border-color: var(--moss); }
+.landing label { display: flex; flex-direction: column; gap: 6px; font-size: .82rem; font-weight: 600; color: var(--muted); text-align: left; }
+.lp-btn, .lm-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer;
+  padding: 13px 24px; border-radius: 999px; border: 2px solid transparent; transition: transform .15s, box-shadow .15s, background .15s;
+}
+.lp-btn.primary, .lm-btn { background: var(--forest); color: #fff; box-shadow: 0 8px 20px rgba(31, 77, 58, .28); }
+.lp-btn.primary:hover, .lm-btn:hover { transform: translateY(-2px); background: #17402f; }
+.lp-btn.ghost { background: transparent; color: var(--forest); border-color: var(--forest); }
+.lp-btn.ghost:hover { background: var(--leaf); }
+.lp-btn.sm { padding: 9px 18px; font-size: .9rem; }
+.lp-btn:disabled, .lm-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+.lp-pill {
+  font: inherit; font-size: .85rem; font-weight: 600; text-decoration: none; cursor: pointer; padding: 7px 14px; border-radius: 999px;
+  background: transparent; color: var(--forest); border: 1.5px solid var(--line); transition: background .15s;
+}
+.lp-pill:hover { background: var(--leaf); }
+.lp-pill.solid { background: var(--forest); color: #fff; border-color: var(--forest); }
+.lp-pill.solid:hover { background: #17402f; }
+
+/* Header */
+.lp-header { position: sticky; top: 0; z-index: 20; background: rgba(255, 250, 241, .85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.lp-header-in { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.lp-brand { display: flex; align-items: center; gap: 10px; font-family: "Playfair Display", serif; font-weight: 800; font-size: 1.2rem; text-decoration: none; color: var(--forest); }
+.lp-brand.light { color: #fff; }
+.lp-logo { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--leaf); font-size: 1.3rem; }
+.lp-nav { display: flex; align-items: center; gap: 22px; }
+.lp-nav > a { text-decoration: none; font-weight: 500; font-size: .95rem; padding: 6px 0; position: relative; }
+.lp-nav > a::after { content: ""; position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--sun); transition: width .2s; }
+.lp-nav > a:hover::after { width: 100%; }
+.lp-nav-actions { display: flex; gap: 8px; align-items: center; }
+.lp-burger { display: none; background: none; border: 0; padding: 8px; cursor: pointer; }
+.lp-burger span { display: block; width: 24px; height: 2px; background: var(--forest); margin: 5px 0; border-radius: 2px; }
+@media (max-width: 900px) {
+  .lp-burger { display: block; }
+  .lp-nav { position: absolute; top: 64px; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0; background: var(--cream); border-bottom: 1px solid var(--line); padding: 8px 16px 16px; display: none; }
+  .lp-nav.open { display: flex; }
+  .lp-nav > a { padding: 12px 4px; border-bottom: 1px solid var(--line); }
+  .lp-nav-actions { flex-wrap: wrap; padding-top: 12px; }
+}
+
+/* Hero */
+.lp-hero { position: relative; padding: 56px 0 0; background: linear-gradient(180deg, #fff3da 0%, var(--cream) 100%); }
+.lp-blobs { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.lp-blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .5; pointer-events: none; }
+.lp-blob.b1 { width: 380px; height: 380px; background: #ffd58f; top: -120px; left: -80px; }
+.lp-blob.b2 { width: 420px; height: 420px; background: #bfe3c7; bottom: 0; right: -120px; }
+.lp-hero-in { position: relative; display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: center; }
+.lp-eyebrow { display: inline-block; font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--wood); background: #fff; border: 1px solid var(--line); padding: 6px 14px; border-radius: 999px; margin-bottom: 18px; }
+.lp-hero h1 { font-size: clamp(2.1rem, 4.4vw, 3.5rem); color: var(--forest); font-weight: 800; }
+.lp-hero h1 em { font-style: italic; color: var(--wood); }
+.lp-hero p { font-size: 1.1rem; color: var(--muted); max-width: 520px; margin: 20px 0 28px; }
+.lp-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.lp-hero-art { position: relative; border-radius: 36px 36px 120px 36px; overflow: visible; box-shadow: var(--shadow); aspect-ratio: 10 / 8; }
+.heroart { width: 100%; height: 100%; display: block; border-radius: 36px 36px 120px 36px; }
+.lp-float { position: absolute; background: #fff; padding: 10px 16px; border-radius: 999px; font-size: .88rem; font-weight: 600; color: var(--forest); box-shadow: var(--shadow); animation: lp-bob 5s ease-in-out infinite; }
+.lp-float.f1 { top: 8%; left: -6%; } .lp-float.f2 { bottom: 12%; right: -4%; animation-delay: -2.5s; }
+@keyframes lp-bob { 50% { transform: translateY(-8px); } }
+.lp-quick {
+  position: relative; margin-top: 44px; margin-bottom: -48px; z-index: 2; display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 14px; align-items: end;
+  background: #fff; padding: 20px; border-radius: 28px; box-shadow: 0 20px 50px rgba(31, 77, 58, .18); border: 1px solid var(--line);
+}
+@media (max-width: 900px) {
+  .lp-hero { padding-top: 32px; }
+  .lp-hero-in { grid-template-columns: 1fr; }
+  .lp-hero-art { order: -1; border-radius: 28px 28px 80px 28px; }
+  .heroart { border-radius: 28px 28px 80px 28px; }
+  .lp-float.f1 { left: 4%; top: 4%; } .lp-float.f2 { right: 4%; }
+  .lp-quick { grid-template-columns: 1fr 1fr; }
+  .lp-quick .lp-btn { grid-column: 1 / -1; }
+}
+
+/* Thống kê */
+.lp-stats { padding: 96px 0 24px; }
+.lp-stats-in { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center; }
+.lp-stats-in strong { display: block; font-family: "Playfair Display", serif; font-size: clamp(2rem, 4vw, 3rem); color: var(--forest); }
+.lp-stats-in span { color: var(--muted); font-size: .95rem; }
+@media (max-width: 700px) { .lp-stats-in { grid-template-columns: 1fr 1fr; row-gap: 24px; } }
+
+/* Mục chung */
+.lp-section { padding: 88px 0; }
+.lp-section.alt { background: var(--sand); }
+.lp-head { text-align: center; max-width: 680px; margin: 0 auto 48px; }
+.lp-head h2, .lp-about h2 { font-size: clamp(1.8rem, 3.6vw, 2.7rem); color: var(--forest); margin-bottom: 12px; }
+.lp-head p { color: var(--muted); }
+
+/* Giới thiệu */
+.lp-about { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.lp-about p { color: var(--muted); }
+.lp-about-art { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.lp-tile { display: grid; place-items: center; font-size: 4rem; border-radius: 28px; aspect-ratio: 1; box-shadow: var(--shadow); }
+.lp-tile.t1 { background: #ffe3b8; } .lp-tile.t2 { background: #cfe9d4; transform: translateY(24px); }
+.lp-tile.t3 { background: #f7d2c4; } .lp-tile.t4 { background: #cde6ee; transform: translateY(24px); }
+.lp-checks { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 10px; }
+.lp-checks li { padding-left: 34px; position: relative; font-weight: 500; }
+.lp-checks li::before { content: "✓"; position: absolute; left: 0; top: 1px; width: 24px; height: 24px; border-radius: 50%; background: var(--leaf); color: var(--moss); display: grid; place-items: center; font-size: .8rem; font-weight: 700; }
+@media (max-width: 800px) { .lp-about { grid-template-columns: 1fr; gap: 40px; } }
+
+/* Phòng */
+.lp-rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; }
+.lp-room { background: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--line); transition: transform .2s; }
+.lp-room:hover { transform: translateY(-6px); }
+.lp-room-img { height: 150px; display: grid; place-items: center; font-size: 3.4rem;
+  background: radial-gradient(circle at 30% 20%, hsl(var(--h) 70% 92%), hsl(var(--h) 45% 78%)); }
+.lp-room-body { padding: 18px 20px 22px; display: grid; gap: 6px; }
+.lp-room-body small { color: var(--wood); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: .72rem; }
+.lp-room-body h3 { font-size: 1.2rem; }
+.lp-price { font-weight: 700; color: var(--forest); margin: 4px 0 10px; }
+.lp-price span { font-weight: 500; color: var(--muted); font-size: .85rem; }
+
+/* Tiện nghi */
+.lp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.lp-feature { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 24px; transition: transform .2s, box-shadow .2s; }
+.lp-feature:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.lp-ico { width: 56px; height: 56px; display: grid; place-items: center; font-size: 1.7rem; background: var(--leaf); border-radius: 16px; margin-bottom: 16px; }
+.lp-feature h3 { font-size: 1.1rem; margin-bottom: 6px; color: var(--forest); }
+.lp-feature p { margin: 0; color: var(--muted); font-size: .95rem; }
+@media (max-width: 900px) { .lp-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .lp-grid { grid-template-columns: 1fr; } }
+
+/* Các bước */
+.lp-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; counter-reset: s; }
+.lp-steps li { text-align: center; padding: 8px 16px; }
+.lp-steps b { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 50%; background: var(--forest); color: #fff; font-size: 1.3rem; box-shadow: 0 8px 18px rgba(31, 77, 58, .3); }
+.lp-steps h3 { margin-bottom: 6px; color: var(--forest); }
+.lp-steps p { margin: 0; color: var(--muted); }
+@media (max-width: 800px) { .lp-steps { grid-template-columns: 1fr; } }
+
+/* Đặt phòng */
+.lp-panel { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; }
+.lp-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 800px) { .lp-filters { grid-template-columns: 1fr 1fr; } }
+.lp-error { color: #b3261e; font-weight: 600; margin: 14px 0 0; }
+.lp-results { display: grid; gap: 12px; margin-top: 20px; }
+.lp-result { display: grid; grid-template-columns: 1.2fr 1.6fr auto; gap: 16px; align-items: center; padding: 14px 18px; border-radius: 16px; border: 1.5px solid var(--line); }
+.lp-result.ok { border-color: #b7dcc0; background: #f4fbf5; }
+.lp-result.no { background: #faf6ee; }
+.lp-result-mid { display: grid; gap: 4px; }
+@media (max-width: 700px) { .lp-result { grid-template-columns: 1fr; } }
+.lp-badge { justify-self: start; font-size: .8rem; font-weight: 700; padding: 3px 12px; border-radius: 999px; }
+.lp-badge.free { background: #d6f0dc; color: #1c6b34; } .lp-badge.booked { background: #fddcd8; color: #9a2a20; } .lp-badge.held { background: #fdeccb; color: #8a5a00; }
+.lp-cal-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.lp-cal-bar .lp-pill { margin-left: 6px; }
+.lp-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .85rem; color: var(--muted); margin-bottom: 12px; }
+.lp-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+.dot.free, .lp-cal td.free { background: #d6f0dc; } .dot.booked, .lp-cal td.booked { background: #f2a59c; }
+.dot.held, .lp-cal td.held { background: #fcd98a; } .dot.maint, .lp-cal td.maint { background: repeating-linear-gradient(45deg, #e2ddd2, #e2ddd2 4px, #f3efe6 4px, #f3efe6 8px); }
+.lp-scroll { overflow-x: auto; }
+.lp-cal { border-collapse: separate; border-spacing: 3px; width: 100%; min-width: 760px; }
+.lp-cal th { font-size: .78rem; font-weight: 600; color: var(--muted); padding: 4px 2px; text-align: center; line-height: 1.2; }
+.lp-cal th small { display: block; font-weight: 500; font-size: .68rem; }
+.lp-cal th.today { color: var(--forest); background: var(--leaf); border-radius: 8px; }
+.lp-cal th[scope="row"] { text-align: left; color: var(--ink); white-space: nowrap; padding-right: 10px; position: sticky; left: 0; background: #fff; }
+.lp-cal td { height: 34px; border-radius: 8px; }
+.lp-cal td.past { background: #f3efe6; opacity: .55; }
+.lp-cal td.sel { outline: 2.5px solid var(--forest); outline-offset: -2px; }
+
+/* Footer */
+.lp-footer { background: var(--forest); color: #dfeee4; padding: 56px 0 24px; }
+.lp-footer-in { display: grid; grid-template-columns: 1.4fr 1fr 1.4fr; gap: 32px; }
+.lp-footer h4 { color: #fff; margin-bottom: 12px; font-size: 1rem; }
+.lp-footer a { display: block; text-decoration: none; padding: 3px 0; opacity: .9; } .lp-footer a:hover { opacity: 1; text-decoration: underline; }
+.lp-muted-l { opacity: .8; margin: 10px 0 0; }
+.lp-copy { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid rgba(255, 255, 255, .15); margin-top: 36px; padding-top: 18px; font-size: .85rem; opacity: .85; }
+.lp-copy a { display: inline; }
+@media (max-width: 800px) { .lp-footer-in { grid-template-columns: 1fr; } }
+
+/* Trang tài khoản */
+.lp-account { padding: 20px 0 60px; }
+.lp-account-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 28px; }
+.lp-account-title { font-size: 2.2rem; color: var(--forest); }
+.lp-booking-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin: 16px 0 0; }
+.lp-booking-side { display: grid; gap: 8px; justify-items: end; }
+.lp-status { font-size: .8rem; font-weight: 700; padding: 3px 12px; border-radius: 999px; background: var(--line); }
+.lp-status.pending { background: #fdeccb; color: #8a5a00; } .lp-status.confirmed { background: #d6e8fb; color: #1e4f8a; }
+.lp-status.checked_in { background: #d6f0dc; color: #1c6b34; } .lp-status.cancelled { background: #fddcd8; color: #9a2a20; }
+
+/* Hộp thoại đăng nhập / đặt phòng */
+.lm-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(20, 30, 24, .55); backdrop-filter: blur(4px); display: flex; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; animation: lm-fade .2s; }
+.lm-modal { position: relative; background: #fff; color: var(--ink); width: min(440px, 100%); margin: 6vh 0; padding: 28px 26px; border-radius: 24px; box-shadow: 0 30px 80px rgba(0, 0, 0, .3); display: grid; gap: 14px; animation: lm-pop .25s; }
+@keyframes lm-fade { from { opacity: 0; } } @keyframes lm-pop { from { opacity: 0; transform: translateY(14px) scale(.98); } }
+.lm-modal h3 { font-family: "Playfair Display", serif; font-size: 1.5rem; color: var(--forest); margin: 0; }
+.lm-modal form { display: grid; gap: 14px; }
+.lm-x { position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--sand); font-size: 1.4rem; line-height: 1; cursor: pointer; color: var(--ink); }
+.lm-muted { color: var(--muted); margin: 0; } .lm-small { font-size: .78rem; }
+.lm-google { display: flex; align-items: center; justify-content: center; gap: 10px; font: inherit; font-weight: 600; padding: 12px; border-radius: 999px; background: #fff; color: var(--ink); border: 1.5px solid var(--line); cursor: pointer; transition: box-shadow .15s; }
+.lm-google:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, .12); } .lm-google:disabled { opacity: .6; }
+.lm-or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: .8rem; }
+.lm-or::before, .lm-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.lm-link { background: none; border: 0; color: var(--moss); font: inherit; font-weight: 600; cursor: pointer; padding: 4px; text-decoration: none; }
+.lm-err { color: #b3261e; margin: 0; font-size: .9rem; font-weight: 500; }
+.lm-summary { background: var(--leaf); border-radius: 14px; padding: 12px 14px; display: grid; gap: 2px; font-size: .92rem; }
+.lm-done { display: grid; gap: 12px; text-align: center; justify-items: center; }
+.lm-tick { width: 64px; height: 64px; border-radius: 50%; background: #d6f0dc; color: #1c6b34; display: grid; place-items: center; font-size: 2rem; font-weight: 700; }
+.lm-done .lm-btn { text-decoration: none; }
+
+/* Hiện dần khi cuộn */
+.landing .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+.landing .reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .landing .reveal { opacity: 1; transform: none; transition: none; }
+  .lp-float, .lm-modal, .lm-overlay { animation: none; }
+  html { scroll-behavior: auto; }
+}

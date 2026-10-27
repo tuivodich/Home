@@ -5,7 +5,7 @@ import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
 import { DEFAULT_USD_RATE } from "../lib/format";
-import { ROLES, type Role, type UserDoc } from "../lib/types";
+import { ROLES, isStaffRole, type Role, type UserDoc } from "../lib/types";
 
 export default function Settings() {
   const { t } = useI18n();
@@ -29,11 +29,11 @@ export default function Settings() {
       </div>
       <div className="card">
         <h3>{t("staffAccounts")}</h3>
-        {users.map((u) => (
+        {[...users].sort((a, b) => Number(isStaffRole(b.role)) - Number(isStaffRole(a.role)) || a.email.localeCompare(b.email)).map((u) => (
           <div className="row between" key={u.id}>
             <span>{u.email}</span>
             <select
-              value={u.role}
+              value={u.role === "pending" ? "customer" : u.role}
               disabled={u.id === user?.uid || (u.role === "owner" && profile?.role !== "owner")}
               onChange={(e) => updateDoc(doc(db, "users", u.id), { role: e.target.value as Role })}
             >

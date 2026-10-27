@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
 import { todayStr } from "../lib/format";
@@ -5,10 +7,12 @@ import type { Booking, Room } from "../lib/types";
 
 export default function Dashboard() {
   const { t } = useI18n();
+  const { profile } = useAuth();
   const { data: rooms } = useCollection<Room>("rooms");
   const { data: bookings } = useCollection<Booking>("bookings");
   const today = todayStr();
   const live = bookings.filter((b) => b.status !== "cancelled");
+  const pending = bookings.filter((b) => b.status === "pending");
   const arrivals = live.filter((b) => b.checkIn === today && b.status === "confirmed");
   const departures = live.filter((b) => b.checkOut === today && b.status === "checked_in");
   const occupied = live.filter((b) => b.status === "checked_in").length;
@@ -22,7 +26,15 @@ export default function Dashboard() {
         <div className="card"><big>{occupied}</big><div>{t("occupiedNow")}</div></div>
         <div className="card"><big>{arrivals.length}</big><div>{t("arrivalsToday")}</div></div>
         <div className="card"><big>{departures.length}</big><div>{t("departuresToday")}</div></div>
+        <div className="card"><big>{pending.length}</big><div>{t("pendingRequests")}</div></div>
       </div>
+      {pending.length > 0 && ["owner", "manager", "reception"].includes(profile?.role ?? "") && (
+        <div className="card">
+          <h3>{t("pendingRequests")}</h3>
+          {pending.map((b) => <div key={b.id}>{b.guestName} — {name(b.roomId)} · {b.checkIn} → {b.checkOut}</div>)}
+          <Link to="/app/bookings">{t("bookings")} →</Link>
+        </div>
+      )}
       {[[t("arrivalsToday"), arrivals], [t("departuresToday"), departures]].map(([title, list]) => (
         <div className="card" key={title as string}>
           <h3>{title as string}</h3>

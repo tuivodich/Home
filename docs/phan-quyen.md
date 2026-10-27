@@ -20,6 +20,7 @@ Vai trò: **Chủ** (`owner`), **Quản lý** (`manager`), **Lễ tân** (`recep
 | Mã giảm giá: tạo, xem danh sách, xóa | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Phòng: thêm, sửa giá, bảo trì, xóa | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cài đặt: tỷ giá USD, bật/tắt tự từ chối yêu cầu quá hạn | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Cài đặt: giao diện website (chọn giao diện, bật/tắt hiệu ứng, tự chuyển Noel) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cài đặt: cấp/đổi vai trò tài khoản | ✅ | ✅ (không đụng tài khoản Chủ, không cấp quyền Chủ) | ❌ | ❌ | ❌ | ❌ |
 | Xem trang giới thiệu, lịch phòng trống (không cần đăng nhập) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Gửi yêu cầu đặt phòng online, đổi ngày/phòng trước khi gửi, dùng mã giảm giá | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |

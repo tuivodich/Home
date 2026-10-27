@@ -8,7 +8,7 @@ export const THEME_IDS: ThemeId[] = ["night", "mist", "dusk", "noel"];
 export const DEFAULT_THEME: ThemeId = "night";
 
 /** Giao diện đã hoàn thiện CSS/bố cục. Giao diện chưa có trong danh sách này sẽ tự dùng mặc định. */
-export const READY_THEMES: ThemeId[] = ["night", "mist", "dusk"];
+export const READY_THEMES: ThemeId[] = ["night", "mist", "dusk", "noel"];
 
 export const THEME_INFO: Record<ThemeId, { vi: string; en: string; descVi: string; descEn: string }> = {
   night: { vi: "Đêm rừng thông", en: "Pine forest night", descVi: "Xanh rêu tối, vàng nhạt, trăng và đom đóm.", descEn: "Dark moss green, soft gold, moon and fireflies." },

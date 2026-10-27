@@ -59,6 +59,42 @@
 .landing[data-theme="dusk"] .lp-review.featured { background: linear-gradient(160deg, rgba(244, 168, 184, .18), rgba(244, 168, 184, .03) 60%), var(--paper); border-color: rgba(244, 168, 184, .45); }
 .landing[data-theme="dusk"] .lm-overlay { background: rgba(10, 4, 20, .72); }
 
+/* ===== Đêm Noel tuyết trắng: xanh đêm lạnh, cây thông Noel, người tuyết, nút đỏ ===== */
+.landing[data-theme="noel"] {
+  --forest: #1f6a58; --forest2: #082029; --moss: #3f9a86; --leaf: rgba(191, 230, 242, .08); --wood: #d9a95a; --orange: #e2493f;
+  --cream: #06131a; --paper: #0c222c; --ink: #e9f2f5; --muted: #9fb9c3; --line: rgba(200, 230, 240, .18);
+  --shadow: 0 12px 30px rgba(0, 0, 0, .4); --gold: #ffd27a;
+  --head: #f4f8fb; --link: #bfe6f2; --prose: #b7ccd4; --input: rgba(255, 255, 255, .07); --on-accent: #fff;
+  --gold-ink: #ffd27a; --shade: 3, 15, 20; --hdr: rgba(6, 19, 26, .8); --hero-bg: #030f14; --hero-h1: #fff; --hero-p: #d6e6ec; --hero-shadow: rgba(0, 0, 0, .55);
+  --band: #08202a; --band-a: #0c2d38; --band-b: #071a22; --band-ink: #e9f2f5; --band-h: #ffffff; --band-p: #b7ccd4; --foot: #03090d;
+  --glass: rgba(12, 34, 44, .86); --glass2: rgba(12, 34, 44, .78); --tile4: #1f5f66; --fly: #ffe9a8; --eyebrow-fg: #ffd27a; --hover-shadow: rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+.landing[data-theme="noel"] .lp-btn.primary { box-shadow: 0 8px 20px rgba(226, 73, 63, .4); }
+.landing[data-theme="noel"] .lp-btn.primary:hover { background: #ef5a50; }
+.landing[data-theme="noel"] .lp-pill.solid, .landing[data-theme="noel"] .lm-btn { background: #c93c3c; border-color: #c93c3c; }
+.landing[data-theme="noel"] .lp-pill.solid:hover, .landing[data-theme="noel"] .lm-btn:hover { background: #e04a4a; }
+.landing[data-theme="noel"] .lp-stars { color: #ffd27a; }
+.landing[data-theme="noel"] .lp-review::before { background: linear-gradient(90deg, #c93c3c, #ffd27a, #2f8f5a, #c93c3c); }
+.landing[data-theme="noel"] .lp-review.featured { background: linear-gradient(160deg, rgba(226, 73, 63, .16), rgba(226, 73, 63, .03) 60%), var(--paper); border-color: rgba(226, 73, 63, .45); }
+.landing[data-theme="noel"] .lp-stats, .landing[data-theme="noel"] .lp-section.forest, .landing[data-theme="noel"] .lp-footer { border-color: #c93c3c; }
+.landing[data-theme="noel"] .lm-overlay { background: rgba(2, 8, 12, .74); }
+
+/* Tuyết rơi và dây đèn (chỉ Noel) */
+.lp-snowfall, .lp-garland { position: absolute; left: 0; right: 0; top: 0; pointer-events: none; display: none; }
+.lp-snowfall { bottom: 0; overflow: hidden; }
+.landing[data-theme="noel"] .lp-snowfall { display: block; }
+.lp-snowfall i { position: absolute; top: -10px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px rgba(255, 255, 255, .8); animation: lp-snow linear infinite; }
+@keyframes lp-snow { to { transform: translate(var(--dx, 0), 110vh); } }
+.lp-garland { height: 44px; z-index: 3; }
+.landing[data-theme="noel"] .lp-garland { display: block; }
+.lp-garland svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lp-garland i { position: absolute; width: 11px; height: 15px; border-radius: 50% 50% 55% 55%; background: var(--c); box-shadow: 0 0 10px 3px var(--c); animation: lp-twinkle 1.8s ease-in-out infinite; }
+.lp-garland i[data-c="0"] { --c: #ff4d4d; } .lp-garland i[data-c="1"] { --c: #ffd24d; } .lp-garland i[data-c="2"] { --c: #4dd27a; } .lp-garland i[data-c="3"] { --c: #4db8ff; }
+@keyframes lp-twinkle { 50% { opacity: .35; transform: scale(.85); } }
+.landing[data-fx="off"] .lp-snowfall { display: none !important; }
+.landing[data-fx="off"] .lp-garland i { animation: none; }
+
 /* Sương trôi nhẹ trên tranh (Sương mai, Hoàng hôn) */
 .lp-drift { position: absolute; inset: 0; overflow: hidden; pointer-events: none; display: none; }
 .landing[data-theme="mist"] .lp-drift, .landing[data-theme="dusk"] .lp-drift { display: block; }
@@ -400,7 +436,9 @@ html { scroll-behavior: smooth; }
 .landing .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   .landing .reveal { opacity: 1; transform: none; transition: none; }
-  .lp-float, .lm-modal, .lm-overlay, .lp-fireflies i, .smoke, .lit, .lp-drift i { animation: none; }
+  .lp-float, .lm-modal, .lm-overlay, .lp-fireflies i, .smoke, .lit, .lp-drift i, .lp-garland i { animation: none; }
+  .lp-snowfall { display: none !important; }
   .lp-fireflies { display: none; }
   html { scroll-behavior: auto; }
 }
+.landing[data-theme="noel"] .lp-hero-badges { display: none; }

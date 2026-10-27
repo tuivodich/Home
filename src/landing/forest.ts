@@ -139,7 +139,7 @@ export function sceneSvg(p: ScenePalette, o: SceneOptions): string {
     ${layer(53, 790, 20, 330, 520, p.ridge[3], [cx - 250, cx + 250], p.snow, st && [st[0]])}
     <rect x="0" y="${gy - 4}" width="1600" height="110" fill="url(#gr${id})"/>
     <ellipse cx="${cx}" cy="${gy + 6}" rx="230" ry="26" fill="${p.win}" opacity=".16" class="lit"/>
-    ${tree ? xmas(cx - 330, gy, 1.5, id) : ""}
+    ${tree ? xmas(cx + 235, gy, 1.5, id) : ""}
     <g transform="translate(${cx} ${gy}) scale(${scale})">
       <circle cx="-48" cy="-44" r="70" fill="url(#wg${id})" class="lit"/><circle cx="46" cy="-44" r="70" fill="url(#wg${id})" class="lit"/>
       <rect x="-82" y="-86" width="164" height="86" fill="${p.wall}"/>

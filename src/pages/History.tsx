@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
+import { useAuth } from "../lib/auth";
 import { deleteField, doc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useCollection } from "../lib/useCollection";
 import { useMoney } from "../lib/useRate";
 import { useI18n } from "../i18n";
-import { nightsBetween, normName, overlaps } from "../lib/format";
+import { fmtDate, nightsBetween, normName, overlaps } from "../lib/format";
 import type { Booking, BookingStatus, Guest, Room } from "../lib/types";
 
 type Filter = "all" | "checked_out" | "cancelled";
@@ -15,6 +16,8 @@ const monthOf = (b: Booking) => (b.status === "checked_out" ? b.checkOut : b.che
 export default function History() {
   const { t } = useI18n();
   const { money } = useMoney();
+  const { profile } = useAuth();
+  const isOwner = profile?.role === "owner"; // chỉ chủ được hoàn tác trả phòng / khôi phục đặt phòng đã hủy
   const { data: rooms } = useCollection<Room>("rooms");
   const { data: bookings } = useCollection<Booking>("bookings");
   const { data: guests } = useCollection<Guest>("guests");
@@ -79,7 +82,7 @@ export default function History() {
           <label>{t("month")}
             <select value={month} onChange={(e) => setMonth(e.target.value)}>
               <option value="">{t("all")}</option>
-              {months.map((m) => <option key={m} value={m}>{m}</option>)}
+              {months.map((m) => <option key={m} value={m}>{m.slice(5)}/{m.slice(0, 4)}</option>)}
             </select>
           </label>
           <label>{t("search")}
@@ -98,14 +101,14 @@ export default function History() {
               <strong>{b.guestName}{b.source === "online" && <small> · {t("online")}</small>}</strong>
               <span className={`tag ${b.status}`}>{label}</span>
             </div>
-            <div>{roomName(b.roomId)} · {b.checkIn} → {b.checkOut} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>
+            <div>{roomName(b.roomId)} · {fmtDate(b.checkIn)} → {fmtDate(b.checkOut)} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>
             <div>{money(b.total)}{b.phone && ` · ${b.phone}`}{b.email && ` · ${b.email}`}</div>
             {b.couponCode && <small>🏷 {t("couponApplied")} {b.couponCode} (−{b.discountPercent}%)</small>}
             {g && <small>👤 {g.fullName} · {t(g.docType)}: {g.docNumber}</small>}
             {b.note && <small>{b.note}</small>}
             <div className="row">
-              {b.status === "checked_out" && <button className="ghost" onClick={() => confirm(t("sure")) && setStatus(b.id, "checked_in")}>↩ {t("undoCheckOut")}</button>}
-              {b.status === "cancelled" && <button className="ghost" onClick={() => restore(b)}>↩ {t("restore")}</button>}
+              {isOwner && b.status === "checked_out" && <button className="ghost" onClick={() => confirm(t("sure")) && setStatus(b.id, "checked_in")}>↩ {t("undoCheckOut")}</button>}
+              {isOwner && b.status === "cancelled" && <button className="ghost" onClick={() => restore(b)}>↩ {t("restore")}</button>}
             </div>
           </div>
         );

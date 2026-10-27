@@ -5,7 +5,7 @@ import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useMoney } from "../lib/useRate";
 import { useI18n } from "../i18n";
-import { addDays, nightsBetween, overlaps, todayStr } from "../lib/format";
+import { addDays, fmtDate, nightsBetween, overlaps, todayStr } from "../lib/format";
 import GuestInfo from "../components/GuestInfo";
 import type { Booking, Guest, Room } from "../lib/types";
 
@@ -78,7 +78,7 @@ export default function CalendarPage() {
             </div>
             <div>
               <strong>{open.guestName}</strong> <span className={`tag ${open.status}`}>{t(open.status)}</span>
-              <div>{open.checkIn} → {open.checkOut} ({nightsBetween(open.checkIn, open.checkOut)} {t("nights")})</div>
+              <div>{fmtDate(open.checkIn)} → {fmtDate(open.checkOut)} ({nightsBetween(open.checkIn, open.checkOut)} {t("nights")})</div>
               <div>{t("numGuests")}: {open.guests}</div>
               {open.phone && <div>{t("phone")}: {open.phone}</div>}
               {open.email && <div>{t("email")}: {open.email}</div>}

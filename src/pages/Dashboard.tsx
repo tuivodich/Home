@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
-import { todayStr } from "../lib/format";
+import { fmtDate, todayStr } from "../lib/format";
 import type { Booking, Room } from "../lib/types";
 import type { Review } from "../lib/reviews";
 
@@ -36,7 +36,7 @@ export default function Dashboard() {
       {pending.length > 0 && ["owner", "manager", "reception"].includes(profile?.role ?? "") && (
         <div className="card">
           <h3>{t("pendingRequests")}</h3>
-          {pending.map((b) => <div key={b.id}>{b.guestName} — {name(b.roomId)} · {b.checkIn} → {b.checkOut}</div>)}
+          {pending.map((b) => <div key={b.id}>{b.guestName} — {name(b.roomId)} · {fmtDate(b.checkIn)} → {fmtDate(b.checkOut)}</div>)}
           <Link to="/app/bookings">{t("bookings")} →</Link>
         </div>
       )}

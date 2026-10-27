@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import DateInput from "../components/DateInput";
 import { Link } from "react-router-dom";
 import { collection, doc, getDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -111,11 +112,11 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             </div>
             <div className="lm-dates">
               <label>{L.search.checkIn}
-                <input type="date" required min={todayStr()} value={checkIn}
-                  onChange={(e) => { const v = e.target.value; setCheckIn(v); if (v && checkOut <= v) setCheckOut(addDays(v, 1)); setErr(""); }} />
+                <DateInput required min={todayStr()} value={checkIn}
+                  onChange={(v) => { setCheckIn(v); if (v && checkOut <= v) setCheckOut(addDays(v, 1)); setErr(""); }} />
               </label>
               <label>{L.search.checkOut}
-                <input type="date" required min={addDays(checkIn || todayStr(), 1)} value={checkOut} onChange={(e) => { setCheckOut(e.target.value); setErr(""); }} />
+                <DateInput required min={addDays(checkIn || todayStr(), 1)} value={checkOut} onChange={(v) => { setCheckOut(v); setErr(""); }} />
               </label>
             </div>
             {dateError && <p className="lm-err">{dateError}</p>}

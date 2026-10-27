@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import DateInput from "../components/DateInput";
 import { Link, useNavigate } from "react-router-dom";
 import { collection, doc, serverTimestamp, updateDoc, writeBatch } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
@@ -7,7 +8,7 @@ import { useCollection } from "../lib/useCollection";
 import { useMoney } from "../lib/useRate";
 import { useAuth } from "../lib/auth";
 import { useI18n } from "../i18n";
-import { addDays, nightsBetween, overlaps, todayStr } from "../lib/format";
+import { addDays, fmtDate, nightsBetween, overlaps, todayStr } from "../lib/format";
 import { checkCoupon, discounted, type CouponCheck } from "../lib/coupons";
 import GuestFields, { conflictsFor, emptyGuestForm, type GuestForm } from "../components/GuestFields";
 import type { Booking, BookingStatus, Guest, Room } from "../lib/types";
@@ -172,14 +173,14 @@ export default function Bookings() {
           </select>
         </label>
         <div className="row">
-          <label>{t("checkIn")}<input type="date" required value={f.checkIn} onChange={(e) => setF({ ...f, checkIn: e.target.value })} /></label>
-          <label>{t("checkOut")}<input type="date" required value={f.checkOut} onChange={(e) => setF({ ...f, checkOut: e.target.value })} /></label>
+          <label>{t("checkIn")}<DateInput required value={f.checkIn} onChange={(v) => setF({ ...f, checkIn: v })} /></label>
+          <label>{t("checkOut")}<DateInput required value={f.checkOut} onChange={(v) => setF({ ...f, checkOut: v })} /></label>
         </div>
         <label>{t("numGuests")}<input type="number" min={1} value={f.guests} onChange={(e) => setF({ ...f, guests: +e.target.value })} /></label>
         <h4 className="sub">{t("guestSection")}</h4>
         <GuestFields value={g} onChange={setG} guests={guests} file={file} onFile={setFile} docRequired={false} />
         <small>{t("guestSectionHint")}</small>
-        <label>{t("total")} (₫) — {nights > 0 ? `${nights} ${t("nights")} = ${money(suggested)}` : ""}
+        <label>{t("total")} (VNĐ) — {nights > 0 && <>{nights} {t("nights")} = {money(suggested)}</>}
           <input type="number" min={0} step={10000} placeholder={String(suggested)} value={f.total || ""} onChange={(e) => setF({ ...f, total: +e.target.value })} />
         </label>
         {isAdmin && (
@@ -212,9 +213,9 @@ export default function Bookings() {
               <strong>{b.guestName}{b.source === "online" && <small> · {t("online")}</small>}</strong>
               <span className={`tag ${b.status}`}>{expired ? t("expiredLabel") : t(b.status)}</span>
             </div>
-            <div>{roomName(b.roomId)} · {b.checkIn} → {b.checkOut} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>
+            <div>{roomName(b.roomId)} · {fmtDate(b.checkIn)} → {fmtDate(b.checkOut)} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>
             <div>{money(b.total)}{b.priceEditedBy && <small> ✎</small>}{b.phone && ` · ${b.phone}`}{b.email && ` · ${b.email}`}</div>
-            {b.couponCode && <small>🏷 {t("couponApplied")} {b.couponCode} (−{b.discountPercent}%){b.originalTotal ? ` · ${money(b.originalTotal)} → ${money(b.total)}` : ""}</small>}
+            {b.couponCode && <small>🏷 {t("couponApplied")} {b.couponCode} (−{b.discountPercent}%){b.originalTotal ? <> · {money(b.originalTotal)} → {money(b.total)}</> : ""}</small>}
             {b.note && <small>{b.note}</small>}
             {b.status === "pending" && b.checkIn < today && <p className="overdue">{t("overdueIn")}</p>}
             {b.status === "confirmed" && b.checkIn < today && <p className="overdue">{t("overdueIn")}</p>}
@@ -238,7 +239,7 @@ export default function Bookings() {
             </div>
             {editing && (
               <div className="pricebox">
-                <label>{t("rentPrice")} (₫)
+                <label>{t("rentPrice")} (VNĐ)
                   <div className="row">
                     <input type="number" min={0} step={10000} value={editing.total} onChange={(e) => setPe({ ...editing, total: +e.target.value, coupon: null })} />
                     <button onClick={() => savePrice(b)} disabled={editing.busy}>{t("save")}</button>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import DateInput from "./DateInput";
 import { useI18n } from "../i18n";
 import { normDocNumber, normName } from "../lib/format";
 import type { Guest } from "../lib/types";
@@ -90,7 +91,7 @@ export default function GuestFields({ value: v, onChange, guests, selfId, onFile
       )}
       {live.other.length === 0 && live.same.length > 0 && <p className="info">{t("dupSame")}</p>}
       <label>{t("nationality")}<input value={v.nationality} onChange={(e) => set({ nationality: e.target.value })} /></label>
-      <label>{t("dob")}<input type="date" value={v.dob} onChange={(e) => set({ dob: e.target.value })} /></label>
+      <label>{t("dob")}<DateInput value={v.dob} onChange={(v) => set({ dob: v })} /></label>
       <label>{t("phone")}<input type="tel" value={v.phone} onChange={(e) => set({ phone: e.target.value })} /></label>
       <label>{t("email")}<input type="email" value={v.email} onChange={(e) => set({ email: e.target.value })} /></label>
       <label>{t("docImage")}{hasPhoto && <small>{t("keepPhotoHint")}</small>}

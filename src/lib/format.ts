@@ -1,14 +1,23 @@
 export const DEFAULT_USD_RATE = 25000;
 
 export function formatVnd(n: number): string {
-  return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + " ₫";
+  return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + " VNĐ";
 }
 
-/** "1.500.000 ₫ (≈ $60)" — kèm quy đổi USD để khách nước ngoài dễ hiểu. */
-export function formatMoney(vnd: number, usdRate = DEFAULT_USD_RATE): string {
+/** "2026-10-27" → "27/10/2026" (hiển thị thống nhất toàn trang; dữ liệu vẫn lưu dạng yyyy-mm-dd). */
+export function fmtDate(s: string | undefined | null): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s ?? "");
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : s ?? "";
+}
+
+/** "1.500.000 VNĐ (≈ $60)" — kèm quy đổi USD để khách nước ngoài dễ hiểu. */
+export function usdText(vnd: number, usdRate = DEFAULT_USD_RATE): string {
   const usd = vnd / (usdRate || DEFAULT_USD_RATE);
-  const usdStr = new Intl.NumberFormat("en-US", { maximumFractionDigits: usd < 100 ? 1 : 0 }).format(usd);
-  return `${formatVnd(vnd)} (≈ $${usdStr})`;
+  return `≈ $${new Intl.NumberFormat("en-US", { maximumFractionDigits: usd < 100 ? 1 : 0 }).format(usd)}`;
+}
+
+export function formatMoney(vnd: number, usdRate = DEFAULT_USD_RATE): string {
+  return `${formatVnd(vnd)} (${usdText(vnd, usdRate)})`;
 }
 
 export const todayStr = () => toDateStr(new Date());

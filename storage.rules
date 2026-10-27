@@ -4,11 +4,19 @@ service firebase.storage {
     function role() {
       return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
     }
-    // Ảnh giấy tờ khách: chỉ chủ / quản lý / lễ tân.
+    function isFront() {
+      return request.auth != null && role() in ['owner', 'manager', 'reception'];
+    }
+    function isAdmin() {
+      return request.auth != null && role() in ['owner', 'manager'];
+    }
+    // Ảnh giấy tờ khách: chỉ chủ / quản lý / lễ tân xem và tải lên; chỉ chủ / quản lý xóa.
     match /guests/{guestId}/{file} {
-      allow read, write: if request.auth != null && role() in ['owner', 'manager', 'reception']
-        && (request.method == 'get' || request.resource.size < 8 * 1024 * 1024)
-        && (request.method == 'get' || request.resource.contentType.matches('image/.*'));
+      allow read: if isFront();
+      allow create, update: if isFront()
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
     }
   }
 }

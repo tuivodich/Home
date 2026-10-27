@@ -1,43 +1,55 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useI18n, useL } from "../i18n";
 import { site } from "../lib/siteConfig";
 import { isStaffRole } from "../lib/types";
+import Dropdown, { type DdItem } from "../components/Dropdown";
+import HashLink from "../components/HashLink";
+import { useAuthUi } from "../layout/authUi";
 
-export default function Header({ onSignIn }: { onSignIn: () => void }) {
+/** Menu gọn: Trang chủ · Đặt phòng ▾ (giới thiệu, phòng, tiện nghi, lịch trống) · Thông tin ▾ (cảm nhận, hỏi đáp, chính sách, liên hệ) · Tài khoản. */
+export default function Header() {
   const L = useL();
+  const M = L.menu;
   const { lang, setLang } = useI18n();
   const { user, profile, logout } = useAuth();
-  const [open, setOpen] = useState(false);
-  const links: [string, string][] = [
-    ["#home", L.nav.home], ["#about", L.nav.about], ["#rooms", L.nav.rooms],
-    ["#features", L.nav.features], ["#booking", L.nav.booking], ["#contact", L.nav.contact],
-  ];
+  const { open: openAuth } = useAuthUi();
+  const [menu, setMenu] = useState(false);
+  const loc = useLocation();
+  useEffect(() => { setMenu(false); }, [loc.pathname, loc.hash]);
+
   const staff = isStaffRole(profile?.role);
+  const bookItems: DdItem[] = [
+    { label: M.about, to: "/#about" }, { label: M.rooms, to: "/#rooms" }, { label: M.features, to: "/#features" }, { label: M.availability, to: "/#booking" },
+  ];
+  const infoItems: DdItem[] = [
+    { label: M.reviews, to: "/reviews" }, { label: M.faq, to: "/faq" }, { label: M.privacy, to: "/privacy" }, { label: M.contact, to: "/#contact" },
+  ];
+  const accountItems: DdItem[] = [
+    { label: L.myBookings, to: "/account" },
+    ...(staff ? [{ label: L.manage, to: "/app" }] : []),
+    { label: L.reviews.write, to: "/reviews" },
+    { label: L.signOut, onClick: logout },
+  ];
+  const onPage = (paths: string[]) => paths.includes(loc.pathname);
 
   return (
     <header className="lp-header">
       <div className="lp-wrap lp-header-in">
-        <a href="#home" className="lp-brand" onClick={() => setOpen(false)}>
-          <span className="lp-logo">🏡</span><span>{site.name}</span>
-        </a>
-        <nav className={`lp-nav ${open ? "open" : ""}`}>
-          {links.map(([href, label]) => <a key={href} href={href} onClick={() => setOpen(false)}>{label}</a>)}
+        <HashLink to="/#home" className="lp-brand"><span className="lp-logo"><img src="/favicon.svg" alt="" width="38" height="38" /></span><span>{site.name}</span></HashLink>
+        <nav className={`lp-nav ${menu ? "open" : ""}`} aria-label="Menu">
+          <HashLink to="/#home" className={loc.pathname === "/" ? "lp-link" : "lp-link"}>{M.home}</HashLink>
+          <Dropdown className="lp-dd" label={M.book} items={bookItems} active={loc.pathname === "/"} />
+          <Dropdown className="lp-dd" label={M.info} items={infoItems} active={onPage(["/reviews", "/faq", "/privacy"])} />
           <div className="lp-nav-actions">
             <button className="lp-pill" onClick={() => setLang(lang === "vi" ? "en" : "vi")} aria-label="Language">{lang === "vi" ? "EN" : "VI"}</button>
-            {user ? (
-              <>
-                {staff && <Link className="lp-pill solid" to="/app" onClick={() => setOpen(false)}>{L.manage}</Link>}
-                <Link className={`lp-pill ${staff ? "" : "solid"}`} to="/account" onClick={() => setOpen(false)}>{L.myBookings}</Link>
-                <button className="lp-pill" onClick={() => { setOpen(false); logout(); }}>{L.signOut}</button>
-              </>
-            ) : (
-              <button className="lp-pill solid" onClick={() => { setOpen(false); onSignIn(); }}>{L.signIn}</button>
-            )}
+            {user
+              ? <Dropdown className="lp-dd lp-dd-account" align="right" label={M.account} items={accountItems} />
+              : <button className="lp-pill solid" onClick={() => { setMenu(false); openAuth(); }}>{L.signIn}</button>}
           </div>
         </nav>
-        <button className="lp-burger" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <button className="lp-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
           <span /><span /><span />
         </button>
       </div>

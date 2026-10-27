@@ -1,21 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { addDays, todayStr } from "../lib/format";
 import { isStaffRole, type Busy, type Room } from "../lib/types";
-import AuthModal from "../components/AuthModal";
-import Header from "../landing/Header";
+import SiteLayout from "../layout/SiteLayout";
+import { useAuthUi } from "../layout/authUi";
 import Hero from "../landing/Hero";
-import { About, Features, Footer, HowItWorks, RoomsShowcase, Stats } from "../landing/Sections";
+import { About, Features, HowItWorks, RoomsShowcase, Stats, Testimonials } from "../landing/Sections";
 import Availability from "../landing/Availability";
 import BookingModal from "../landing/BookingModal";
 import { useReveal } from "../landing/useReveal";
 import type { Search } from "../landing/availability";
-import "../landing/landing.css";
 
-export default function Landing() {
+function LandingBody() {
   const { user, profile } = useAuth();
+  const { open: openAuth } = useAuthUi();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { hash } = useLocation();
@@ -24,17 +24,20 @@ export default function Landing() {
   const rooms = useMemo(() => [...roomsRaw].sort((a, b) => a.name.localeCompare(b.name, "vi", { numeric: true })), [roomsRaw]);
 
   const [search, setSearch] = useState<Search>({ checkIn: todayStr(), checkOut: addDays(todayStr(), 1), roomId: "", guests: 2 });
-  const [authOpen, setAuthOpen] = useState(params.get("login") === "1");
   const [bookRoomId, setBookRoomId] = useState("");
   const wanted = useRef("");
-  const closeAuth = useCallback(() => setAuthOpen(false), []);
 
   useReveal();
 
-  // Mở trang kèm #booking (từ trang tài khoản) thì cuộn tới đúng mục.
+  // Mở trang kèm mục neo (#booking…) thì cuộn tới đúng mục.
   useEffect(() => {
     if (hash) setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView(), 50);
   }, [hash]);
+
+  // /?login=1 (ví dụ chuyển từ khu quản lý khi chưa đăng nhập) thì mở hộp thoại đăng nhập.
+  useEffect(() => {
+    if (params.get("login") === "1" && !user) openAuth();
+  }, [params, user, openAuth]);
 
   // Đăng nhập xong (từ nút Đặt phòng) thì mở tiếp cửa sổ đặt phòng; nhân viên vào trang quản lý nếu có ?next=app.
   useEffect(() => {
@@ -44,15 +47,14 @@ export default function Landing() {
   }, [user, profile, params, navigate]);
 
   const onBook = (roomId: string) => {
-    if (!user) { wanted.current = roomId; setAuthOpen(true); }
+    if (!user) { wanted.current = roomId; openAuth(); }
     else setBookRoomId(roomId);
   };
 
   const bookRoom = rooms.find((r) => r.id === bookRoomId);
 
   return (
-    <div className="landing">
-      <Header onSignIn={() => setAuthOpen(true)} />
+    <>
       <main>
         <Hero rooms={rooms} search={search} setSearch={setSearch} />
         <Stats />
@@ -60,13 +62,16 @@ export default function Landing() {
         <RoomsShowcase rooms={rooms} search={search} setSearch={setSearch} />
         <Features />
         <HowItWorks />
+        <Testimonials />
         <Availability rooms={rooms} busy={busy} search={search} setSearch={setSearch} onBook={onBook} />
       </main>
-      <Footer />
-      {authOpen && !user && <AuthModal onClose={closeAuth} />}
       {bookRoom && user && (
         <BookingModal room={bookRoom} search={search} user={user} profile={profile} busy={busy} onClose={() => setBookRoomId("")} />
       )}
-    </div>
+    </>
   );
+}
+
+export default function Landing() {
+  return <SiteLayout><LandingBody /></SiteLayout>;
 }

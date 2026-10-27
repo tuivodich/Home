@@ -4,12 +4,16 @@ import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
 import { todayStr } from "../lib/format";
 import type { Booking, Room } from "../lib/types";
+import type { Review } from "../lib/reviews";
 
 export default function Dashboard() {
   const { t } = useI18n();
   const { profile } = useAuth();
   const { data: rooms } = useCollection<Room>("rooms");
   const { data: bookings } = useCollection<Booking>("bookings");
+  const isAdmin = profile?.role === "owner" || profile?.role === "manager";
+  const { data: reviews } = useCollection<Review>("reviews", isAdmin);
+  const pendingReviews = reviews.filter((r) => r.status === "pending").length;
   const today = todayStr();
   const live = bookings.filter((b) => b.status !== "cancelled");
   const pending = bookings.filter((b) => b.status === "pending");
@@ -27,6 +31,7 @@ export default function Dashboard() {
         <div className="card"><big>{arrivals.length}</big><div>{t("arrivalsToday")}</div></div>
         <div className="card"><big>{departures.length}</big><div>{t("departuresToday")}</div></div>
         <div className="card"><big>{pending.length}</big><div>{t("pendingRequests")}</div></div>
+        {isAdmin && <Link className="card statlink" to="/app/reviews"><big>{pendingReviews}</big><div>{t("reviewsPendingTile")}</div></Link>}
       </div>
       {pending.length > 0 && ["owner", "manager", "reception"].includes(profile?.role ?? "") && (
         <div className="card">

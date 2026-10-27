@@ -1,0 +1,14 @@
+{
+  "name": "Nhà Gỗ Homestay",
+  "short_name": "Nhà Gỗ",
+  "description": "Homestay nhà gỗ giữa vườn trái cây: xem phòng trống và đặt phòng trực tuyến.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7efdc",
+  "theme_color": "#123528",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

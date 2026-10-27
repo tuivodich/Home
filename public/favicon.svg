@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Nhà Gỗ Homestay">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f7a58"/>
+      <stop offset="1" stop-color="#123528"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- cây thông -->
+  <path d="M47 11l9 13h-5.5l7.5 11H36l7.5-11H38z" fill="#7cc08a"/>
+  <rect x="45.5" y="35" width="3" height="7" fill="#5a3a1c"/>
+  <!-- nhà gỗ -->
+  <path d="M5 37L24 20l19 17z" fill="#d9822b"/>
+  <rect x="10" y="37" width="28" height="18" fill="#f3ead4"/>
+  <rect x="19" y="43" width="10" height="12" rx="1.5" fill="#8a5a2b"/>
+  <rect x="31" y="41" width="5" height="5" rx="1" fill="#ffd48a"/>
+</svg>

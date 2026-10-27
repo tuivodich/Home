@@ -26,8 +26,8 @@ export default function HeroArt() {
         <ellipse cx="170" cy="110" rx="60" ry="16" /><ellipse cx="210" cy="98" rx="40" ry="14" />
         <ellipse cx="430" cy="70" rx="46" ry="12" /><ellipse cx="462" cy="62" rx="30" ry="10" />
       </g>
-      <path d="M0 360 Q140 270 300 350 T620 330 T800 350 V560 H0Z" fill="#a9cfa0" />
-      <path d="M0 410 Q220 330 420 400 T800 380 V560 H0Z" fill="#7fb98a" />
+      <path d="M0 360 Q140 270 300 350 T620 330 T800 350 V560 H0Z" fill="#9fc99a" />
+      <path d="M0 410 Q220 330 420 400 T800 380 V560 H0Z" fill="#6fae7a" />
       {/* nhà sàn gỗ */}
       <g transform="translate(250 250)">
         <rect x="14" y="150" width="10" height="46" fill="#5a3a1c" /><rect x="126" y="150" width="10" height="46" fill="#5a3a1c" />

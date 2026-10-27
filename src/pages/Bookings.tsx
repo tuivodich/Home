@@ -102,25 +102,24 @@ export default function Bookings() {
 
   const setStatus = (id: string, status: BookingStatus) => updateDoc(doc(db, "bookings", id), { status });
 
-  // Xác nhận yêu cầu online: không được trùng với đặt phòng đã xác nhận / đang ở của cùng phòng.
-  const approve = (b: Booking) => {
-    const clash = bookings.some((o) => o.id !== b.id && o.roomId === b.roomId
-      && ["confirmed", "checked_in", "checked_out"].includes(o.status) && overlaps(o.checkIn, o.checkOut, b.checkIn, b.checkOut));
-    if (clash) return alert(t("confirmClash"));
-    return setStatus(b.id, "confirmed");
-  };
+  // Xác nhận / nhận phòng một yêu cầu đang "Chờ xác nhận": không được trùng với đặt phòng đã xác nhận / đang ở / đã trả của cùng phòng.
+  const hasClash = (b: Booking) => bookings.some((o) => o.id !== b.id && o.roomId === b.roomId
+    && ["confirmed", "checked_in", "checked_out"].includes(o.status) && overlaps(o.checkIn, o.checkOut, b.checkIn, b.checkOut));
 
   const hasProfile = (b: Booking) => guests.some((x) => x.bookingId === b.id);
 
-  // Bắt buộc có hồ sơ khách (giấy tờ) rồi mới cho nhận phòng; nếu chưa có thì chuyển sang form tạo hồ sơ.
-  const checkIn = async (b: Booking) => {
-    if (guestsLoading) return;
-    if (!hasProfile(b)) {
+  // Chuyển qua lại giữa Chờ xác nhận / Đã xác nhận / Nhận phòng (Đang ở).
+  const moveTo = async (b: Booking, target: "pending" | "confirmed" | "checked_in") => {
+    if (b.status === target || guestsLoading) return;
+    if (b.status === "pending" && hasClash(b)) return alert(t("confirmClash"));
+    // Bắt buộc có hồ sơ khách (giấy tờ) rồi mới cho nhận phòng; nếu chưa có thì chuyển sang form tạo hồ sơ.
+    if (target === "checked_in" && !hasProfile(b)) {
       alert(t("needGuestProfile"));
       navigate(`/app/guests?booking=${b.id}`);
       return;
     }
-    await setStatus(b.id, "checked_in");
+    if (target === "pending" && !confirm(t("sure"))) return;
+    await setStatus(b.id, target);
   };
 
   // Sửa giá (chủ/quản lý): đổi giá thuê hoặc áp mã giảm giá cho đặt phòng đã xác nhận / đang ở.
@@ -156,7 +155,9 @@ export default function Bookings() {
     }
   };
 
-  const sorted = [...bookings].sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+  // Chỉ hiện các đặt phòng đang hoạt động; "Đã trả phòng" và "Đã hủy" xem ở trang Lịch sử.
+  const sorted = bookings.filter((b) => b.status === "pending" || b.status === "confirmed" || b.status === "checked_in")
+    .sort((a, b) => b.checkIn.localeCompare(a.checkIn));
 
   return (
     <section>
@@ -219,16 +220,18 @@ export default function Bookings() {
             {b.status === "confirmed" && b.checkIn < today && <p className="overdue">{t("overdueIn")}</p>}
             {b.status === "checked_in" && b.checkOut < today && <p className="overdue">{t("overdueOut")}</p>}
             <div className="row">
-              {b.status === "pending" && <button onClick={() => approve(b)}>{t("approve")}</button>}
-              {b.status === "pending" && <button className="ghost danger" onClick={() => confirm(t("sure")) && setStatus(b.id, "cancelled")}>{t("reject")}</button>}
-              {b.status === "confirmed" && <button onClick={() => checkIn(b)}>{t("doCheckIn")}</button>}
+              <div className="segbar" role="group" aria-label={t("status")}>
+                {(["pending", "confirmed", "checked_in"] as const).map((s) => (
+                  <button key={s} type="button" className={`seg ${b.status === s ? "on" : ""}`} aria-pressed={b.status === s} onClick={() => moveTo(b, s)}>
+                    {s === "checked_in" ? t("doCheckIn") : t(s)}
+                  </button>
+                ))}
+              </div>
               {b.status === "checked_in" && <button onClick={() => setStatus(b.id, "checked_out")}>{t("doCheckOut")}</button>}
               {isAdmin && (b.status === "confirmed" || b.status === "checked_in") && !editing && (
                 <button className="ghost" onClick={() => openPrice(b)}>💲 {t("editPrice")}</button>
               )}
-              {(b.status === "confirmed" || b.status === "checked_in") && (
-                <button className="ghost danger" onClick={() => confirm(t("sure")) && setStatus(b.id, "cancelled")}>{t("doCancel")}</button>
-              )}
+              <button className="ghost danger" onClick={() => confirm(t("sure")) && setStatus(b.id, "cancelled")}>{b.status === "pending" ? t("reject") : t("doCancel")}</button>
               {b.status !== "cancelled" && (hasProfile(b)
                 ? <span className="info">{t("hasGuestProfile")}</span>
                 : <Link className="ghost linkbtn" to={`/app/guests?booking=${b.id}`}>👤 {t("addGuestProfile")}</Link>)}

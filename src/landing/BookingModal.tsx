@@ -5,7 +5,7 @@ import type { User } from "firebase/auth";
 import { db } from "../lib/firebase";
 import { useL } from "../i18n";
 import { useMoney } from "../lib/useRate";
-import { nightsBetween } from "../lib/format";
+import { addDays, nightsBetween, todayStr } from "../lib/format";
 import type { Busy, Coupon, Room, UserDoc } from "../lib/types";
 import { rangeState, type Search } from "./availability";
 
@@ -16,7 +16,12 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
 }) {
   const L = useL();
   const { money } = useMoney();
-  const nights = nightsBetween(search.checkIn, search.checkOut);
+  // Khách có thể đổi ngày ngay trong hộp thoại; giá và tình trạng phòng tính lại theo ngày mới.
+  const [checkIn, setCheckIn] = useState(search.checkIn);
+  const [checkOut, setCheckOut] = useState(search.checkOut);
+  const nights = nightsBetween(checkIn, checkOut);
+  const dateError = !checkIn || !checkOut || nights < 1 ? L.booking.errDates : checkIn < todayStr() ? L.booking.errPast : nights > 30 ? L.booking.errLong : "";
+  const unavailable = !dateError && rangeState(room, busy, checkIn, checkOut) !== "free";
   const [name, setName] = useState(profile?.name || user.displayName || "");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState(user.email ?? "");
@@ -29,7 +34,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
   const [busyNow, setBusyNow] = useState(false);
   const [done, setDone] = useState(false);
 
-  const original = room.price * nights;
+  const original = nights > 0 ? room.price * nights : 0;
   const total = coupon ? Math.round(original * (100 - coupon.percent) / 100) : original;
 
   const applyCoupon = async () => {
@@ -52,19 +57,20 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
     e.preventDefault();
     setErr("");
     // Kiểm tra lại trên dữ liệu mới nhất phòng vừa bị giữ chỗ hay chưa.
-    if (rangeState(room, busy, search.checkIn, search.checkOut) !== "free") return setErr(L.modal.clash);
+    if (dateError) return setErr(dateError);
+    if (rangeState(room, busy, checkIn, checkOut) !== "free") return setErr(L.modal.clash);
     setBusyNow(true);
     try {
       const id = doc(collection(db, "bookings")).id;
       const b = writeBatch(db);
       b.set(doc(db, "bookings", id), {
         roomId: room.id, guestName: name.trim(), phone: phone.trim(), email: email.trim(),
-        checkIn: search.checkIn, checkOut: search.checkOut, guests, total,
+        checkIn, checkOut, guests, total,
         status: "pending", note: note.trim(), source: "online", createdBy: user.uid,
         ...(coupon ? { couponCode: coupon.code, discountPercent: coupon.percent, originalTotal: original } : {}),
       });
       // Bản sao công khai (không có dữ liệu cá nhân) để mọi người thấy phòng đang được giữ chỗ.
-      b.set(doc(db, "busy", id), { roomId: room.id, checkIn: search.checkIn, checkOut: search.checkOut, status: "pending" });
+      b.set(doc(db, "busy", id), { roomId: room.id, checkIn, checkOut, status: "pending" });
       // Đánh dấu mã đã dùng trong CÙNG lần ghi: nếu ai đó vừa dùng mã này, cả đặt phòng bị từ chối (không thể dùng 2 lần).
       if (coupon) b.update(doc(db, "coupons", coupon.code), { used: true, usedBy: user.uid, usedAt: serverTimestamp(), bookingId: id });
       await b.commit();
@@ -93,7 +99,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             <h3>{L.modal.title}</h3>
             <div className="lm-summary">
               <strong>{room.name}</strong>
-              <div>{search.checkIn} → {search.checkOut} · {nights} {L.booking.nights}</div>
+              <div>{nights > 0 ? `${nights} ${L.booking.nights}` : "—"}</div>
               {coupon ? (
                 <>
                   <div>{L.modal.original}: <s>{money(original)}</s></div>
@@ -103,6 +109,17 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
                 <div>{L.booking.estimate}: <b>{money(original)}</b></div>
               )}
             </div>
+            <div className="lm-dates">
+              <label>{L.search.checkIn}
+                <input type="date" required min={todayStr()} value={checkIn}
+                  onChange={(e) => { const v = e.target.value; setCheckIn(v); if (v && checkOut <= v) setCheckOut(addDays(v, 1)); setErr(""); }} />
+              </label>
+              <label>{L.search.checkOut}
+                <input type="date" required min={addDays(checkIn || todayStr(), 1)} value={checkOut} onChange={(e) => { setCheckOut(e.target.value); setErr(""); }} />
+              </label>
+            </div>
+            {dateError && <p className="lm-err">{dateError}</p>}
+            {unavailable && <p className="lm-err">{L.modal.datesUnavailable}</p>}
             <label><span>{L.modal.name} <em className="lm-secret">{L.modal.secret}</em></span>
               <input required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
             </label>
@@ -125,7 +142,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             </div>
             <label>{L.modal.note}<textarea maxLength={500} rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></label>
             {err && <p className="lm-err">{err}</p>}
-            <button className="lm-btn" type="submit" disabled={busyNow}>{busyNow ? L.modal.sending : L.modal.send}</button>
+            <button className="lm-btn" type="submit" disabled={busyNow || !!dateError || unavailable}>{busyNow ? L.modal.sending : L.modal.send}</button>
             <p className="lm-muted lm-small">{L.booking.final}</p>
           </form>
         )}

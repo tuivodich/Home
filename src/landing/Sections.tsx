@@ -4,6 +4,7 @@ import { useL } from "../i18n";
 import { site } from "../lib/siteConfig";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
+import Icon from "./Icon";
 
 export function Stats() {
   const L = useL();
@@ -24,7 +25,8 @@ export function About() {
     <section id="about" className="lp-section">
       <div className="lp-wrap lp-about">
         <div className="lp-about-art reveal" aria-hidden="true">
-          <div className="lp-tile t1">🏡</div><div className="lp-tile t2">🌳</div><div className="lp-tile t3">🍳</div><div className="lp-tile t4">💧</div>
+          <div className="lp-tile t1"><Icon name="home" /></div><div className="lp-tile t2"><Icon name="tree" /></div>
+          <div className="lp-tile t3"><Icon name="pot" /></div><div className="lp-tile t4"><Icon name="water" /></div>
         </div>
         <div className="reveal">
           <span className="lp-eyebrow">{L.about.eyebrow}</span>
@@ -37,8 +39,6 @@ export function About() {
     </section>
   );
 }
-
-const hues = [150, 28, 95, 190, 12];
 
 export function RoomsShowcase({ rooms, search, setSearch }: { rooms: Room[]; search: Search; setSearch: (s: Search) => void }) {
   const L = useL();
@@ -57,13 +57,13 @@ export function RoomsShowcase({ rooms, search, setSearch }: { rooms: Room[]; sea
         </div>
         {rooms.length === 0 && <p className="lp-center lp-muted">{L.rooms.empty}</p>}
         <div className="lp-rooms">
-          {rooms.map((r, i) => (
-            <article key={r.id} className="lp-room reveal" style={{ ["--h" as string]: hues[i % hues.length] }}>
-              <div className="lp-room-img"><span>{r.type === "wood" ? "🏡" : "🛏️"}</span></div>
+          {rooms.map((r) => (
+            <article key={r.id} className="lp-room reveal">
+              <div className="lp-room-img"><Icon name={r.type === "wood" ? "home" : "bed"} /></div>
               <div className="lp-room-body">
                 <small>{r.type === "wood" ? L.rooms.wood : L.rooms.concrete}</small>
                 <h3>{r.name}</h3>
-                <div className="lp-muted">👤 {r.capacity} {L.rooms.up}</div>
+                <div className="lp-muted">{L.rooms.capacity}: {r.capacity} {L.rooms.up}</div>
                 <div className="lp-price">{money(r.price)} <span>{L.rooms.perNight}</span></div>
                 <button className="lp-btn primary sm" onClick={() => view(r.id)}>{L.rooms.view}</button>
               </div>
@@ -78,7 +78,7 @@ export function RoomsShowcase({ rooms, search, setSearch }: { rooms: Room[]; sea
 export function Features() {
   const L = useL();
   return (
-    <section id="features" className="lp-section">
+    <section id="features" className="lp-section forest">
       <div className="lp-wrap">
         <div className="lp-head reveal">
           <span className="lp-eyebrow">{L.features.eyebrow}</span>
@@ -87,7 +87,7 @@ export function Features() {
         <div className="lp-grid">
           {L.features.items.map((f) => (
             <div key={f.t} className="lp-feature reveal">
-              <div className="lp-ico">{f.i}</div>
+              <div className="lp-ico"><Icon name={f.i} /></div>
               <h3>{f.t}</h3>
               <p>{f.d}</p>
             </div>

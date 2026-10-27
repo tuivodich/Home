@@ -23,7 +23,7 @@ const vi = {
   },
   rooms: {
     eyebrow: "Phòng nghỉ", title: "Chọn không gian của bạn", sub: "Giá hiển thị theo đêm. Bấm vào phòng để xem lịch trống.",
-    wood: "Nhà gỗ · Trên lầu", concrete: "Nhà bê tông · Riêng biệt", perNight: "/ đêm", up: "người", view: "Xem lịch & đặt", empty: "Danh sách phòng đang được cập nhật.",
+    wood: "Nhà gỗ · Trên lầu", concrete: "Nhà bê tông · Riêng biệt", perNight: "/ đêm", capacity: "Sức chứa", up: "người", view: "Xem lịch & đặt", empty: "Danh sách phòng đang được cập nhật.",
   },
   features: {
     eyebrow: "Tiện nghi", title: "Mọi thứ bạn cần cho một kỳ nghỉ nhẹ nhàng",
@@ -63,6 +63,7 @@ const vi = {
     doneTitle: "Đã gửi yêu cầu!", doneText: "Homestay sẽ xem và liên hệ xác nhận với bạn. Bạn có thể theo dõi trong mục “Đặt phòng của tôi”.",
     clash: "Rất tiếc, phòng vừa được người khác giữ chỗ trong khoảng ngày này. Vui lòng chọn ngày hoặc phòng khác.",
     err: "Không gửi được yêu cầu. Vui lòng thử lại.", viewMine: "Xem đặt phòng của tôi",
+    datesUnavailable: "Phòng không còn trống trong khoảng ngày này. Vui lòng chọn ngày khác.",
     secret: "(Thông tin này được bảo mật và không công khai)", email: "Email liên hệ", coupon: "Mã giảm giá", couponPh: "Nhập mã (nếu có)", apply: "Áp dụng", remove: "Bỏ mã",
     couponOk: "Đã áp dụng giảm", couponGone: "Mã không tồn tại.", couponUsed: "Mã này đã được sử dụng.", couponExpired: "Mã này đã hết hạn.",
     couponRace: "Mã giảm giá vừa được dùng hoặc không còn hiệu lực. Vui lòng bỏ mã hoặc thử mã khác.", original: "Giá gốc", total: "Thành tiền",
@@ -119,7 +120,7 @@ const en: Dict = {
   },
   rooms: {
     eyebrow: "Rooms", title: "Choose your space", sub: "Prices are per night. Tap a room to see its availability.",
-    wood: "Wooden house · Upstairs", concrete: "Concrete house · Separate", perNight: "/ night", up: "guests", view: "View & book", empty: "Rooms are being updated.",
+    wood: "Wooden house · Upstairs", concrete: "Concrete house · Separate", perNight: "/ night", capacity: "Capacity", up: "guests", view: "View & book", empty: "Rooms are being updated.",
   },
   features: {
     eyebrow: "Amenities", title: "Everything for a relaxed getaway",
@@ -159,6 +160,7 @@ const en: Dict = {
     doneTitle: "Request sent!", doneText: "The homestay will review it and get in touch to confirm. Track it under “My bookings”.",
     clash: "Sorry, this room was just taken for those dates. Please pick other dates or another room.",
     err: "Could not send the request. Please try again.", viewMine: "View my bookings",
+    datesUnavailable: "This room is not available for those dates. Please pick other dates.",
     secret: "(This information is kept private and never shown publicly)", email: "Contact email", coupon: "Discount code", couponPh: "Enter code (if any)", apply: "Apply", remove: "Remove code",
     couponOk: "Discount applied", couponGone: "Code not found.", couponUsed: "This code has already been used.", couponExpired: "This code has expired.",
     couponRace: "The discount code was just used or is no longer valid. Remove it or try another code.", original: "Original price", total: "Total",

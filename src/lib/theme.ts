@@ -70,3 +70,6 @@ export interface SiteTheme { theme: ThemeId; effects: boolean }
 /** Giao diện đang áp dụng, cấp từ khung trang công khai để các thành phần con không phải đọc lại Firestore. */
 export const ThemeCtx = createContext<SiteTheme>({ theme: DEFAULT_THEME, effects: true });
 export const useTheme = () => useContext(ThemeCtx);
+
+/** Số yêu cầu đặt phòng đang chờ xác nhận tối đa mỗi tài khoản khi chủ chưa chỉnh trong Cài đặt. */
+export const DEFAULT_MAX_PENDING = 3;

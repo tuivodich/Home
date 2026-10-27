@@ -47,6 +47,7 @@ export default function Account() {
       const w = writeBatch(db);
       w.update(doc(db, "bookings", confirming.id), { status: "cancelled", cancelReason: "customer" });
       w.delete(doc(db, "busy", confirming.id));
+      if (confirming.slotId) w.delete(doc(db, "pend", confirming.slotId));
       await w.commit();
       setConfirming(null);
     } catch (ex) {

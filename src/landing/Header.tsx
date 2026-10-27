@@ -43,15 +43,17 @@ export default function Header() {
           <Dropdown className="lp-dd" label={M.book} items={bookItems} active={loc.pathname === "/"} />
           <Dropdown className="lp-dd" label={M.info} items={infoItems} active={onPage(["/reviews", "/faq", "/privacy"])} />
           <div className="lp-nav-actions">
-            <button className="lp-pill" onClick={() => setLang(lang === "vi" ? "en" : "vi")} aria-label="Language">{lang === "vi" ? "EN" : "VI"}</button>
             {user
               ? <Dropdown className="lp-dd lp-dd-account" align="right" label={M.account} items={accountItems} />
               : <button className="lp-pill solid" onClick={() => { setMenu(false); openAuth(); }}>{L.signIn}</button>}
           </div>
         </nav>
-        <button className="lp-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
-          <span /><span /><span />
-        </button>
+        <div className="lp-tools">
+          <button className="lp-pill lp-lang" onClick={() => setLang(lang === "vi" ? "en" : "vi")} aria-label="Language">{lang === "vi" ? "EN" : "VI"}</button>
+          <button className="lp-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
+            <span /><span /><span />
+          </button>
+        </div>
       </div>
     </header>
   );

@@ -13,7 +13,7 @@ export interface Booking {
   guests: number; total: number; status: BookingStatus; note: string;
   email?: string; createdBy?: string; source?: "online" | "staff";
   couponCode?: string; discountPercent?: number; originalTotal?: number; cancelReason?: "expired" | "customer";
-  priceEditedBy?: string;
+  priceEditedBy?: string; slotId?: string;
 }
 
 /** Bản sao công khai của đặt phòng: chỉ phòng + ngày + trạng thái, không có dữ liệu cá nhân. */

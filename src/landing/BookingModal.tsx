@@ -1,7 +1,8 @@
+import { DEFAULT_MAX_PENDING } from "../lib/theme";
 import { useState, type FormEvent } from "react";
 import DateInput from "../components/DateInput";
 import { Link } from "react-router-dom";
-import { collection, doc, getDoc, serverTimestamp, writeBatch } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db } from "../lib/firebase";
 import { useL } from "../i18n";
@@ -62,12 +63,21 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
     if (rangeState(room, busy, checkIn, checkOut) !== "free") return setErr(L.modal.clash);
     setBusyNow(true);
     try {
+      // Giới hạn số yêu cầu đang chờ xác nhận mỗi tài khoản (chủ/quản lý chỉnh ở Cài đặt): mỗi yêu cầu giữ một "khe" pend/{uid}_{n}.
+      const max = (await getDoc(doc(db, "settings", "app"))).data()?.maxPending;
+      const limit = typeof max === "number" && max >= 1 ? max : DEFAULT_MAX_PENDING;
+      const used = new Set((await getDocs(query(collection(db, "pend"), where("uid", "==", user.uid)))).docs.map((d) => d.data().n as number));
+      let n = 1;
+      while (used.has(n)) n++;
+      if (n > limit) { setErr(L.modal.limitReached.replace("{n}", String(limit))); return; }
       const id = doc(collection(db, "bookings")).id;
+      const slotId = `${user.uid}_${n}`;
       const b = writeBatch(db);
+      b.set(doc(db, "pend", slotId), { uid: user.uid, n, bookingId: id });
       b.set(doc(db, "bookings", id), {
         roomId: room.id, guestName: name.trim(), phone: phone.trim(), email: email.trim(),
         checkIn, checkOut, guests, total,
-        status: "pending", note: note.trim(), source: "online", createdBy: user.uid,
+        status: "pending", note: note.trim(), source: "online", createdBy: user.uid, slotId,
         ...(coupon ? { couponCode: coupon.code, discountPercent: coupon.percent, originalTotal: original } : {}),
       });
       // Bản sao công khai (không có dữ liệu cá nhân) để mọi người thấy phòng đang được giữ chỗ.

@@ -7,6 +7,7 @@ import type { Search } from "./availability";
 import Icon from "./Icon";
 import HashLink from "../components/HashLink";
 import Stars from "../components/Stars";
+import ReviewCard from "../components/ReviewCard";
 import { useApprovedReviews } from "../lib/reviews";
 import { fmtDate } from "../lib/pages";
 import { useI18n } from "../i18n";
@@ -134,16 +135,12 @@ export function Testimonials() {
         <div className="lp-head reveal">
           <span className="lp-eyebrow">{L.reviews.homeEyebrow}</span>
           <h2>{L.reviews.homeTitle}</h2>
-          {reviews.length > 0 && <p><Stars value={avg} label={L.reviews.stars} /> <strong>{avg.toFixed(1)}</strong> · {reviews.length} {L.reviews.count}</p>}
+          {reviews.length > 0 && <p className="lp-avg"><Stars value={avg} label={L.reviews.stars} /> <strong>{avg.toFixed(1)}</strong> · {reviews.length} {L.reviews.count}</p>}
         </div>
         {!loading && shown.length === 0 && <p className="lp-center lp-muted">{L.reviews.homeEmpty}</p>}
         <div className="lp-reviews">
-          {shown.map((r) => (
-            <figure key={r.id} className="lp-review reveal">
-              <Stars value={r.rating} label={L.reviews.stars} />
-              <blockquote>{r.comment}</blockquote>
-              <figcaption><strong>{r.name}</strong>{r.createdAt && <small> · {fmtDate(r.createdAt, lang)}</small>}</figcaption>
-            </figure>
+          {shown.map((r, i) => (
+            <ReviewCard key={r.id} r={r} reveal featured={i === 0 && shown.length > 1} />
           ))}
         </div>
         <div className="lp-center lp-review-cta">

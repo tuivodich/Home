@@ -26,7 +26,7 @@ export default function Rooms() {
     const b = writeBatch(db);
     const samples = [
       ["Phòng gỗ 1", "wood"], ["Phòng gỗ 2", "wood"], ["Phòng gỗ 3", "wood"],
-      ["Phòng bê tông 1", "concrete"], ["Phòng bê tông 2", "concrete"],
+      ["Phòng xây dựng 1", "concrete"], ["Phòng xây dựng 2", "concrete"],
     ] as const;
     samples.forEach(([name, type]) => b.set(doc(collection(db, "rooms")), { ...empty, name, type }));
     await b.commit();

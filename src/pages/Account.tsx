@@ -18,6 +18,9 @@ export default function Account() {
   const { data: rooms } = useCollection<Room>("rooms");
   const [mine, setMine] = useState<Booking[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [confirming, setConfirming] = useState<Booking | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelErr, setCancelErr] = useState("");
   const uid = user?.uid;
 
   useEffect(() => {
@@ -28,17 +31,26 @@ export default function Account() {
     }, (e) => { console.error("my bookings", e); setFetching(false); });
   }, [uid]);
 
-  const sorted = useMemo(() => [...mine].sort((a, b) => b.checkIn.localeCompare(a.checkIn)), [mine]);
+  // Chỉ hiện đặt phòng khách tự đặt online (đặt phòng do nhân viên nhập hộ không nằm ở đây).
+  const sorted = useMemo(() => mine.filter((b) => b.source === "online").sort((a, b) => b.checkIn.localeCompare(a.checkIn)), [mine]);
 
   if (loading) return <div className="center">{t("loading")}</div>;
   if (!user) return <Navigate to="/?login=1" replace />;
 
-  const cancel = async (b: Booking) => {
-    if (!confirm(L.account.sure)) return;
-    const w = writeBatch(db);
-    w.update(doc(db, "bookings", b.id), { status: "cancelled" });
-    w.delete(doc(db, "busy", b.id));
-    await w.commit();
+  // Hủy sau khi khách xác nhận trong hộp thoại; gỡ luôn lịch bận công khai để phòng được nhả ngay.
+  const doCancel = async () => {
+    if (!confirming) return;
+    setCancelling(true); setCancelErr("");
+    try {
+      const w = writeBatch(db);
+      w.update(doc(db, "bookings", confirming.id), { status: "cancelled", cancelReason: "customer" });
+      w.delete(doc(db, "busy", confirming.id));
+      await w.commit();
+      setConfirming(null);
+    } catch (ex) {
+      console.error("cancel failed", ex);
+      setCancelErr(L.account.cancelFailed);
+    } finally { setCancelling(false); }
   };
 
   return (
@@ -67,19 +79,40 @@ export default function Account() {
           <div className="lp-panel lp-booking-row" key={b.id}>
             <div>
               <strong>{rooms.find((r) => r.id === b.roomId)?.name ?? "?"}</strong>
+              <div>{L.account.fullName}: <b>{b.guestName}</b></div>
               <div>{b.checkIn} → {b.checkOut} · {nightsBetween(b.checkIn, b.checkOut)} {L.booking.nights}</div>
               <div className="lp-muted">{money(b.total)} · 👤 {b.guests}</div>
               {b.couponCode && <div className="lp-muted lp-small">🏷 {b.couponCode} (−{b.discountPercent}%)</div>}
             </div>
             <div className="lp-booking-side">
               <span className={`lp-status ${expired ? "cancelled" : b.status}`}>{expired ? L.account.expired : t(b.status)}</span>
-              {b.status === "pending" && !stale && <button className="lp-pill" onClick={() => cancel(b)}>{L.account.cancel}</button>}
+              {((b.status === "pending" && !stale) || b.status === "confirmed") && (
+                <button className="lp-pill" onClick={() => { setCancelErr(""); setConfirming(b); }}>{L.account.cancel}</button>
+              )}
             </div>
           </div>
           );
         })}
-        {sorted.some((b) => b.status !== "pending" && b.status !== "cancelled") && <p className="lp-muted lp-small">{L.account.contactToChange}</p>}
+        {sorted.some((b) => b.status === "checked_in") && <p className="lp-muted lp-small">{L.account.contactToChange}</p>}
       </div>
+
+      {confirming && (
+        <div className="lm-overlay" onClick={() => !cancelling && setConfirming(null)} role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+          <div className="lm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 id="cancel-title">{L.account.confirmTitle}</h3>
+            <div className="lm-summary">
+              <strong>{rooms.find((r) => r.id === confirming.roomId)?.name ?? "?"}</strong>
+              <div>{L.account.fullName}: {confirming.guestName}</div>
+              <div>{confirming.checkIn} → {confirming.checkOut} · {nightsBetween(confirming.checkIn, confirming.checkOut)} {L.booking.nights}</div>
+              <div>{money(confirming.total)}</div>
+            </div>
+            <p className="lm-muted">{confirming.status === "confirmed" ? L.account.confirmConfirmed : L.account.confirmPending}</p>
+            {cancelErr && <p className="lm-err">{cancelErr}</p>}
+            <button className="lm-btn" onClick={() => setConfirming(null)} disabled={cancelling}>{L.account.keep}</button>
+            <button className="lm-link lm-danger" onClick={doCancel} disabled={cancelling}>{cancelling ? L.account.cancelling : L.account.doCancel}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

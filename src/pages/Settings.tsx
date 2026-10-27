@@ -5,6 +5,7 @@ import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
 import { DEFAULT_USD_RATE } from "../lib/format";
+import { CONTACT_FIELDS, EMPTY_CONTACT, isUrlOk, useContact, type Contact } from "../lib/contact";
 import { tgLinkCode, tgSetup } from "../lib/telegram";
 import { PALETTES, sceneSvg } from "../landing/forest";
 import { READY_THEMES, THEME_IDS, THEME_INFO, parseSettings, DEFAULT_MAX_PENDING, DEFAULT_SETTINGS, type SiteSettings, type ThemeId } from "../lib/theme";
@@ -21,6 +22,26 @@ export default function Settings() {
   const { data: users } = useCollection<UserDoc & { id: string }>("users", profile?.role === "owner" || profile?.role === "manager");
 
   const isOwner = profile?.role === "owner";
+  // Thông tin liên hệ công khai (website + bot Telegram cùng đọc từ settings/contact).
+  const savedContact = useContact();
+  const [ct, setCt] = useState<Contact>(EMPTY_CONTACT);
+  const [ctMsg, setCtMsg] = useState("");
+  const [ctErr, setCtErr] = useState("");
+  useEffect(() => { setCt(savedContact); }, [savedContact]);
+  const ctDirty = CONTACT_FIELDS.some((k) => ct[k].trim() !== savedContact[k]);
+  const ctBadUrl = !isUrlOk(ct.facebook) || !isUrlOk(ct.mapUrl);
+  const saveContact = async () => {
+    setCtMsg(""); setCtErr("");
+    try {
+      const data = Object.fromEntries(CONTACT_FIELDS.map((k) => [k, ct[k].trim()]));
+      await setDoc(doc(db, "settings", "contact"), data);
+      setCtMsg(vi ? "Đã lưu thông tin liên hệ." : "Contact details saved.");
+    } catch (ex) { console.error("save contact", ex); setCtErr(vi ? "Không lưu được. Vui lòng thử lại." : "Could not save. Please try again."); }
+  };
+  const ctLabels: Record<keyof Contact, [string, string]> = {
+    phone: ["Số điện thoại", "Phone"], zalo: ["Zalo (số điện thoại hoặc đường dẫn)", "Zalo (number or link)"], email: ["Email", "Email"],
+    address: ["Địa chỉ", "Address"], facebook: ["Facebook (đường dẫn https://…)", "Facebook (https:// link)"], mapUrl: ["Đường dẫn bản đồ (Google Maps https://…)", "Map link (Google Maps https://…)"],
+  };
   // Bot Telegram: kết nối bot (chủ), liên kết chat của tôi, danh sách chat đang nhận thông báo.
   const { data: tgChats } = useCollection<{ id: string; email?: string; name?: string; type?: string; role?: string }>("tgChats", profile?.role === "owner" || profile?.role === "manager");
   const [tgMsg, setTgMsg] = useState("");
@@ -111,6 +132,23 @@ export default function Settings() {
           <input type="checkbox" checked={site.themeAuto} disabled={!READY_THEMES.includes("noel")} onChange={(e) => setDoc(doc(db, "settings", "app"), { themeAuto: e.target.checked }, { merge: true })} />
           <span>{vi ? "Tự chuyển sang Noel từ 01/12 đến 05/01 (ngoài mùa dùng giao diện đã chọn)" : "Switch to Christmas automatically 1 Dec – 5 Jan (otherwise your chosen theme)"}</span>
         </label>
+      </div>
+      <div className="card" id="contact-info">
+        <h3>{vi ? "Thông tin liên hệ" : "Contact details"}</h3>
+        <small>{vi ? "Hiển thị công khai ở chân trang website và trong lệnh /lienhe của bot Telegram. Để trống mục nào thì mục đó được ẩn." : "Shown publicly in the website footer and in the Telegram bot's /lienhe command. Leave a field empty to hide it."}</small>
+        {CONTACT_FIELDS.map((k) => (
+          <label key={k}>{vi ? ctLabels[k][0] : ctLabels[k][1]}
+            <input value={ct[k]} maxLength={300} type={k === "email" ? "email" : k === "phone" ? "tel" : "text"}
+              onChange={(e) => { setCtMsg(""); setCt({ ...ct, [k]: e.target.value }); }} />
+          </label>
+        ))}
+        {ctBadUrl && <p className="error">{vi ? "Đường dẫn Facebook / bản đồ phải bắt đầu bằng http:// hoặc https://" : "Facebook / map links must start with http:// or https://"}</p>}
+        <div className="rolebar">
+          <button type="button" disabled={!ctDirty || ctBadUrl} onClick={saveContact}>{t("save")}</button>
+          <button type="button" className="ghost" disabled={!ctDirty} onClick={() => setCt(savedContact)}>{vi ? "Hủy bỏ" : "Discard"}</button>
+        </div>
+        {ctMsg && <p className="ok-msg" role="status">{ctMsg}</p>}
+        {ctErr && <p className="error">{ctErr}</p>}
       </div>
       <div className="card" id="telegram">
         <h3>{vi ? "Bot Telegram" : "Telegram bot"}</h3>

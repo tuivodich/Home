@@ -42,11 +42,22 @@ service cloud.firestore {
     // Giao diện: chỉ nhận các mã hợp lệ, hiệu ứng / tự động theo mùa là true/false.
     match /settings/{id} {
       allow read: if true;
-      allow write: if isAdmin()
+      allow write: if isAdmin() && id != 'contact'
         && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel'])
         && (!('themeAuto' in request.resource.data) || request.resource.data.themeAuto is bool)
         && (!('effects' in request.resource.data) || request.resource.data.effects is bool)
         && (!('maxPending' in request.resource.data) || (request.resource.data.maxPending is int && request.resource.data.maxPending >= 1 && request.resource.data.maxPending <= 20));
+    }
+    // Thông tin liên hệ công khai (website + bot Telegram): chuỗi ngắn; đường dẫn chỉ nhận http(s) để không chèn được javascript:.
+    match /settings/contact {
+      function okText(d, k) { return !(k in d) || (d[k] is string && d[k].size() <= 300); }
+      function okUrl(d, k) { return !(k in d) || (d[k] is string && d[k].size() <= 300 && (d[k] == '' || d[k].matches('^https?://[^ ]+$'))); }
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['phone', 'zalo', 'email', 'address', 'facebook', 'mapUrl'])
+        && okText(request.resource.data, 'phone') && okText(request.resource.data, 'zalo')
+        && okText(request.resource.data, 'email') && okText(request.resource.data, 'address')
+        && okUrl(request.resource.data, 'facebook') && okUrl(request.resource.data, 'mapUrl');
     }
     match /rooms/{id} {
       allow read: if true;

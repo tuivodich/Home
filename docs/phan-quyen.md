@@ -22,6 +22,7 @@ Vai trò: **Chủ** (`owner`), **Quản lý** (`manager`), **Lễ tân** (`recep
 | Phòng: thêm, sửa giá, bảo trì, xóa | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cài đặt: tỷ giá USD, bật/tắt tự từ chối yêu cầu quá hạn | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Sửa nội dung cảm nhận của khách (kể cả đã duyệt) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Cài đặt: thông tin liên hệ công khai (website + bot) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cài đặt: số yêu cầu đang chờ tối đa mỗi tài khoản | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cài đặt: giao diện website (chọn giao diện, bật/tắt hiệu ứng, tự chuyển Noel) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cài đặt: cấp/đổi vai trò tài khoản (chọn xong bấm "Lưu lại" mới áp dụng) | ✅ | ✅ (chỉ cấp lễ tân/buồng phòng/bảo vệ/khách; không cấp "Chủ"/"Quản lý", không đụng tài khoản Chủ/Quản lý) | ❌ | ❌ | ❌ | ❌ |

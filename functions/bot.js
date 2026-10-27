@@ -209,10 +209,14 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     return tg.sendMessage(chatId, `🏡 <b>${esc(site.name)}</b>\n${lines.join("\n")}`, webBtn("🌐 Xem ảnh và đặt phòng", "/#rooms"));
   }
 
+  /** Thông tin liên hệ do chủ/quản lý nhập ở Cài đặt (settings/contact), cùng nguồn với chân trang website. */
   async function contact(chatId) {
+    const c = (await get("settings/contact")) ?? {};
+    const str = (k) => (typeof c[k] === "string" ? c[k].trim() : "");
+    const http = (k) => (/^https?:\/\/\S+$/i.test(str(k)) ? str(k) : "");
     const rows = [
-      site.phone && `📞 ${esc(site.phone)}`, site.zalo && `💬 Zalo: ${esc(site.zalo)}`, site.email && `✉️ ${esc(site.email)}`,
-      site.address && `📍 ${esc(site.address)}`, site.facebook && `👍 ${esc(site.facebook)}`, site.mapUrl && `🗺 ${esc(site.mapUrl)}`,
+      str("phone") && `📞 ${esc(str("phone"))}`, str("zalo") && `💬 Zalo: ${esc(str("zalo"))}`, str("email") && `✉️ ${esc(str("email"))}`,
+      str("address") && `📍 ${esc(str("address"))}`, http("facebook") && `👍 ${esc(http("facebook"))}`, http("mapUrl") && `🗺 ${esc(http("mapUrl"))}`,
     ].filter(Boolean);
     const body = rows.length ? rows.join("\n") : "Homestay chưa cập nhật thông tin liên hệ. Bạn gửi yêu cầu đặt phòng trên website, chúng tôi sẽ phản hồi sớm.";
     return tg.sendMessage(chatId, `📇 <b>${esc(site.name)}</b>\n${body}`, webBtn("🌐 Mở website", "/#contact"));

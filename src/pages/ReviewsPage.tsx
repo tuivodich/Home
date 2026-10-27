@@ -5,6 +5,7 @@ import { useAuth } from "../lib/auth";
 import { useI18n, useL } from "../i18n";
 import { fmtDate } from "../lib/pages";
 import { useApprovedReviews, type Review } from "../lib/reviews";
+import { tgNotify } from "../lib/telegram";
 import { useTitle } from "../lib/useTitle";
 import SiteLayout from "../layout/SiteLayout";
 import { useAuthUi } from "../layout/authUi";
@@ -47,6 +48,7 @@ function WriteReview() {
     try {
       if (mine) await updateDoc(doc(db, "reviews", uid), { ...body, status: "pending" }); // sửa → duyệt lại
       else await setDoc(doc(db, "reviews", uid), { ...body, status: "pending", createdBy: uid, createdAt: serverTimestamp() });
+      tgNotify("review");
       setMsg(L.reviews.thanks); setEditing(false); setComment("");
     } catch (ex) { console.error("review failed", ex); setErr(L.reviews.failed); }
     finally { setBusy(false); }

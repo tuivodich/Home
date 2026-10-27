@@ -23,6 +23,9 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Chỉ **chủ/quản lý** đổi được ở *Cài đặt → Giao diện website* (lưu trong `settings/app`: `theme`, `themeAuto`, `effects`; luật Firestore kiểm tra giá trị hợp lệ). Khu quản lý của nhân viên giữ nguyên giao diện.
 - Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
 
+## Bot Telegram
+Thông báo yêu cầu đặt phòng / khách hủy / cảm nhận mới, nút Xác nhận–Từ chối ngay trong Telegram, lệnh `/homnay` `/cho` `/trong`. Hướng dẫn thiết lập: [`docs/telegram-bot.md`](docs/telegram-bot.md).
+
 ## Chạy thử
 ```bash
 npm install

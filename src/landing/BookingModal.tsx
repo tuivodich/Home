@@ -1,3 +1,4 @@
+import { tgNotify } from "../lib/telegram";
 import { DEFAULT_MAX_PENDING } from "../lib/theme";
 import { useState, type FormEvent } from "react";
 import DateInput from "../components/DateInput";
@@ -85,6 +86,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
       // Đánh dấu mã đã dùng trong CÙNG lần ghi: nếu ai đó vừa dùng mã này, cả đặt phòng bị từ chối (không thể dùng 2 lần).
       if (coupon) b.update(doc(db, "coupons", coupon.code), { used: true, usedBy: user.uid, usedAt: serverTimestamp(), bookingId: id });
       await b.commit();
+      tgNotify("booking", id);
       setDone(true);
     } catch (ex) {
       console.error("booking failed", ex);

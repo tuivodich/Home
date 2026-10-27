@@ -131,8 +131,13 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
 .rosttbl th[scope="row"] { text-align: left; white-space: nowrap; }
 .rosttbl th.today { background: color-mix(in srgb, var(--accent) 18%, transparent); border-radius: 8px; }
 .rosttbl select { width: 100%; padding: 6px 4px; }
+.rosttbl td.changed { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 8px; }
 .sumtbl { min-width: 520px; }
 .clickrow { cursor: pointer; }
 .clickrow:hover, .clickrow.sel { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .shiftform { align-items: flex-end; flex-wrap: wrap; gap: 8px; }
 .shiftform label { flex: 1 1 110px; }
+
+/* Dòng tên tài khoản + vai trò (menu Tài khoản và thanh đầu khu quản lý) */
+.dd-who { padding: 8px 14px 10px; font-weight: 700; font-size: .9rem; overflow-wrap: anywhere; border-bottom: 1px solid currentColor; border-bottom-color: color-mix(in srgb, currentColor 18%, transparent); margin-bottom: 4px; cursor: default; }
+.shell header .who { font-size: .85rem; opacity: .9; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

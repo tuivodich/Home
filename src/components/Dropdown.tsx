@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import HashLink from "./HashLink";
 
-export interface DdItem { label: string; to?: string; onClick?: () => void }
+/** `heading`: dòng chữ không bấm được (vd. tên tài khoản và vai trò) ở đầu menu. */
+export interface DdItem { label: string; to?: string; onClick?: () => void; heading?: boolean }
 
 /** Menu thả xuống: bấm hoặc rê chuột (máy tính) để mở; Esc / bấm ra ngoài / chuyển trang thì đóng. */
 export default function Dropdown({ label, items, align = "left", className = "", active = false }: {
@@ -28,7 +29,9 @@ export default function Dropdown({ label, items, align = "left", className = "",
         {label}<span className="dd-caret" aria-hidden="true" />
       </button>
       <div className={`dd-menu ${align === "right" ? "right" : ""}`} role="menu">
-        {items.map((it) => it.to
+        {items.map((it) => it.heading
+          ? <div key={it.label} className="dd-who" role="presentation">{it.label}</div>
+          : it.to
           ? <HashLink key={it.label} to={it.to} role="menuitem" onClick={() => setOpen(false)}>{it.label}</HashLink>
           : <button key={it.label} type="button" role="menuitem" onClick={() => { setOpen(false); it.onClick?.(); }}>{it.label}</button>)}
       </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { addDoc, collection, deleteDoc, doc, query, setDoc, updateDoc, where, writeBatch } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, query, updateDoc, where, writeBatch } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useCollection } from "../lib/useCollection";
 import { fmtDate, todayStr } from "../lib/format";
@@ -30,30 +30,55 @@ export default function Roster() {
   const sched = useQueryDocs<ScheduleEntry>(query(collection(db, "schedule"), where("date", ">=", prev), where("date", "<=", days[6])), `ros:${monday}`);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  // Ô đã chọn nhưng chưa lưu: khóa "yyyy-mm-dd_uid" → mã ca ("" = nghỉ). Chỉ áp dụng khi bấm "Lưu lại".
+  const [draft, setDraft] = useState<Record<string, { uid: string; date: string; name: string; shiftId: string }>>({});
+  const [saving, setSaving] = useState(false);
+  const dirty = Object.keys(draft).length;
 
   const staff = useMemo(() => users.filter((u) => isStaffRole(u.role)).sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email, "vi")), [users]);
   const nameOf = (u: Staff) => u.name || u.email;
   const entry = (uid: string, d: string) => sched.data.find((e) => e.id === `${d}_${uid}`);
   const activeShifts = shifts.filter((s) => s.active).sort((a, b) => a.start.localeCompare(b.start));
-  const guard = async (f: () => Promise<unknown>) => { setErr(""); setMsg(""); try { await f(); } catch (ex) { console.error("roster", ex); setErr(t("error")); } };
 
-  const setCell = (u: Staff, d: string, shiftId: string) => guard(() => shiftId
-    ? setDoc(doc(db, "schedule", `${d}_${u.id}`), { date: d, uid: u.id, name: nameOf(u), shiftId })
-    : deleteDoc(doc(db, "schedule", `${d}_${u.id}`)));
+  /** Giá trị đang hiển thị của ô: bản nháp nếu có, không thì lịch đã lưu. */
+  const cellValue = (uid: string, d: string) => draft[`${d}_${uid}`]?.shiftId ?? entry(uid, d)?.shiftId ?? "";
+  const setCell = (u: Staff, d: string, shiftId: string) => {
+    setMsg(""); setErr("");
+    setDraft((cur) => {
+      const next = { ...cur }, key = `${d}_${u.id}`;
+      if ((entry(u.id, d)?.shiftId ?? "") === shiftId) delete next[key]; // chọn lại đúng giá trị cũ = không thay đổi
+      else next[key] = { uid: u.id, date: d, name: nameOf(u), shiftId };
+      return next;
+    });
+  };
 
-  const copyPrev = () => guard(async () => {
-    const w = writeBatch(db);
-    let n = 0;
-    for (const e of sched.data) {
-      if (e.date < prev || e.date >= monday) continue;
-      const d = addDaysStr(e.date, 7);
-      if (entry(e.uid, d)) continue; // không ghi đè ô đã xếp
-      w.set(doc(db, "schedule", `${d}_${e.uid}`), { date: d, uid: e.uid, name: e.name, shiftId: e.shiftId });
-      n++;
-    }
-    if (n) await w.commit();
-    setMsg(H.copied);
-  });
+  // Sao chép tuần trước vào bản nháp (các ô còn trống); chỉ ghi khi bấm "Lưu lại".
+  const copyPrev = () => {
+    setMsg(""); setErr("");
+    setDraft((cur) => {
+      const next = { ...cur };
+      for (const e of sched.data) {
+        if (e.date < prev || e.date >= monday) continue;
+        const d = addDaysStr(e.date, 7), key = `${d}_${e.uid}`;
+        if (entry(e.uid, d) || next[key]) continue; // không ghi đè ô đã xếp hoặc đang chọn
+        next[key] = { uid: e.uid, date: d, name: e.name, shiftId: e.shiftId };
+      }
+      return next;
+    });
+  };
+
+  const save = async () => {
+    setSaving(true); setErr(""); setMsg("");
+    try {
+      const w = writeBatch(db);
+      for (const [key, c] of Object.entries(draft)) {
+        if (c.shiftId) w.set(doc(db, "schedule", key), { date: c.date, uid: c.uid, name: c.name, shiftId: c.shiftId });
+        else w.delete(doc(db, "schedule", key));
+      }
+      await w.commit();
+      setDraft({}); setMsg(H.rosterSaved);
+    } catch (ex) { console.error("roster save", ex); setErr(t("error")); } finally { setSaving(false); }
+  };
 
   return (
     <section>
@@ -70,7 +95,7 @@ export default function Roster() {
         </div>
         <div className="row">
           <button className="ghost" onClick={() => setMonday(mondayOf(todayStr()))}>{H.thisWeek}</button>
-          <button className="ghost" onClick={copyPrev}>{H.copyPrev}</button>
+          <button className="ghost" disabled={saving} onClick={copyPrev}>{H.copyPrev}</button>
         </div>
         {staff.length === 0 ? <p>{H.noStaff}</p> : (
           <div className="rostscroll">
@@ -83,14 +108,14 @@ export default function Roster() {
                   <tr key={u.id}>
                     <th scope="row">{nameOf(u)}<br /><small>{t(u.role)}</small></th>
                     {days.map((d) => {
-                      const e = entry(u.id, d);
-                      const known = !e || shifts.some((s) => s.id === e.shiftId);
+                      const v = cellValue(u.id, d);
+                      const known = !v || shifts.some((s) => s.id === v);
                       return (
-                        <td key={d}>
-                          <select value={e?.shiftId ?? ""} aria-label={`${nameOf(u)} ${d}`} onChange={(ev) => setCell(u, d, ev.target.value)}>
+                        <td key={d} className={draft[`${d}_${u.id}`] ? "changed" : ""}>
+                          <select value={v} disabled={saving} aria-label={`${nameOf(u)} ${d}`} onChange={(ev) => setCell(u, d, ev.target.value)}>
                             <option value="">{H.dayOff}</option>
-                            {!known && <option value={e!.shiftId}>?</option>}
-                            {shifts.filter((s) => s.active || s.id === e?.shiftId).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            {!known && <option value={v}>?</option>}
+                            {shifts.filter((s) => s.active || s.id === v).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                           </select>
                         </td>
                       );
@@ -101,6 +126,10 @@ export default function Roster() {
             </table>
           </div>
         )}
+        <div className="rolebar">
+          <button type="button" disabled={dirty === 0 || saving} onClick={save}>{H.rosterSave}{dirty > 0 && ` (${dirty})`}</button>
+          <button type="button" className="ghost" disabled={dirty === 0 || saving} onClick={() => { setDraft({}); setMsg(""); setErr(""); }}>{H.rosterCancel}</button>
+        </div>
         {activeShifts.length === 0 && <p className="warn">{H.shiftsTitle}: {H.seedShifts}</p>}
       </div>
 

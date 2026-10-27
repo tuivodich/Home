@@ -12,7 +12,7 @@ Bất kỳ ai nhắn bot cũng dùng được các lệnh dưới đây (dữ li
 - `/trong` (đêm nay), `/trong 25/12` (1 đêm), `/trong 25/12 27/12` (nhận → trả): phòng còn trống, giá, tạm tính, kèm nút **Đặt phòng trên website** mở sẵn ngày đã chọn. Không ghi năm thì lấy lần tới của ngày đó; tối đa 30 đêm.
 - `/phong` (các phòng và giá), `/lienhe` (liên hệ), `/dat [ngày]` (nút mở trang đặt phòng).
 - Đặt phòng vẫn làm trên website (cần đăng nhập, có giới hạn số yêu cầu chờ).
-- Thông tin liên hệ của `/lienhe` lấy từ `functions/site.js` (giữ giống `src/lib/siteConfig.ts`); để trống thì bot bỏ qua mục đó.
+- Thông tin `/lienhe` do chủ/quản lý nhập ở **Cài đặt → Thông tin liên hệ** (lưu ở `settings/contact`), cùng nguồn với chân trang website; mục nào để trống thì bỏ qua. Tên homestay và địa chỉ website của bot nằm ở `functions/site.js`.
 
 ### Chống spam
 - Chat chưa liên kết (khách): tối đa **6 tin/phút** và **80 tin/ngày**; vượt thì bot báo **một lần** rồi im lặng cho tới khi hết giới hạn.

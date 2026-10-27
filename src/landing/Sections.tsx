@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useMoney } from "../lib/useRate";
 import { useL } from "../i18n";
 import { site } from "../lib/siteConfig";
+import { safeUrl, useContact, zaloHref } from "../lib/contact";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
 import Icon from "./Icon";
@@ -154,12 +155,13 @@ export function Testimonials() {
 
 export function Footer() {
   const L = useL();
+  const c = useContact();
   const rows: [string, string, string?][] = [
-    [L.footer.phone, site.phone, site.phone && `tel:${site.phone}`],
-    [L.footer.zalo, site.zalo, site.zalo && `https://zalo.me/${site.zalo.replace(/\D/g, "")}`],
-    [L.footer.email, site.email, site.email && `mailto:${site.email}`],
-    [L.footer.address, site.address, site.mapUrl || undefined],
-    [L.footer.facebook, site.facebook, site.facebook || undefined],
+    [L.footer.phone, c.phone, c.phone && `tel:${c.phone.replace(/[^\d+]/g, "")}`],
+    [L.footer.zalo, c.zalo, zaloHref(c.zalo)],
+    [L.footer.email, c.email, c.email && `mailto:${c.email}`],
+    [L.footer.address, c.address, safeUrl(c.mapUrl)],
+    [L.footer.facebook, c.facebook, safeUrl(c.facebook)],
   ];
   const shown = rows.filter(([, v]) => v);
   return (

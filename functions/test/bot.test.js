@@ -23,7 +23,7 @@ const NOW = new Date("2026-11-10T03:00:00Z"); // 10:00 giờ Việt Nam
 const mk = () => { const tg = fakeTg(); return { tg, bot: createBot({ db, tg, now: () => NOW, randomCode: () => "ABCD1234" }) }; };
 
 async function reset() {
-  for (const c of ["users", "rooms", "bookings", "busy", "pend", "tgChats", "tgLinks", "tgSent", "reviews", "tgRate"]) {
+  for (const c of ["users", "rooms", "bookings", "busy", "pend", "tgChats", "tgLinks", "tgSent", "reviews", "tgRate", "settings"]) {
     const s = await db.collection(c).get();
     await Promise.all(s.docs.map((d) => d.ref.delete()));
   }
@@ -246,6 +246,7 @@ test("khách: /phong, /lienhe, /dat", async () => {
   assert.match(tg.sent[0].text, /500\.000 VNĐ\/đêm/);
   await bot.handleUpdate(msg(500, "/lienhe"));
   assert.match(tg.sent[1].text, /Nhà Gỗ Homestay/);
+  assert.match(tg.sent[1].text, /chưa cập nhật/); // chưa có settings/contact
   await bot.handleUpdate(msg(500, "/dat 25/12 27/12"));
   assert.match(tg.sent[2].extra.reply_markup.inline_keyboard[0][0].url, /checkIn=2026-12-25&checkOut=2026-12-27/);
 });
@@ -293,4 +294,18 @@ test("khách: ngày không ghi năm lấy lần tới (qua năm mới)", async (
   assert.match(tg.sent[0].text, /30\/12\/2026 → 02\/01\/2027<\/b> \(3 đêm\)/);
   await bot.handleUpdate(msg(500, "/trong 05/01"));
   assert.match(tg.sent[1].text, /05\/01\/2027 → 06\/01\/2027/);
+});
+
+test("khách: /lienhe đọc settings/contact, bỏ mục trống, escape HTML, chỉ nhận đường dẫn http(s)", async () => {
+  await reset();
+  await db.doc("settings/contact").set({ phone: "0901 234 567", zalo: "", email: "a<b>@x.vn", address: "12 Đường Thông, Đà Lạt", facebook: "javascript:alert(1)", mapUrl: "https://maps.app.goo.gl/abc" });
+  const { tg, bot } = mk();
+  await bot.handleUpdate(msg(500, "/lienhe"));
+  const t = tg.sent[0].text;
+  assert.match(t, /0901 234 567/);
+  assert.match(t, /12 Đường Thông/);
+  assert.match(t, /a&lt;b&gt;@x\.vn/);
+  assert.match(t, /maps\.app\.goo\.gl/);
+  assert.doesNotMatch(t, /Zalo/);
+  assert.doesNotMatch(t, /javascript/);
 });

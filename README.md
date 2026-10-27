@@ -16,7 +16,7 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - **Mã giảm giá dùng 1 lần** (chủ/quản lý tạo ở mục *Mã giảm giá*): khách nhập ở bước Đặt phòng; mã được đánh dấu đã dùng ngay trong cùng lần ghi với đặt phòng nên không thể dùng 2 lần.
 - **Tự từ chối** yêu cầu online còn "Chờ xác nhận" khi đã qua ngày nhận phòng (bật/tắt ở *Cài đặt*; chạy khi có nhân viên lễ tân trở lên mở trang quản lý).
 - **Giới hạn yêu cầu đang chờ**: mỗi tài khoản chỉ có tối đa N yêu cầu "Chờ xác nhận" cùng lúc (mặc định 3, chủ/quản lý chỉnh ở *Cài đặt*, 1–20). Luật Firestore ép bằng "khe" `pend/{uid}_{n}`; khe tự nhả khi yêu cầu được xác nhận/từ chối/hủy (khi nhân viên mở khu quản lý). Yêu cầu đã xác nhận không tính.
-- Thông tin liên hệ hiển thị ở footer chỉnh trong `src/lib/siteConfig.ts`.
+- Thông tin liên hệ (điện thoại, Zalo, email, địa chỉ, Facebook, bản đồ) do chủ/quản lý nhập ở *Cài đặt → Thông tin liên hệ*; hiện ở footer website và trong lệnh `/lienhe` của bot Telegram. Tên homestay chỉnh trong `src/lib/siteConfig.ts`.
 
 ## Giao diện website
 - Trang công khai có 4 giao diện: **Đêm rừng thông** (mặc định), **Sương mai**, **Hoàng hôn tím sương** và **Đêm Noel tuyết trắng** (dây đèn, tuyết rơi, cây thông Noel, người tuyết, nút đỏ). Bật "Tự chuyển sang Noel" ở Cài đặt để trang tự dùng giao diện Noel từ 01/12 đến 05/01 mỗi năm.

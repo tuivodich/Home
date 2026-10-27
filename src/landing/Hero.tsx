@@ -14,21 +14,20 @@ export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; sear
 
   return (
     <section id="home" className="lp-hero">
-      <div className="lp-blobs"><div className="lp-blob b1" /><div className="lp-blob b2" /></div>
-      <div className="lp-wrap lp-hero-in">
-        <div className="lp-hero-text reveal">
+      <div className="lp-hero-split">
+        <div className="lp-hero-l reveal">
           <span className="lp-eyebrow">{L.hero.eyebrow}</span>
-          <h1>{L.hero.title1}<br /><em>{L.hero.title2}</em></h1>
+          <h1>{L.hero.title1} <em>{L.hero.title2}</em></h1>
           <p>{L.hero.sub}</p>
           <div className="lp-cta">
             <a className="lp-btn primary" href="#booking">{L.hero.cta1}</a>
             <a className="lp-btn ghost" href="#about">{L.hero.cta2}</a>
           </div>
         </div>
-        <div className="lp-hero-art reveal">
-          <HeroArt />
-          <div className="lp-float f1">🌿 {L.hero.badge1}</div>
-          <div className="lp-float f2">🍊 {L.hero.badge2}</div>
+        <div className="lp-hero-r">
+          <div className="lp-arch reveal"><HeroArt /></div>
+          <div className="lp-float f1">{L.hero.badge1}</div>
+          <div className="lp-float f2">{L.hero.badge2}</div>
         </div>
       </div>
       <form className="lp-wrap lp-quick reveal" onSubmit={go}>

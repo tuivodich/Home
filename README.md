@@ -3,7 +3,8 @@
 Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ngữ Việt/Anh, tiền VNĐ kèm quy đổi USD.
 
 ## Đã có (Giai đoạn 1)
-- Đăng nhập email/mật khẩu, phân quyền: chủ, quản lý, lễ tân, buồng phòng, bảo vệ
+- Đăng nhập email/mật khẩu hoặc Google; phân quyền: chủ, quản lý, lễ tân, buồng phòng, bảo vệ, khách hàng (bảng quyền chi tiết: [`docs/phan-quyen.md`](docs/phan-quyen.md))
+- Trang **Lịch sử** thống kê các đặt phòng đã trả phòng / đã hủy (doanh thu, lọc theo tháng, tìm kiếm, hoàn tác / khôi phục)
 - Quản lý phòng, đặt/hủy/nhận/trả phòng (chặn trùng lịch), lịch phòng 14 ngày
 - Khách lưu trú + ảnh CCCD/hộ chiếu/bằng lái (Firebase Storage, chỉ chủ/quản lý/lễ tân xem)
 

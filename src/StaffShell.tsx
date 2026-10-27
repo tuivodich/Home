@@ -1,7 +1,7 @@
 import { Link, NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import { useI18n } from "./i18n";
-import { useBusySync } from "./lib/useBusySync";
+import { useBusySync, useLegacyRoomNames } from "./lib/useBusySync";
 import { isFrontRole, isStaffRole } from "./lib/types";
 import Dropdown, { type DdItem } from "./components/Dropdown";
 import Dashboard from "./pages/Dashboard";
@@ -20,6 +20,7 @@ export default function StaffShell() {
   const loc = useLocation();
   const front = isFrontRole(profile?.role);
   useBusySync(front);
+  useLegacyRoomNames(profile?.role === "owner" || profile?.role === "manager");
 
   if (loading) return <div className="center">{t("loading")}</div>;
   if (!user) return <Navigate to="/?login=1&next=app" replace />;

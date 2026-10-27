@@ -6,7 +6,7 @@ import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
 import { DEFAULT_USD_RATE } from "../lib/format";
 import { PALETTES, sceneSvg } from "../landing/forest";
-import { READY_THEMES, THEME_IDS, THEME_INFO, parseSettings, DEFAULT_SETTINGS, type SiteSettings, type ThemeId } from "../lib/theme";
+import { READY_THEMES, THEME_IDS, THEME_INFO, parseSettings, DEFAULT_MAX_PENDING, DEFAULT_SETTINGS, type SiteSettings, type ThemeId } from "../lib/theme";
 import { ROLES, isStaffRole, type Role, type UserDoc } from "../lib/types";
 
 export default function Settings() {
@@ -16,11 +16,13 @@ export default function Settings() {
   const { user, profile } = useAuth();
   const [rate, setRate] = useState(DEFAULT_USD_RATE);
   const [autoReject, setAutoReject] = useState(true);
+  const [maxPending, setMaxPending] = useState(DEFAULT_MAX_PENDING);
   const { data: users } = useCollection<UserDoc & { id: string }>("users", profile?.role === "owner" || profile?.role === "manager");
 
   useEffect(() => onSnapshot(doc(db, "settings", "app"), (s) => {
     if (typeof s.data()?.usdRate === "number") setRate(s.data()!.usdRate);
     setAutoReject(s.data()?.autoRejectPending !== false);
+    if (typeof s.data()?.maxPending === "number") setMaxPending(s.data()!.maxPending);
     setSite(parseSettings(s.data()));
   }, () => {}), []);
 
@@ -40,6 +42,13 @@ export default function Settings() {
           <span>{t("autoReject")}</span>
         </label>
         <small>{t("autoRejectHint")}</small>
+      </div>
+      <div className="card">
+        <label>{vi ? "Số yêu cầu đặt phòng đang chờ xác nhận tối đa mỗi tài khoản" : "Max pending booking requests per account"}
+          <input type="number" min={1} max={20} step={1} value={maxPending} onChange={(e) => setMaxPending(+e.target.value)} />
+        </label>
+        <small>{vi ? "Chống đặt phòng bừa bãi: khách chưa được nhân viên xử lý hết yêu cầu thì không đặt thêm được. Yêu cầu đã xác nhận không tính." : "Stops spam bookings: a guest cannot send more until staff handle the pending ones. Confirmed bookings do not count."}</small>
+        <button disabled={!Number.isInteger(maxPending) || maxPending < 1 || maxPending > 20} onClick={() => setDoc(doc(db, "settings", "app"), { maxPending }, { merge: true })}>{t("save")}</button>
       </div>
       <div className="card" id="site-theme">
         <h3>{vi ? "Giao diện website" : "Website theme"}</h3>

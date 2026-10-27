@@ -8,6 +8,7 @@ import { useApprovedReviews, type Review } from "../lib/reviews";
 import { useTitle } from "../lib/useTitle";
 import SiteLayout from "../layout/SiteLayout";
 import { useAuthUi } from "../layout/authUi";
+import ReviewCard from "../components/ReviewCard";
 import Stars from "../components/Stars";
 
 function WriteReview() {
@@ -30,7 +31,8 @@ function WriteReview() {
     return onSnapshot(doc(db, "reviews", uid), (s) => setMine(s.exists() ? ({ ...(s.data() as object), id: s.id } as Review) : null), () => setMine(null));
   }, [uid]);
 
-  useEffect(() => { if (user && !name) setName(user.displayName ?? ""); }, [user, name]);
+  // Điền sẵn tên tài khoản MỘT lần khi đăng nhập; không điền lại khi người dùng xóa ô để nhập tên khác.
+  useEffect(() => { setName(uid ? user?.displayName ?? "" : ""); }, [uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startEdit = () => {
     if (!mine) return;
@@ -118,11 +120,7 @@ export default function ReviewsPage() {
           {!loading && reviews.length === 0 && <p className="lp-muted">{L.reviews.none}</p>}
           <div className="lp-reviews">
             {reviews.map((r) => (
-              <figure key={r.id} className="lp-review">
-                <Stars value={r.rating} label={L.reviews.stars} />
-                <blockquote>{r.comment}</blockquote>
-                <figcaption><strong>{r.name}</strong>{r.createdAt && <small> · {fmtDate(r.createdAt, lang)}</small>}</figcaption>
-              </figure>
+              <ReviewCard key={r.id} r={r} />
             ))}
           </div>
           <WriteReview />

@@ -9,6 +9,11 @@ service cloud.firestore {
     function isAdmin() { return signedIn() && role() in ['owner', 'manager']; }
     function isStaff() { return signedIn() && role() in ['owner', 'manager', 'reception', 'housekeeping', 'security']; }
     function isOwner() { return signedIn() && role() == 'owner'; }
+    // Số yêu cầu đặt phòng đang chờ xác nhận tối đa mỗi tài khoản (chủ/quản lý chỉnh ở Cài đặt; mặc định 3).
+    function maxPending() {
+      return exists(/databases/$(database)/documents/settings/app)
+        ? get(/databases/$(database)/documents/settings/app).data.get('maxPending', 3) : 3;
+    }
     function isFront() { return signedIn() && role() in ['owner', 'manager', 'reception']; }
 
     // Người đầu tiên đăng nhập (chưa có meta/bootstrap) trở thành chủ homestay.
@@ -39,7 +44,8 @@ service cloud.firestore {
       allow write: if isAdmin()
         && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel'])
         && (!('themeAuto' in request.resource.data) || request.resource.data.themeAuto is bool)
-        && (!('effects' in request.resource.data) || request.resource.data.effects is bool);
+        && (!('effects' in request.resource.data) || request.resource.data.effects is bool)
+        && (!('maxPending' in request.resource.data) || (request.resource.data.maxPending is int && request.resource.data.maxPending >= 1 && request.resource.data.maxPending <= 20));
     }
     match /rooms/{id} {
       allow read: if true;
@@ -69,7 +75,7 @@ service cloud.firestore {
       allow create: if isFront() || (signedIn()
         && request.resource.data.keys().hasOnly(['roomId', 'guestName', 'phone', 'email', 'checkIn', 'checkOut',
                                                   'guests', 'total', 'status', 'note', 'source', 'createdBy',
-                                                  'couponCode', 'discountPercent', 'originalTotal'])
+                                                  'couponCode', 'discountPercent', 'originalTotal', 'slotId'])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.source == 'online'
@@ -82,6 +88,10 @@ service cloud.firestore {
         && request.resource.data.guests is int && request.resource.data.guests >= 1 && request.resource.data.guests <= 30
         && request.resource.data.total is number
         && request.resource.data.email is string && request.resource.data.email.size() <= 200
+        // Mỗi yêu cầu phải chiếm một khe giữ chỗ của chính khách (tối đa maxPending khe) được tạo cùng lần ghi.
+        && request.resource.data.slotId is string
+        && getAfter(/databases/$(database)/documents/pend/$(request.resource.data.slotId)).data.bookingId == id
+        && getAfter(/databases/$(database)/documents/pend/$(request.resource.data.slotId)).data.uid == request.auth.uid
         // Giảm giá chỉ hợp lệ khi mã vừa được dùng trong CÙNG lần ghi, thuộc về chính khách này, đúng phần trăm.
         && (!('couponCode' in request.resource.data) || (
               getAfter(/databases/$(database)/documents/coupons/$(request.resource.data.couponCode)).data.used == true
@@ -106,6 +116,21 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason'])
             && (!('cancelReason' in request.resource.data) || request.resource.data.cancelReason == 'customer'))));
       allow delete: if isAdmin();
+    }
+
+    // Khe giữ chỗ giới hạn số yêu cầu đang chờ xác nhận mỗi tài khoản: id = uid_n với 1 ≤ n ≤ maxPending.
+    // Khách chỉ tạo được khe (không sửa) cùng với đặt phòng; chỉ nhả được khi đặt phòng đó không còn "chờ xác nhận" (vd. tự hủy).
+    match /pend/{slotId} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isFront());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'n', 'bookingId'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.n is int && request.resource.data.n >= 1 && request.resource.data.n <= maxPending()
+        && slotId == request.auth.uid + '_' + string(request.resource.data.n)
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.slotId == slotId
+        && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.createdBy == request.auth.uid;
+      allow delete: if isFront() || (signedIn() && resource.data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId)).data.status != 'pending');
     }
 
     // Mã giảm giá dùng 1 lần do chủ/quản lý tạo. Khách chỉ được xem MỘT mã khi biết đúng mã (không liệt kê được).

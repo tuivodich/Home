@@ -15,6 +15,7 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Lịch công khai đọc từ bộ sưu tập `busy` (chỉ phòng + ngày + trạng thái, không có dữ liệu cá nhân). Khi nhân viên lễ tân trở lên mở khu quản lý, `busy` tự được đồng bộ với `bookings`.
 - **Mã giảm giá dùng 1 lần** (chủ/quản lý tạo ở mục *Mã giảm giá*): khách nhập ở bước Đặt phòng; mã được đánh dấu đã dùng ngay trong cùng lần ghi với đặt phòng nên không thể dùng 2 lần.
 - **Tự từ chối** yêu cầu online còn "Chờ xác nhận" khi đã qua ngày nhận phòng (bật/tắt ở *Cài đặt*; chạy khi có nhân viên lễ tân trở lên mở trang quản lý).
+- **Giới hạn yêu cầu đang chờ**: mỗi tài khoản chỉ có tối đa N yêu cầu "Chờ xác nhận" cùng lúc (mặc định 3, chủ/quản lý chỉnh ở *Cài đặt*, 1–20). Luật Firestore ép bằng "khe" `pend/{uid}_{n}`; khe tự nhả khi yêu cầu được xác nhận/từ chối/hủy (khi nhân viên mở khu quản lý). Yêu cầu đã xác nhận không tính.
 - Thông tin liên hệ hiển thị ở footer chỉnh trong `src/lib/siteConfig.ts`.
 
 ## Giao diện website

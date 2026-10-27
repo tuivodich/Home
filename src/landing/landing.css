@@ -59,6 +59,7 @@ html { scroll-behavior: smooth; }
 .lp-nav > a::after { content: ""; position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--orange); transition: width .2s; }
 .lp-nav > a:hover::after { width: 100%; }
 .lp-nav-actions { display: flex; gap: 8px; align-items: center; }
+.lp-tools { display: flex; align-items: center; gap: 8px; }
 .lp-burger { display: none; background: none; border: 0; padding: 8px; cursor: pointer; }
 .lp-burger span { display: block; width: 24px; height: 2px; background: var(--forest); margin: 5px 0; border-radius: 2px; }
 @media (max-width: 900px) {
@@ -306,11 +307,26 @@ html { scroll-behavior: smooth; }
 .lp-stars i { display: inline-flex; font-style: normal; }
 .lp-stars.pick button { background: none; border: 0; padding: 2px; cursor: pointer; color: inherit; font-size: 1.9rem; line-height: 1; display: inline-flex; }
 .lp-stars.pick button:focus-visible { outline: 3px solid rgba(62, 122, 82, .4); border-radius: 6px; }
-.lp-avg { margin: 14px 0 0; font-size: 1.05rem; }
-.lp-reviews { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 28px; }
-.lp-review { margin: 0; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); display: grid; gap: 10px; align-content: start; }
-.lp-review blockquote { margin: 0; color: var(--prose); line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
-.lp-review figcaption { color: var(--head); }
+.lp-avg { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 16px 0 0; font-size: 1rem; padding: 8px 18px; border-radius: 999px; background: rgba(233, 180, 76, .1); border: 1px solid rgba(233, 180, 76, .35); }
+.lp-avg strong { font-variant-numeric: lining-nums; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.6rem; color: var(--gold); line-height: 1; }
+.lp-reviews { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 22px; margin-top: 30px; }
+.lp-review {
+  position: relative; margin: 0; padding: 30px 26px 24px; display: grid; gap: 14px; align-content: start; overflow: hidden;
+  background: linear-gradient(160deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02) 60%), var(--paper);
+  border: 1px solid var(--line); border-radius: 26px; box-shadow: var(--shadow); transition: transform .25s, border-color .25s, box-shadow .25s;
+}
+.lp-review::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, transparent, var(--orange), transparent); opacity: .8; }
+.lp-review:hover { transform: translateY(-6px); border-color: rgba(233, 180, 76, .5); box-shadow: 0 22px 44px rgba(0, 0, 0, .45), 0 0 0 1px rgba(233, 180, 76, .15); }
+.lp-quote { position: absolute; top: -6px; right: 18px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 7.5rem; line-height: 1; color: var(--orange); opacity: .16; pointer-events: none; }
+.lp-review.featured { background: linear-gradient(160deg, rgba(233, 180, 76, .16), rgba(233, 180, 76, .03) 60%), var(--paper); border-color: rgba(233, 180, 76, .4); }
+@media (min-width: 900px) { .lp-reviews .lp-review.featured { transform: translateY(-10px); } .lp-reviews .lp-review.featured:hover { transform: translateY(-16px); } }
+.lp-review .lp-stars { font-size: 1.25rem; filter: drop-shadow(0 0 6px rgba(233, 180, 76, .5)); }
+.lp-review blockquote { margin: 0; color: var(--head); opacity: .92; line-height: 1.7; font-size: 1.02rem; font-style: italic; white-space: pre-wrap; overflow-wrap: anywhere; }
+.lp-review figcaption { display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+.lp-avatar { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 1.05rem; color: var(--on-accent); background: linear-gradient(135deg, #f6d27a, var(--orange)); box-shadow: 0 0 0 3px rgba(233, 180, 76, .22); }
+.lp-who { display: grid; line-height: 1.3; min-width: 0; }
+.lp-who strong { color: var(--head); overflow-wrap: anywhere; }
+.lp-who small { color: var(--muted); font-size: .78rem; }
 .lp-review-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
 .lp-write { margin-top: 44px; scroll-margin-top: 90px; }
 .lp-write h2 { font-size: 1.5rem; color: var(--head); margin-bottom: 14px; }

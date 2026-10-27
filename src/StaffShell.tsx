@@ -13,11 +13,16 @@ import Settings from "./pages/Settings";
 import Coupons from "./pages/Coupons";
 import History from "./pages/History";
 import ReviewsAdmin from "./pages/ReviewsAdmin";
+import Attendance from "./pages/Attendance";
+import Roster from "./pages/Roster";
+import Timesheet from "./pages/Timesheet";
+import { useHr } from "./i18n/hr";
 
 export default function StaffShell() {
   const { user, profile, loading, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
   const loc = useLocation();
+  const H = useHr();
   const front = isFrontRole(profile?.role);
   useBusySync(front);
   useLegacyRoomNames(profile?.role === "owner" || profile?.role === "manager");
@@ -40,6 +45,10 @@ export default function StaffShell() {
     { label: t("faqPage"), to: "/faq" },
     { label: t("privacyPage"), to: "/privacy" },
   ];
+  const hrItems: DdItem[] = [
+    { label: H.attendance, to: "/app/attendance" },
+    ...(admin ? [{ label: H.roster, to: "/app/roster" }, { label: H.timesheet, to: "/app/timesheet" }] : []),
+  ];
   const setupItems: DdItem[] = [{ label: t("rooms"), to: "/app/rooms" }, { label: t("settings"), to: "/app/settings" }];
 
   return (
@@ -55,6 +64,9 @@ export default function StaffShell() {
         <NavLink to="/app/calendar">{t("calendar")}</NavLink>
         {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/history", "/app/coupons")} />}
         {front && <NavLink to="/app/guests">{t("guests")}</NavLink>}
+        {admin
+          ? <Dropdown className="st-dd" label={H.menu} items={hrItems} active={isIn("/app/attendance", "/app/roster", "/app/timesheet")} />
+          : <NavLink to="/app/attendance">{H.attendance}</NavLink>}
         {admin && <Dropdown className="st-dd" label={t("menuContent")} items={contentItems} active={isIn("/app/reviews")} />}
         {admin && <Dropdown className="st-dd" label={t("menuSetup")} items={setupItems} active={isIn("/app/rooms", "/app/settings")} />}
       </nav>
@@ -65,6 +77,9 @@ export default function StaffShell() {
           {front && <Route path="bookings" element={<Bookings />} />}
           {front && <Route path="history" element={<History />} />}
           {front && <Route path="guests" element={<Guests />} />}
+          <Route path="attendance" element={<Attendance />} />
+          {admin && <Route path="roster" element={<Roster />} />}
+          {admin && <Route path="timesheet" element={<Timesheet />} />}
           {admin && <Route path="coupons" element={<Coupons />} />}
           {admin && <Route path="reviews" element={<ReviewsAdmin />} />}
           {admin && <Route path="rooms" element={<Rooms />} />}

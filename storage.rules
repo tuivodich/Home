@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function role() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
+    // Ảnh giấy tờ khách: chỉ chủ / quản lý / lễ tân.
+    match /guests/{guestId}/{file} {
+      allow read, write: if request.auth != null && role() in ['owner', 'manager', 'reception']
+        && (request.method == 'get' || request.resource.size < 8 * 1024 * 1024)
+        && (request.method == 'get' || request.resource.contentType.matches('image/.*'));
+    }
+  }
+}

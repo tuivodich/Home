@@ -4,14 +4,16 @@ const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { createTelegram } = require("./telegram");
-const { createBot, webhookSecret, safeEq, FRONT } = require("./bot");
+const { createBot, webhookSecret, safeEq, STAFF_COMMANDS } = require("./bot");
 
 initializeApp();
 const TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const REGION = "us-central1";
 const opts = { region: REGION, secrets: [TOKEN] };
 
-const botFor = () => createBot({ db: getFirestore(), tg: createTelegram(TOKEN.value()) });
+// Bộ đếm tin nhắn trong bộ nhớ dùng chung giữa các yêu cầu của cùng một instance.
+const mem = new Map();
+const botFor = () => createBot({ db: getFirestore(), tg: createTelegram(TOKEN.value()), mem });
 const needAuth = (req) => { if (!req.auth) throw new HttpsError("unauthenticated", "Cần đăng nhập."); return req.auth.uid; };
 const asHttpsError = (e) => (e instanceof HttpsError ? e : new HttpsError(e.code === "permission-denied" ? "permission-denied" : "internal", e.message));
 
@@ -44,11 +46,14 @@ exports.tgSetup = onCall(opts, async (req) => {
     const bot = await tg.getMe();
     await tg.setWebhook(url, webhookSecret(TOKEN.value()));
     await tg.setMyCommands([
-      { command: "homnay", description: "Khách nhận/trả phòng hôm nay" },
-      { command: "cho", description: "Yêu cầu đang chờ xác nhận" },
-      { command: "trong", description: "Phòng còn trống (vd /trong 25/12)" },
-      { command: "huylienket", description: "Ngừng nhận thông báo ở chat này" },
+      { command: "trong", description: "Phòng còn trống (vd /trong 25/12 27/12)" },
+      { command: "phong", description: "Các phòng và giá" },
+      { command: "lienhe", description: "Thông tin liên hệ" },
+      { command: "dat", description: "Mở trang đặt phòng" },
     ]);
+    // Chat nhân viên đã liên kết có menu riêng (đặt lại ở đây để đồng bộ khi nâng cấp).
+    const staff = await getFirestore().collection("tgChats").get();
+    await Promise.allSettled(staff.docs.map((d) => tg.setMyCommands(STAFF_COMMANDS, { type: "chat", chat_id: Number(d.id) })));
     return { username: bot.username, url };
   } catch (e) { throw new HttpsError("internal", e.message); }
 });

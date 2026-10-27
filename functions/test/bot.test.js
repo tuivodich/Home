@@ -23,7 +23,7 @@ const NOW = new Date("2026-11-10T03:00:00Z"); // 10:00 giờ Việt Nam
 const mk = () => { const tg = fakeTg(); return { tg, bot: createBot({ db, tg, now: () => NOW, randomCode: () => "ABCD1234" }) }; };
 
 async function reset() {
-  for (const c of ["users", "rooms", "bookings", "busy", "pend", "tgChats", "tgLinks", "tgSent", "reviews"]) {
+  for (const c of ["users", "rooms", "bookings", "busy", "pend", "tgChats", "tgLinks", "tgSent", "reviews", "tgRate"]) {
     const s = await db.collection(c).get();
     await Promise.all(s.docs.map((d) => d.ref.delete()));
   }
@@ -103,11 +103,11 @@ test("liên kết: tạo mã → /start MÃ → chat được lưu; khách thư�
 test("liên kết: mã hết hạn / người bị hạ quyền không liên kết được", async () => {
   await reset();
   const { bot } = mk();
-  await db.doc("tgLinks/OLD").set({ uid: "own", exp: NOW.getTime() - 1 });
-  await bot.handleUpdate(msg(444, "/start OLD"));
+  await db.doc("tgLinks/OLDCODE1").set({ uid: "own", exp: NOW.getTime() - 1 });
+  await bot.handleUpdate(msg(444, "/start OLDCODE1"));
   assert.equal((await db.doc("tgChats/444").get()).exists, false);
-  await db.doc("tgLinks/HK").set({ uid: "hk", exp: NOW.getTime() + 60000 });
-  await bot.handleUpdate(msg(445, "/start HK"));
+  await db.doc("tgLinks/HKCODE12").set({ uid: "hk", exp: NOW.getTime() + 60000 });
+  await bot.handleUpdate(msg(445, "/start HKCODE12"));
   assert.equal((await db.doc("tgChats/445").get()).exists, false);
 });
 
@@ -115,7 +115,9 @@ test("chat chưa liên kết không dùng được lệnh và nút", async () =>
   await reset();
   const { tg, bot } = mk();
   await bot.handleUpdate(msg(999, "/cho"));
-  assert.match(tg.sent[0].text, /chưa liên kết/);
+  assert.match(tg.sent[0].text, /dành cho nhân viên/);
+  await bot.handleUpdate(msg(999, "/homnay"));
+  assert.match(tg.sent[1].text, /dành cho nhân viên/);
   await bot.handleUpdate(press(999, "cf:b1"));
   assert.match(tg.answers[0].text, /chưa liên kết|không đủ quyền/);
   assert.equal((await db.doc("bookings/b1").get()).data().status, "pending");
@@ -188,4 +190,107 @@ test("/huylienket", async () => {
   const { bot } = mk();
   await bot.handleUpdate(msg(111, "/huylienket"));
   assert.equal((await db.doc("tgChats/111").get()).exists, false);
+});
+
+// ===== Chế độ khách =====
+test("khách: /start chào kèm lệnh và nút website; mã lạ không bị coi là mã liên kết", async () => {
+  await reset();
+  const { tg, bot } = mk();
+  await bot.handleUpdate(msg(500, "/start"));
+  assert.match(tg.sent[0].text, /Xin chào/);
+  assert.match(tg.sent[0].text, /\/trong/);
+  assert.match(tg.sent[0].extra.reply_markup.inline_keyboard[0][0].url, /nhago\.web\.app/);
+  await bot.handleUpdate(msg(500, "/start xyz"));
+  assert.match(tg.sent[1].text, /Xin chào/);
+});
+
+test("khách: /trong có khoảng ngày → phòng trống, giá, tạm tính và nút đặt có ngày điền sẵn", async () => {
+  await reset();
+  const { tg, bot } = mk();
+  await bot.handleUpdate(msg(500, "/trong 20/11 22/11")); // r1 đang bị giữ chỗ (pending b1) 20→22/11
+  assert.match(tg.sent[0].text, /còn 1\/2/);
+  assert.doesNotMatch(tg.sent[0].text, /Phòng gỗ 1/);
+  assert.match(tg.sent[0].text, /Phòng gỗ 2 — 600\.000 VNĐ\/đêm \(≈ 1\.200\.000 VNĐ\)/);
+  assert.match(tg.sent[0].extra.reply_markup.inline_keyboard[0][0].url, /\?checkIn=2026-11-20&checkOut=2026-11-22#booking$/);
+  assert.doesNotMatch(tg.sent[0].text, /An|090|k@x/); // không lộ thông tin khách
+});
+
+test("khách: /trong kiểm tra ngày sai", async () => {
+  await reset();
+  const { tg, bot } = mk();
+  await bot.handleUpdate(msg(500, "/trong 01/11/2026")); // đã qua (hôm nay 10/11/2026)
+  assert.match(tg.sent[0].text, /đã qua/);
+  await bot.handleUpdate(msg(500, "/trong 25/12/2026 20/12/2026"));
+  assert.match(tg.sent[1].text, /sau ngày nhận/);
+  await bot.handleUpdate(msg(500, "/trong 01/12 05/02"));
+  assert.match(tg.sent[2].text, /Tối đa 30 đêm/);
+  await bot.handleUpdate(msg(500, "/trong a b c"));
+  assert.match(tg.sent[3].text, /tối đa 2 ngày/);
+});
+
+test("khách: hết phòng thì báo hết", async () => {
+  await reset();
+  await db.doc("busy/x2").set({ roomId: "r2", checkIn: "2026-12-01", checkOut: "2026-12-05", status: "confirmed" });
+  await db.doc("busy/x1").set({ roomId: "r1", checkIn: "2026-12-01", checkOut: "2026-12-05", status: "confirmed" });
+  const { tg, bot } = mk();
+  await bot.handleUpdate(msg(500, "/trong 02/12 03/12"));
+  assert.match(tg.sent[0].text, /còn 0\/2/);
+  assert.match(tg.sent[0].text, /hết phòng/);
+});
+
+test("khách: /phong, /lienhe, /dat", async () => {
+  await reset();
+  const { tg, bot } = mk();
+  await bot.handleUpdate(msg(500, "/phong"));
+  assert.match(tg.sent[0].text, /Phòng gỗ 1/);
+  assert.match(tg.sent[0].text, /500\.000 VNĐ\/đêm/);
+  await bot.handleUpdate(msg(500, "/lienhe"));
+  assert.match(tg.sent[1].text, /Nhà Gỗ Homestay/);
+  await bot.handleUpdate(msg(500, "/dat 25/12 27/12"));
+  assert.match(tg.sent[2].extra.reply_markup.inline_keyboard[0][0].url, /checkIn=2026-12-25&checkOut=2026-12-27/);
+});
+
+test("giới hạn tần suất: khách quá 6 tin/phút bị chặn, báo đúng một lần, rồi im lặng", async () => {
+  await reset();
+  const { tg, bot } = mk();
+  for (let i = 0; i < 10; i++) await bot.handleUpdate(msg(600, "/lienhe"));
+  assert.equal(tg.sent.filter((x) => /Nhà Gỗ Homestay/.test(x.text)).length, 6);
+  assert.equal(tg.sent.filter((x) => /quá nhanh/.test(x.text)).length, 1);
+  assert.equal(tg.sent.length, 7); // 6 trả lời + 1 cảnh báo; các tin còn lại không trả lời
+});
+
+test("giới hạn theo ngày: vượt 80 tin/ngày bị chặn", async () => {
+  await reset();
+  await db.doc("tgRate/700").set({ minKey: 0, minN: 0, dayKey: "2026-11-10", dayN: 80, warnedKey: "" });
+  const { tg, bot } = mk();
+  await bot.handleUpdate(msg(700, "/lienhe"));
+  assert.match(tg.sent[0].text, /quá nhiều hôm nay/);
+  await bot.handleUpdate(msg(700, "/lienhe"));
+  assert.equal(tg.sent.length, 1);
+});
+
+test("giới hạn trong bộ nhớ: lũ tin nhắn bị bỏ qua mà không chạm Firestore", async () => {
+  await reset();
+  const { tg, bot } = mk();
+  for (let i = 0; i < 40; i++) await bot.handleUpdate(msg(800, "/lienhe"));
+  assert.equal(tg.sent.length, 7); // 6 + cảnh báo; từ tin thứ 21 trở đi bỏ qua ngay
+  const rate = (await db.doc("tgRate/800").get()).data();
+  assert.ok(rate.minN <= 20, "Firestore chỉ đếm tối đa 20 tin trước khi chặn bằng bộ nhớ");
+});
+
+test("nhân viên đã liên kết không bị giới hạn kiểu khách (chỉ giới hạn bộ nhớ 20/phút)", async () => {
+  await reset();
+  const { tg, bot } = mk();
+  for (let i = 0; i < 15; i++) await bot.handleUpdate(msg(111, "/phong"));
+  assert.equal(tg.sent.length, 15);
+  assert.equal((await db.doc("tgRate/111").get()).exists, false);
+});
+
+test("khách: ngày không ghi năm lấy lần tới (qua năm mới)", async () => {
+  await reset();
+  const { tg, bot } = mk();
+  await bot.handleUpdate(msg(500, "/trong 30/12 02/01"));
+  assert.match(tg.sent[0].text, /30\/12\/2026 → 02\/01\/2027<\/b> \(3 đêm\)/);
+  await bot.handleUpdate(msg(500, "/trong 05/01"));
+  assert.match(tg.sent[1].text, /05\/01\/2027 → 06\/01\/2027/);
 });

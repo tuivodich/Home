@@ -18,7 +18,7 @@ function createTelegram(token, fetchImpl = fetch) {
     editMessageText: (chatId, messageId, text, extra = {}) => call("editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML", disable_web_page_preview: true, ...extra }),
     answerCallbackQuery: (id, text) => call("answerCallbackQuery", { callback_query_id: id, text }),
     setWebhook: (url, secretToken) => call("setWebhook", { url, secret_token: secretToken, allowed_updates: ["message", "callback_query"], drop_pending_updates: true }),
-    setMyCommands: (commands) => call("setMyCommands", { commands }),
+    setMyCommands: (commands, scope) => call("setMyCommands", scope ? { commands, scope } : { commands }),
   };
 }
 

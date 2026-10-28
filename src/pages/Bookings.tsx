@@ -164,45 +164,7 @@ export default function Bookings() {
     <section>
       <h2>{t("bookings")}</h2>
       {notice && <p className="warn">⚠ {notice}</p>}
-      <form className="card" onSubmit={create}>
-        <h3>{t("newBooking")}</h3>
-        <label>{t("room")}
-          <select required value={f.roomId} onChange={(e) => setF({ ...f, roomId: e.target.value })}>
-            <option value="">—</option>
-            {rooms.filter((r) => r.status === "active").map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        </label>
-        <div className="row">
-          <label>{t("checkIn")}<DateInput required value={f.checkIn} onChange={(v) => setF({ ...f, checkIn: v })} /></label>
-          <label>{t("checkOut")}<DateInput required value={f.checkOut} onChange={(v) => setF({ ...f, checkOut: v })} /></label>
-        </div>
-        <label>{t("numGuests")}<input type="number" min={1} value={f.guests} onChange={(e) => setF({ ...f, guests: +e.target.value })} /></label>
-        <h4 className="sub">{t("guestSection")}</h4>
-        <GuestFields value={g} onChange={setG} guests={guests} file={file} onFile={setFile} docRequired={false} />
-        <small>{t("guestSectionHint")}</small>
-        <label>{t("total")} (VNĐ) — {nights > 0 && <>{nights} {t("nights")} = {money(suggested)}</>}
-          <input type="number" min={0} step={10000} placeholder={String(suggested)} value={f.total || ""} onChange={(e) => setF({ ...f, total: +e.target.value })} />
-        </label>
-        {isAdmin && (
-          <div>
-            <label>{t("coupons")}
-              <div className="row">
-                <input value={code} disabled={!!coupon} placeholder="NG20-XXXXXX" maxLength={32} onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCode(); } }} />
-                {coupon
-                  ? <button type="button" className="ghost" onClick={() => { setCoupon(null); setCode(""); }}>{t("removeCode")}</button>
-                  : <button type="button" className="ghost" onClick={applyCode}>{t("applyCode")}</button>}
-              </div>
-            </label>
-            {coupon && <p className="info">✓ −{coupon.percent}% · {money(base)} → <b>{money(finalTotal)}</b></p>}
-            {couponMsg && <p className="error">{couponMsg}</p>}
-          </div>
-        )}
-        <label>{t("note")}<input value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></label>
-        {err && <p className="error">{err}</p>}
-        <button type="submit" disabled={busy}>{t("add")}</button>
-      </form>
-
+      <h3 className="sub">{t("currentBookings")}</h3>
       {sorted.length === 0 && <p>{t("noData")}</p>}
       {sorted.map((b) => {
         const expired = b.status === "cancelled" && b.cancelReason === "expired";
@@ -269,6 +231,44 @@ export default function Bookings() {
           </div>
         );
       })}
+      <form className="card" onSubmit={create}>
+        <h3>{t("newBooking")}</h3>
+        <label>{t("room")}
+          <select required value={f.roomId} onChange={(e) => setF({ ...f, roomId: e.target.value })}>
+            <option value="">—</option>
+            {rooms.filter((r) => r.status === "active").map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        </label>
+        <div className="row">
+          <label>{t("checkIn")}<DateInput required value={f.checkIn} onChange={(v) => setF({ ...f, checkIn: v })} /></label>
+          <label>{t("checkOut")}<DateInput required value={f.checkOut} onChange={(v) => setF({ ...f, checkOut: v })} /></label>
+        </div>
+        <label>{t("numGuests")}<input type="number" min={1} value={f.guests} onChange={(e) => setF({ ...f, guests: +e.target.value })} /></label>
+        <h4 className="sub">{t("guestSection")}</h4>
+        <GuestFields value={g} onChange={setG} guests={guests} file={file} onFile={setFile} docRequired={false} />
+        <small>{t("guestSectionHint")}</small>
+        <label>{t("total")} (VNĐ) — {nights > 0 && <>{nights} {t("nights")} = {money(suggested)}</>}
+          <input type="number" min={0} step={10000} placeholder={String(suggested)} value={f.total || ""} onChange={(e) => setF({ ...f, total: +e.target.value })} />
+        </label>
+        {isAdmin && (
+          <div>
+            <label>{t("coupons")}
+              <div className="row">
+                <input value={code} disabled={!!coupon} placeholder="NG20-XXXXXX" maxLength={32} onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCode(); } }} />
+                {coupon
+                  ? <button type="button" className="ghost" onClick={() => { setCoupon(null); setCode(""); }}>{t("removeCode")}</button>
+                  : <button type="button" className="ghost" onClick={applyCode}>{t("applyCode")}</button>}
+              </div>
+            </label>
+            {coupon && <p className="info">✓ −{coupon.percent}% · {money(base)} → <b>{money(finalTotal)}</b></p>}
+            {couponMsg && <p className="error">{couponMsg}</p>}
+          </div>
+        )}
+        <label>{t("note")}<input value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></label>
+        {err && <p className="error">{err}</p>}
+        <button type="submit" disabled={busy}>{t("add")}</button>
+      </form>
     </section>
   );
 }

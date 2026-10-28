@@ -15,6 +15,22 @@ export default function Settings() {
   const { t, lang } = useI18n();
   const vi = lang === "vi";
   const [site, setSite] = useState<SiteSettings>(DEFAULT_SETTINGS);
+  // Giao diện đã chọn nhưng chưa lưu: chỉ áp dụng khi bấm "Lưu lại"; "Hủy bỏ" trả về giá trị đã lưu.
+  const [siteDraft, setSiteDraft] = useState<Partial<SiteSettings>>({});
+  const [themeMsg, setThemeMsg] = useState("");
+  const [themeErr, setThemeErr] = useState("");
+  const [themeSaving, setThemeSaving] = useState(false);
+  const shown: SiteSettings = { ...site, ...siteDraft };
+  const themeDirty = (Object.keys(siteDraft) as (keyof SiteSettings)[]).length;
+  const pickSite = <K extends keyof SiteSettings>(k: K, v: SiteSettings[K]) => {
+    setThemeMsg(""); setThemeErr("");
+    setSiteDraft((d) => { const n = { ...d }; if (site[k] === v) delete n[k]; else n[k] = v; return n; });
+  };
+  const saveTheme = async () => {
+    setThemeSaving(true); setThemeMsg(""); setThemeErr("");
+    try { await setDoc(doc(db, "settings", "app"), siteDraft, { merge: true }); setSiteDraft({}); setThemeMsg(vi ? "Đã đổi giao diện thành công" : "Theme updated successfully"); }
+    catch (ex) { console.error("save theme", ex); setThemeErr(t("error")); } finally { setThemeSaving(false); }
+  };
   const { user, profile } = useAuth();
   const [rate, setRate] = useState(DEFAULT_USD_RATE);
   const [autoReject, setAutoReject] = useState(true);
@@ -86,7 +102,7 @@ export default function Settings() {
 
   return (
     <section>
-      <h2>{t("settings")}</h2>
+      <h2 id="settings">{t("settings")}</h2>
       <div className="card">
         <label>{t("usdRate")}
           <input type="number" min={1} value={rate} onChange={(e) => setRate(+e.target.value)} />
@@ -115,8 +131,8 @@ export default function Settings() {
           {THEME_IDS.map((id: ThemeId) => {
             const ready = READY_THEMES.includes(id);
             return (
-              <button key={id} type="button" className={`theme-card ${site.theme === id ? "on" : ""}`} disabled={!ready} aria-pressed={site.theme === id}
-                onClick={() => setDoc(doc(db, "settings", "app"), { theme: id }, { merge: true })}>
+              <button key={id} type="button" className={`theme-card ${shown.theme === id ? "on" : ""}`} disabled={!ready || themeSaving} aria-pressed={shown.theme === id}
+                onClick={() => pickSite("theme", id)}>
                 <span className="theme-thumb" aria-hidden="true" dangerouslySetInnerHTML={{ __html: sceneSvg(PALETTES[id], { id: `t${id}`, cabinX: 800, cabinScale: 1.3, withTree: false, withSnowman: false }) }} />
                 <strong>{vi ? THEME_INFO[id].vi : THEME_INFO[id].en}</strong>
                 <small>{ready ? (vi ? THEME_INFO[id].descVi : THEME_INFO[id].descEn) : (vi ? "Sắp có" : "Coming soon")}</small>
@@ -125,13 +141,19 @@ export default function Settings() {
           })}
         </div>
         <label className="check">
-          <input type="checkbox" checked={site.effects} onChange={(e) => setDoc(doc(db, "settings", "app"), { effects: e.target.checked }, { merge: true })} />
+          <input type="checkbox" checked={shown.effects} disabled={themeSaving} onChange={(e) => pickSite("effects", e.target.checked)} />
           <span>{vi ? "Bật hiệu ứng (đom đóm, khói, ánh đèn)" : "Enable effects (fireflies, smoke, glow)"}</span>
         </label>
         <label className="check">
-          <input type="checkbox" checked={site.themeAuto} disabled={!READY_THEMES.includes("noel")} onChange={(e) => setDoc(doc(db, "settings", "app"), { themeAuto: e.target.checked }, { merge: true })} />
+          <input type="checkbox" checked={shown.themeAuto} disabled={!READY_THEMES.includes("noel") || themeSaving} onChange={(e) => pickSite("themeAuto", e.target.checked)} />
           <span>{vi ? "Tự chuyển sang Noel từ 01/12 đến 05/01 (ngoài mùa dùng giao diện đã chọn)" : "Switch to Christmas automatically 1 Dec – 5 Jan (otherwise your chosen theme)"}</span>
         </label>
+        <div className="rolebar">
+          <button type="button" disabled={themeDirty === 0 || themeSaving} onClick={saveTheme}>{t("rolesSave")}</button>
+          <button type="button" className="ghost" disabled={themeDirty === 0 || themeSaving} onClick={() => { setSiteDraft({}); setThemeMsg(""); setThemeErr(""); }}>{t("rolesCancel")}</button>
+        </div>
+        {themeMsg && <p className="ok-msg" role="status">{themeMsg}</p>}
+        {themeErr && <p className="error">{themeErr}</p>}
       </div>
       <div className="card" id="contact-info">
         <h3>{vi ? "Thông tin liên hệ" : "Contact details"}</h3>

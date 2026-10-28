@@ -119,7 +119,7 @@ const vi = {
   footer: {
     info: "Thông tin",
     tagline: "Nghỉ dưỡng giữa vườn xanh, ấm áp như ở nhà.", links: "Khám phá", contact: "Liên hệ",
-    contactSoon: "Thông tin liên hệ sẽ sớm được cập nhật.", staff: "Dành cho nhân viên", rights: "Đã đăng ký bản quyền.",
+    contactSoon: "Thông tin liên hệ sẽ sớm được cập nhật.", top: "Về đầu trang", staff: "Dành cho nhân viên", rights: "Đã đăng ký bản quyền.",
     phone: "Điện thoại", zalo: "Zalo", email: "Email", address: "Địa chỉ", facebook: "Facebook", map: "Xem bản đồ",
   },
 };
@@ -247,7 +247,7 @@ const en: Dict = {
   footer: {
     info: "Info",
     tagline: "Rest among the green, warm like home.", links: "Explore", contact: "Contact",
-    contactSoon: "Contact details coming soon.", staff: "Staff area", rights: "All rights reserved.",
+    contactSoon: "Contact details coming soon.", top: "Back to top", staff: "Staff area", rights: "All rights reserved.",
     phone: "Phone", zalo: "Zalo", email: "Email", address: "Address", facebook: "Facebook", map: "View map",
   },
 };

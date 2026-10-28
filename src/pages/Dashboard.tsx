@@ -5,6 +5,7 @@ import { useI18n } from "../i18n";
 import { fmtDate, todayStr } from "../lib/format";
 import type { Booking, Room } from "../lib/types";
 import type { Review } from "../lib/reviews";
+import Settings from "./Settings";
 
 export default function Dashboard() {
   const { t } = useI18n();
@@ -46,6 +47,8 @@ export default function Dashboard() {
           {(list as Booking[]).length === 0 ? <small>{t("none")}</small> : (list as Booking[]).map((b) => <div key={b.id}>{b.guestName} — {name(b.roomId)}</div>)}
         </div>
       ))}
+      {/* Cài đặt (tỷ giá, giao diện, liên hệ, bot Telegram, tài khoản nhân viên) nằm ngay dưới Tổng quan; chỉ chủ/quản lý thấy. */}
+      {isAdmin && <Settings />}
     </section>
   );
 }

@@ -70,6 +70,24 @@ export const Garland = memo(function Garland() {
   );
 });
 
+/** Dải cây thông làm đường chân trời giữa các mục (tô bằng màu hiện tại của CSS `fill`). */
+export const TreeLine = memo(function TreeLine({ seed = 5, flip = false }: { seed?: number; flip?: boolean }) {
+  const d = useMemo(() => {
+    const r = rng(seed);
+    let x = -10, out = "";
+    while (x < 1610) {
+      const w = 26 + r() * 40, h = 28 + r() * 52, b = 90;
+      out += `M${x.toFixed(0)} ${b} L${(x + w / 2).toFixed(0)} ${(b - h).toFixed(0)} L${(x + w).toFixed(0)} ${b}Z `;
+      if (r() > .45) { const w2 = w * .7, h2 = h * .7, x2 = x + w * .55; out += `M${x2.toFixed(0)} ${b} L${(x2 + w2 / 2).toFixed(0)} ${(b - h2).toFixed(0)} L${(x2 + w2).toFixed(0)} ${b}Z `; }
+      x += w * (.55 + r() * .35);
+    }
+    return out + "M-10 90 H1610 V92 H-10Z";
+  }, [seed]);
+  return (
+    <svg className={`lp-treeline${flip ? " flip" : ""}`} viewBox="0 0 1600 92" preserveAspectRatio="none" aria-hidden="true"><path d={d} /></svg>
+  );
+});
+
 /** Sương trôi chậm (Sương mai, Hoàng hôn); CSS chỉ bật cho hai giao diện này và tắt khi giảm chuyển động. */
 export const Drift = memo(function Drift() {
   return <div className="lp-drift" aria-hidden="true"><i /><i /><i /></div>;

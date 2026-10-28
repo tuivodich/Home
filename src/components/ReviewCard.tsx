@@ -16,7 +16,7 @@ export default function ReviewCard({ r, reveal, featured }: { r: Review; reveal?
       <blockquote>{r.comment}</blockquote>
       <figcaption>
         <span className="lp-avatar" aria-hidden="true">{initial(r.name)}</span>
-        <span className="lp-who"><strong>{r.name}</strong>{r.createdAt && <small>{fmtDate(r.createdAt, lang)}</small>}</span>
+        <span className="lp-rv-who"><strong>{r.name}</strong>{r.createdAt && <small>{fmtDate(r.createdAt, lang)}</small>}</span>
       </figcaption>
     </figure>
   );

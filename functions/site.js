@@ -7,4 +7,16 @@
 module.exports = {
   name: "Nhà Gỗ Homestay",
   url: "https://nhago.web.app",
+  // Tiện nghi hiển thị cho lệnh /tiennghi (giữ khớp với mục "Tiện nghi" trên website).
+  amenities: [
+    "🏡 Nhà gỗ truyền thống: 3 phòng ngủ trên lầu, phòng khách rộng và bếp ở tầng trệt",
+    "🛏️ 2 phòng xây dựng riêng tư, độc lập cạnh nhà gỗ",
+    "🚿 Vệ sinh riêng cho từng phòng",
+    "🍳 Bếp lớn để tự nấu bữa cơm gia đình",
+    "🌳 Vườn trái cây, không gian xanh",
+    "💧 Nguồn nước tự nhiên",
+    "🚗 Bãi đậu xe rộng cho ô tô và xe máy",
+    "📶 Wifi và điện lưới ổn định",
+    "🛡️ Khuôn viên có hàng rào chắc chắn, an tâm cho gia đình có trẻ nhỏ",
+  ],
 };

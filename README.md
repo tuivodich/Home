@@ -47,7 +47,7 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Chưa tính lương; chưa xác minh vị trí (GPS) nên nhân viên có thể bấm hộ nhau — chủ/quản lý đối chiếu khi cần.
 
 ## Bot Telegram
-Thông báo yêu cầu đặt phòng / khách hủy / cảm nhận mới, nút Xác nhận–Từ chối ngay trong Telegram, lệnh nhân viên `/homnay` `/cho`; khách tra `/trong` `/phong` `/lienhe` (có chống spam) và bấm sang website đặt phòng. Hướng dẫn thiết lập: [`docs/telegram-bot.md`](docs/telegram-bot.md).
+Thông báo yêu cầu đặt phòng / khách hủy / cảm nhận mới, nút Xác nhận–Từ chối ngay trong Telegram, lệnh nhân viên `/homnay` `/cho` `/doanhthu` `/tra`, nút "Đã dọn xong" buồng phòng, cảnh báo đi muộn/quên ra ca và nhắc khách chưa cọc/chưa có hồ sơ; khách dùng `/trong` `/gia` `/phong` `/tiennghi` `/chinhsach` `/diachi` `/tra MÃ` `/lienhe` (có chống spam) và bấm sang website đặt phòng. Hướng dẫn thiết lập: [`docs/telegram-bot.md`](docs/telegram-bot.md).
 
 ## Chạy thử
 ```bash

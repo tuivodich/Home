@@ -9,7 +9,12 @@ import Dropdown, { type DdItem } from "../components/Dropdown";
 import HashLink from "../components/HashLink";
 import { useAuthUi } from "../layout/authUi";
 
-/** Menu gọn: Trang chủ · Đặt phòng ▾ (giới thiệu, phòng, tiện nghi, lịch trống) · Thông tin ▾ (cảm nhận, hỏi đáp, chính sách, liên hệ) · Tài khoản. */
+/**
+ * Menu chính (mỗi mục lớn có menu con, đều có trạng thái "đang xem"):
+ * Trang chủ ▾ (đầu trang, giới thiệu, phòng nghỉ, tiện nghi) · Đặt phòng ▾ (kiểm tra phòng trống, hỏi & đáp)
+ * · Khám phá ▾ (khu vực, cảm nhận của khách) · Thông tin ▾ (liên hệ, chính sách quyền riêng tư) · Tài khoản ▾.
+ * Tên + vai trò, Đăng xuất và ngôn ngữ nằm ngoài menu, bên phải.
+ */
 export default function Header() {
   const L = useL();
   const M = L.menu;
@@ -22,40 +27,50 @@ export default function Header() {
   useEffect(() => { setMenu(false); }, [loc.pathname, loc.hash]);
 
   const staff = isStaffRole(profile?.role);
-  const bookItems: DdItem[] = [
-    { label: M.about, to: "/#about" }, { label: M.rooms, to: "/#rooms" }, { label: M.features, to: "/#features" }, { label: M.availability, to: "/#booking" },
+  // Mục đang xem: cùng đường dẫn và (nếu mục có mục neo) cùng mục neo; mục không có mục neo chỉ khớp khi URL cũng không có mục neo
+  // (trang chủ coi "#home" như không có mục neo; "#write" của trang cảm nhận thuộc mục "Gửi cảm nhận" của Tài khoản).
+  const at = (to: string) => {
+    const [path, hash = ""] = to.split("#");
+    if (loc.pathname !== path) return false;
+    const cur = loc.hash.replace("#", "");
+    if (hash) return cur === hash;
+    return cur === "" || (path === "/" && cur === "home");
+  };
+  const it = (label: string, to: string): DdItem => ({ label, to, active: at(to) });
+
+  const homeItems: DdItem[] = [it(M.top, "/"), it(M.about, "/#about"), it(M.rooms, "/#rooms"), it(M.features, "/#features")];
+  const bookItems: DdItem[] = [it(M.availability, "/#booking"), it(M.faq, "/faq")];
+  const exploreItems: DdItem[] = [it(M.explore, "/explore"), it(M.reviews, "/reviews")];
+  const infoItems: DdItem[] = [it(M.contact, "/#contact"), it(M.privacy, "/privacy")];
+  const accountItems: DdItem[] = [
+    it(G.myAccount, "/profile"),
+    it(L.myBookings, "/account"),
+    it(L.reviews.write, "/reviews#write"),
+    ...(staff ? [{ label: L.manage, to: "/app" }] : []),
   ];
-  const infoItems: DdItem[] = [
-    { label: M.explore, to: "/explore" }, { label: M.reviews, to: "/reviews" }, { label: M.faq, to: "/faq" }, { label: M.privacy, to: "/privacy" }, { label: M.contact, to: "/#contact" },
-  ];
-  // Dòng đầu menu Tài khoản: tên (hoặc email) và vai trò, vd. "admin@gmail.com (Chủ)".
   const whoName = profile?.name || user?.displayName || user?.email || "";
   const whoRole = t(profile?.role ?? "customer");
-  const accountItems: DdItem[] = [
-    { label: whoName, sub: whoRole, heading: true },
-    { label: G.myAccount, to: "/profile" },
-    { label: L.myBookings, to: "/account" },
-    ...(staff ? [{ label: L.manage, to: "/app" }] : []),
-    { label: L.reviews.write, to: "/reviews" },
-    { label: L.signOut, onClick: logout },
-  ];
-  const onPage = (paths: string[]) => paths.includes(loc.pathname);
 
   return (
     <header className="lp-header">
       <div className="lp-wrap lp-header-in">
         <HashLink to="/#home" className="lp-brand"><span className="lp-logo"><img src="/favicon.svg" alt="" width="38" height="38" /></span><span>{site.name}</span></HashLink>
         <nav className={`lp-nav ${menu ? "open" : ""}`} aria-label="Menu">
-          <HashLink to="/#home" className={loc.pathname === "/" ? "lp-link" : "lp-link"}>{M.home}</HashLink>
-          <Dropdown className="lp-dd" label={M.book} items={bookItems} active={loc.pathname === "/"} />
-          <Dropdown className="lp-dd" label={M.info} items={infoItems} active={onPage(["/explore", "/reviews", "/faq", "/privacy"])} />
+          {user && <div className="lp-who-mobile">{whoName} <span className="dd-role">({whoRole})</span></div>}
+          <Dropdown className="lp-dd" label={M.home} items={homeItems} />
+          <Dropdown className="lp-dd" label={M.book} items={bookItems} />
+          <Dropdown className="lp-dd" label={M.exploreMenu} items={exploreItems} />
+          <Dropdown className="lp-dd" label={M.info} items={infoItems} />
           <div className="lp-nav-actions">
             {user
               ? <Dropdown className="lp-dd lp-dd-account" align="right" label={M.account} items={accountItems} />
               : <button className="lp-pill solid" onClick={() => { setMenu(false); openAuth(); }}>{L.signIn}</button>}
+            {user && <button className="lp-pill lp-logout-mobile" onClick={logout}>{L.signOut}</button>}
           </div>
         </nav>
         <div className="lp-tools">
+          {user && <span className="lp-who" title={user.email ?? ""}>{whoName} <span className="dd-role">({whoRole})</span></span>}
+          {user && <button className="lp-pill lp-logout" onClick={logout}>{L.signOut}</button>}
           <button className="lp-pill lp-lang" onClick={() => setLang(lang === "vi" ? "en" : "vi")} aria-label="Language">{lang === "vi" ? "EN" : "VI"}</button>
           <button className="lp-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
             <span /><span /><span />

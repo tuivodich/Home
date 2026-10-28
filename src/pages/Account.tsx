@@ -7,7 +7,7 @@ import { useCollection } from "../lib/useCollection";
 import { useMoney } from "../lib/useRate";
 import { useI18n, useL } from "../i18n";
 import { fmtDate, nightsBetween, todayStr } from "../lib/format";
-import { isStaffRole, type Booking, type Room } from "../lib/types";
+import type { Booking, Room } from "../lib/types";
 import { tgNotify } from "../lib/telegram";
 import CheckinModal, { type Precheckin } from "../landing/CheckinModal";
 import { useProfileDoc } from "../lib/profile";
@@ -16,14 +16,12 @@ import { useP } from "../i18n/pricing";
 import { useBank, usePricingConfig } from "../lib/usePricing";
 import { daysUntil, refundPercentFor } from "../lib/pricing";
 import PayPanel from "../landing/PayPanel";
-import { useSiteTheme } from "../lib/theme";
-import "../landing/landing.css";
+import SiteLayout from "../layout/SiteLayout";
 
 export default function Account() {
   const L = useL();
-  const { t, lang, setLang } = useI18n();
-  const { user, profile, loading, logout } = useAuth();
-  const siteTheme = useSiteTheme();
+  const { t } = useI18n();
+  const { user, loading } = useAuth();
   const G = useG();
   const P = useP();
   const { cfg } = usePricingConfig();
@@ -81,16 +79,9 @@ export default function Account() {
   };
 
   return (
-    <div className="landing lp-account" data-theme={siteTheme.theme} data-fx={siteTheme.effects ? "on" : "off"}>
+    <SiteLayout>
+      <main className="lp-page lp-account">
       <div className="lp-wrap">
-        <div className="lp-account-bar">
-          <Link to="/" className="lp-pill">{L.account.back}</Link>
-          <Link to="/profile" className="lp-pill">{G.myAccount}</Link>
-          <span className="lp-spacer" />
-          <button className="lp-pill" onClick={() => setLang(lang === "vi" ? "en" : "vi")}>{lang === "vi" ? "EN" : "VI"}</button>
-          {isStaffRole(profile?.role) && <Link className="lp-pill solid" to="/app">{L.account.staffLink}</Link>}
-          <button className="lp-pill" onClick={logout}>{L.signOut}</button>
-        </div>
         <h1 className="lp-account-title">{L.account.title}</h1>
         <p className="lp-muted">{user.displayName || user.email}</p>
 
@@ -169,6 +160,7 @@ export default function Account() {
           </div>
         </div>
       )}
-    </div>
+      </main>
+    </SiteLayout>
   );
 }

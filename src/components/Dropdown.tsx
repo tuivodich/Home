@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import HashLink from "./HashLink";
 
 /** `heading`: dòng chữ không bấm được (vd. tên tài khoản và vai trò) ở đầu menu. */
-export interface DdItem { label: string; to?: string; onClick?: () => void; heading?: boolean; sub?: string }
+export interface DdItem { label: string; to?: string; onClick?: () => void; heading?: boolean; sub?: string; active?: boolean }
 
 /** Menu thả xuống: bấm hoặc rê chuột (máy tính) để mở; Esc / bấm ra ngoài / chuyển trang thì đóng. */
 export default function Dropdown({ label, items, align = "left", className = "", active = false }: {
@@ -24,7 +24,7 @@ export default function Dropdown({ label, items, align = "left", className = "",
   }, [open]);
 
   return (
-    <div ref={ref} className={`dd ${className} ${open ? "open" : ""} ${active ? "active" : ""}`}>
+    <div ref={ref} className={`dd ${className} ${open ? "open" : ""} ${active || items.some((i) => i.active) ? "active" : ""}`}>
       <button type="button" className="dd-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
         {label}<span className="dd-caret" aria-hidden="true" />
       </button>
@@ -32,7 +32,7 @@ export default function Dropdown({ label, items, align = "left", className = "",
         {items.map((it) => it.heading
           ? <div key={it.label} className="dd-who" role="presentation">{it.label}{it.sub && <> <span className="dd-role">({it.sub})</span></>}</div>
           : it.to
-          ? <HashLink key={it.label} to={it.to} role="menuitem" onClick={() => setOpen(false)}>{it.label}</HashLink>
+          ? <HashLink key={it.label} to={it.to} role="menuitem" className={it.active ? "on" : ""} aria-current={it.active ? "page" : undefined} onClick={() => setOpen(false)}>{it.label}</HashLink>
           : <button key={it.label} type="button" role="menuitem" onClick={() => { setOpen(false); it.onClick?.(); }}>{it.label}</button>)}
       </div>
     </div>

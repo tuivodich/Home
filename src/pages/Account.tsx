@@ -14,6 +14,8 @@ import { useProfileDoc } from "../lib/profile";
 import { useG } from "../i18n/guest";
 import TierBadge from "../components/TierBadge";
 import { loyaltyClaim, tgGuestLink } from "../lib/telegram";
+import QrCode from "../components/QrCode";
+import { bookingCode } from "../lib/banks";
 import { useMyTier } from "../lib/loyalty";
 import { fillP } from "../i18n/pricing";
 import { useP } from "../i18n/pricing";
@@ -167,6 +169,13 @@ export default function Account() {
                 return <div className="lp-small">{P.refundDue}: <b>{money(Math.round((b.paid ?? 0) * pct / 100))}</b> ({pct}%)</div>;
               })()}
               {pres.some((p) => p.id === b.id) && <div className="lp-small lp-ok">✓ {G.checkinSent}</div>}
+              {b.status === "confirmed" && !stale && (
+                <details className="lp-qr">
+                  <summary>{G.qrTitle}</summary>
+                  <QrCode value={`${window.location.origin}/app/bookings?b=${b.id}`} label={G.qrTitle} />
+                  <span className="lp-muted lp-small">{G.qrHint} · {bookingCode(b.id)}</span>
+                </details>
+              )}
             </div>
             <div className="lp-booking-side">
               <span className={`lp-status ${expired ? "cancelled" : b.status}`}>{expired ? L.account.expired : t(b.status)}</span>

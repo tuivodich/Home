@@ -57,6 +57,9 @@ const STAFF_COMMANDS = [
   { command: "homnay", description: "Nhận/trả phòng hôm nay và yêu cầu chờ" },
   { command: "cho", description: "Yêu cầu đang chờ xác nhận" },
   { command: "doanhthu", description: "Doanh thu tuần/tháng (chủ, quản lý)" },
+  { command: "baocao", description: "Báo cáo trong ngày: nhận/trả phòng, doanh thu" },
+  { command: "phongban", description: "Phòng đang bẩn / chờ dọn" },
+  { command: "taodat", description: "Tạo đặt phòng nhanh (xem cú pháp: /taodat)" },
   { command: "tra", description: "Tra đặt phòng theo mã (vd /tra AB12CD34)" },
   { command: "trong", description: "Phòng còn trống (vd /trong 25/12 27/12)" },
   { command: "phong", description: "Các phòng và giá" },
@@ -72,7 +75,7 @@ function memAllow(mem, chatId, nowMs) {
   return e.n <= LIMITS.memPerMin;
 }
 
-function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map(), guest }) {
+function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map(), guest, push }) {
   const FieldValue = require("firebase-admin/firestore").FieldValue;
   const code8 = randomCode ?? (() => crypto.randomBytes(6).toString("base64url").replace(/[-_]/g, "x").slice(0, 8).toUpperCase());
   const get = async (path) => { const s = await db.doc(path).get(); return s.exists ? { id: s.id, ...s.data() } : null; };
@@ -85,6 +88,8 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   const sendAll = async (text, extra) => {
     const chats = await staffChats();
     const results = await Promise.allSettled(chats.map((c) => tg.sendMessage(c.id, text, extra)));
+    // Cùng nội dung gửi thành thông báo đẩy trên thiết bị nhân viên đã bật (bản rút gọn, không HTML).
+    if (push) push.send({ title: site.name, body: text.replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").split("\n").filter(Boolean).slice(0, 3).join(" · ").slice(0, 180), url: "/app" }).catch((e) => console.error("push", e));
     return results.filter((r) => r.status === "fulfilled").length;
   };
   /** Ghi dấu đã gửi; trả false nếu thông báo này đã gửi trước đó (create() lỗi khi tài liệu đã có). */
@@ -211,7 +216,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   }
 
   // ===== Lệnh trong chat =====
-  const STAFF_HELP = "Lệnh nhân viên:\n/homnay — khách nhận/trả phòng hôm nay và số yêu cầu chờ\n/cho — yêu cầu đang chờ xác nhận\n/doanhthu — doanh thu tuần hoặc tháng (<code>/doanhthu thang</code>; chủ, quản lý)\n/tra MÃ — tra đặt phòng theo mã\n/huylienket — ngừng nhận thông báo ở chat này\n\nLệnh chung: /trong, /gia, /phong, /tiennghi, /chinhsach, /diachi, /lienhe";
+  const STAFF_HELP = "Lệnh nhân viên:\n/homnay — khách nhận/trả phòng hôm nay và số yêu cầu chờ\n/cho — yêu cầu đang chờ xác nhận\n/doanhthu — doanh thu tuần hoặc tháng (<code>/doanhthu thang</code>; chủ, quản lý)\n/baocao — báo cáo trong ngày (nhận/trả phòng, doanh thu, ngày mai)\n/phongban — phòng đang bẩn, bấm nút khi đã dọn xong\n/taodat — tạo đặt phòng nhanh (<code>/taodat P1 25/12 2 3 Nguyễn Văn A 0909123456</code>)\n/tra MÃ — tra đặt phòng theo mã\n/huylienket — ngừng nhận thông báo ở chat này\n\nLệnh chung: /trong, /gia, /phong, /tiennghi, /chinhsach, /diachi, /lienhe";
   const GUEST_HELP = "Tôi có thể giúp bạn:\n/trong — xem phòng còn trống (vd <code>/trong 25/12 27/12</code> hoặc <code>/trong 25/12</code> cho 1 đêm)\n/gia — báo giá nhanh (vd <code>/gia 2 4</code> = 2 đêm, 4 khách; thêm ngày nhận: <code>/gia 2 4 25/12</code>)\n/phong — các phòng và giá\n/tiennghi — tiện nghi\n/chinhsach — giờ nhận/trả phòng, đặt cọc, hủy phòng\n/diachi — địa chỉ và bản đồ\n/tra MÃ — tra trạng thái đặt phòng bằng mã\n/cuatoi — đặt phòng của tôi (sau khi liên kết tài khoản trên website)\n/lienhe — thông tin liên hệ\n/dat — mở trang đặt phòng";
   const webBtn = (label, path = "") => ({ reply_markup: { inline_keyboard: [[{ text: label, url: `${site.url}${path}` }]] } });
   const bookPath = (inD, outD) => `/?checkIn=${inD}&checkOut=${outD}#booking`;
@@ -281,6 +286,70 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     const type = (x) => (x.type === "wood" ? "nhà gỗ, trên lầu" : "nhà xây dựng, riêng biệt");
     const lines = rooms.map((x) => `• <b>${esc(x.name)}</b> — ${type(x)}${x.capacity ? `, ${x.capacity} người` : ""} — ${money(x.price)}/đêm${x.status === "maintenance" ? " (tạm ngưng)" : ""}`);
     return tg.sendMessage(chatId, `🏡 <b>${esc(site.name)}</b>\n${lines.join("\n")}`, webBtn("🌐 Xem ảnh và đặt phòng", "/#rooms"));
+  }
+
+  const roomsSorted = async () => (await db.collection("rooms").get()).docs.map((x) => ({ id: x.id, ...x.data() })).sort((a, b) => String(a.name).localeCompare(String(b.name), "vi", { numeric: true }));
+
+  /** /phongban: các phòng đang bẩn/đang dọn, mỗi phòng một nút "Đã dọn xong". */
+  async function dirtyRooms(chatId) {
+    const [rooms, st] = await Promise.all([roomsSorted(), db.collection("roomStatus").get()]);
+    const status = new Map(st.docs.map((d) => [d.id, d.data().status]));
+    const todo = rooms.filter((r) => ["dirty", "cleaning"].includes(status.get(r.id)));
+    if (!todo.length) return tg.sendMessage(chatId, "✨ Tất cả phòng đã sẵn sàng.");
+    for (const r of todo) await tg.sendMessage(chatId, `🧹 <b>${esc(r.name)}</b> — ${status.get(r.id) === "cleaning" ? "đang dọn" : "cần dọn"}`, { reply_markup: { inline_keyboard: [[{ text: "✅ Đã dọn xong", callback_data: `rd:${r.id}` }]] } });
+  }
+
+  /** /taodat P1 25/12 2 3 Nguyễn Văn A 0909123456 — phòng, ngày nhận, số đêm, số khách, họ tên (nhiều từ), điện thoại ở cuối. */
+  async function createBooking(chatId, arg, uid) {
+    const rooms = await roomsSorted();
+    const usage = `Cú pháp: <code>/taodat PHÒNG NGÀY_NHẬN SỐ_ĐÊM SỐ_KHÁCH HỌ_TÊN ĐIỆN_THOẠI</code>\nVí dụ: <code>/taodat P1 25/12 2 3 Nguyễn Văn A 0909123456</code>\n\nPhòng:\n${rooms.map((r, i) => `• <b>P${i + 1}</b> = ${esc(r.name)}`).join("\n")}`;
+    const t = String(arg ?? "").trim().split(/\s+/).filter(Boolean);
+    if (t.length < 6) return tg.sendMessage(chatId, usage);
+    const [rTok, dTok, nTok, gTok, ...rest] = t;
+    const phone = rest.pop();
+    const name = rest.join(" ");
+    const today = todayVN(now());
+    let d1 = parseDate(dTok, today);
+    if (d1 && !/\d{4}/.test(dTok) && d1 < today) d1 = `${Number(d1.slice(0, 4)) + 1}${d1.slice(4)}`;
+    const n = Number(nTok), guests = Number(gTok);
+    const m = /^p(\d+)$/i.exec(rTok);
+    let room = m ? rooms[Number(m[1]) - 1] : undefined;
+    if (!room) { const hits = rooms.filter((r) => String(r.name).toLowerCase().includes(rTok.toLowerCase())); if (hits.length === 1) room = hits[0]; }
+    if (!room) return tg.sendMessage(chatId, `Không xác định được phòng “${esc(rTok)}”.\n\n${usage}`);
+    if (!d1 || d1 < today || !Number.isInteger(n) || n < 1 || n > 30 || !Number.isInteger(guests) || guests < 1 || guests > 30 || !name || name.length > 100 || !/^[0-9+().\- ]{8,20}$/.test(phone)) return tg.sendMessage(chatId, `Thông tin chưa hợp lệ (ngày từ hôm nay, 1–30 đêm, 1–30 khách, họ tên, điện thoại ở cuối).\n\n${usage}`);
+    if (Number.isFinite(room.capacity) && room.capacity > 0 && guests > room.capacity) return tg.sendMessage(chatId, `${esc(room.name)} chứa tối đa ${room.capacity} khách.`);
+    const d2 = addDays(d1, n);
+    if (room.status === "maintenance") return tg.sendMessage(chatId, `${esc(room.name)} đang tạm ngưng.`);
+    const busy = (await db.collection("busy").where("roomId", "==", room.id).get()).docs.map((x) => x.data()).filter((x) => HELD.includes(x.status) && overlaps(x.checkIn, x.checkOut, d1, d2));
+    if (busy.length) return tg.sendMessage(chatId, `⚠️ ${esc(room.name)} đã có đặt phòng trong ${fmtDate(d1)} → ${fmtDate(d2)}. Dùng /trong ${fmtDate(d1).slice(0, 5)} ${fmtDate(d2).slice(0, 5)} để xem phòng khác.`);
+    const { pricing: pc, cfg } = await cfgs();
+    const q = pricing.quoteFull({ price: Number(room.price) || 0, capacity: room.capacity, baseGuests: room.baseGuests }, d1, n, guests, pc, cfg, {});
+    const ref = db.collection("bookings").doc();
+    const code = String(ref.id).replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase();
+    const w = db.batch();
+    w.set(ref, { roomId: room.id, guestName: name, phone, email: "", checkIn: d1, checkOut: d2, guests, total: q.total, note: "Tạo qua Telegram", code, lines: pricing.quoteLines(q, room.name), ...(q.deposit > 0 ? { deposit: q.deposit } : {}), status: "confirmed", source: "staff", createdBy: uid });
+    w.set(db.doc(`busy/${ref.id}`), { roomId: room.id, checkIn: d1, checkOut: d2, status: "confirmed" });
+    await w.commit();
+    return tg.sendMessage(chatId, [`✅ <b>Đã tạo đặt phòng ${esc(code)}</b>`, `👤 ${esc(name)} · ${esc(phone)}`, `🛏 ${esc(room.name)} · ${fmtDate(d1)} → ${fmtDate(d2)} (${n} đêm) · ${guests} khách`, `💰 ${money(q.total)}${q.deposit ? ` · cọc ${money(q.deposit)}` : ""}`, "", "Nhớ bổ sung hồ sơ khách trên trang quản trị trước khi nhận phòng."].join("\n"));
+  }
+
+  /** Báo cáo trong ngày (/baocao và tự động 21:00): nhận/trả phòng hôm nay, doanh thu hôm nay, khách đến ngày mai, việc tồn. */
+  async function daySummary() {
+    const d = todayVN(now()), tm = addDays(d, 1);
+    const [bk, rooms, st] = await Promise.all([db.collection("bookings").get(), roomsSorted(), db.collection("roomStatus").get()]);
+    const list = bk.docs.map((x) => ({ id: x.id, ...x.data() }));
+    const name = new Map(rooms.map((r) => [r.id, r.name]));
+    const arrivals = list.filter((b) => b.checkIn === d && ["confirmed", "checked_in", "checked_out"].includes(b.status));
+    const outs = list.filter((b) => b.checkOut === d && b.status === "checked_out");
+    const rev = outs.reduce((s, b) => s + (b.total || 0), 0);
+    const next = list.filter((b) => b.checkIn === tm && ["confirmed", "pending"].includes(b.status));
+    const unpaid = next.filter((b) => b.deposit > 0 && (b.paid ?? 0) < b.deposit);
+    const pending = list.filter((b) => b.status === "pending").length;
+    const dirty = st.docs.filter((x) => ["dirty", "cleaning"].includes(x.data().status)).length;
+    const staying = list.filter((b) => b.status === "checked_in").length;
+    return [`🌙 <b>Báo cáo ngày ${fmtDate(d)}</b>`, `🛬 Nhận phòng hôm nay: ${arrivals.length} · 🛫 Trả phòng: ${outs.length}`, `💰 Doanh thu hôm nay (đã trả phòng): <b>${money(rev)}</b>`, `🏠 Đang ở: ${staying} đặt phòng`,
+      `📅 Ngày mai nhận phòng (${next.length}):`, ...(next.length ? next.map((b) => `• ${esc(b.guestName)} — ${esc(name.get(b.roomId) ?? "?")}${b.status === "pending" ? " (chờ xác nhận)" : ""}${unpaid.includes(b) ? " · chưa đủ cọc" : ""}`) : ["• không có"]),
+      `⏳ Yêu cầu chờ xác nhận: ${pending} · 🧹 Phòng cần dọn: ${dirty}`].join("\n");
   }
 
   const cfgs = async () => {
@@ -473,13 +542,16 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     }
 
     // Lệnh nhân viên: chỉ chat đã liên kết.
-    if (["/homnay", "/cho", "/doanhthu", "/huylienket"].includes(cmd)) {
+    if (["/homnay", "/cho", "/doanhthu", "/baocao", "/phongban", "/taodat", "/huylienket"].includes(cmd)) {
       if (!linked) return tg.sendMessage(chatId, "Lệnh này dành cho nhân viên homestay.");
       // Kiểm tra lại vai trò hiện tại của người đã liên kết (bị hạ quyền thì mất quyền dùng bot).
       const u = await get(`users/${linked.uid}`);
       if (!u || !FRONT.includes(u.role)) { await db.doc(`tgChats/${chatId}`).delete(); return tg.sendMessage(chatId, "Tài khoản liên kết không còn quyền nhân viên; đã ngắt liên kết."); }
       if (cmd === "/homnay") return tg.sendMessage(chatId, await today());
       if (cmd === "/cho") return pendingList(chatId);
+      if (cmd === "/phongban") return dirtyRooms(chatId);
+      if (cmd === "/baocao") return tg.sendMessage(chatId, await daySummary());
+      if (cmd === "/taodat") return createBooking(chatId, rest.join(" "), linked.uid);
       if (cmd === "/doanhthu") return MANAGER.includes(u.role) ? revenue(chatId, rest.join(" ")) : tg.sendMessage(chatId, "Lệnh /doanhthu chỉ dành cho chủ và quản lý.");
       await db.doc(`tgChats/${chatId}`).delete();
       return tg.sendMessage(chatId, "Đã ngừng nhận thông báo ở chat này.");
@@ -576,7 +648,10 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     return { sent, deposit: dep.length, noProfile: noProfile.length };
   }
 
-  return { notify, linkCode, guestLinkCode, handleUpdate, decide, staffAlerts, dailyReminders };
+  /** 21:00 hằng ngày: gửi báo cáo ngày cho chủ/quản lý. */
+  async function dailyReport() { return { sent: await sendManagers(await daySummary()) }; }
+
+  return { notify, linkCode, guestLinkCode, handleUpdate, decide, staffAlerts, dailyReminders, dailyReport };
 }
 
 module.exports = { createBot, webhookSecret, safeEq, parseDate, todayVN, FRONT, LIMITS, STAFF_COMMANDS, GUEST_COMMANDS };

@@ -49,3 +49,8 @@ npx firebase-tools emulators:exec --only firestore "npm test --prefix functions"
 
 ## Khách liên kết Telegram
 Khách đăng nhập website → *Đặt phòng của tôi* → **Nhận thông báo qua Telegram** (mở bot với mã dùng một lần, 30 phút). Chat được lưu ở `tgGuests/{chatId}` (khác `tgChats` của nhân viên nên không nhận thông báo nội bộ). Khách nhận tin xác nhận/hủy/nhắc lịch, dùng `/cuatoi` để xem 5 đặt phòng gần nhất và `/huylienket` để ngừng nhận.
+
+## Lệnh nhân viên bổ sung
+- `/taodat PHÒNG NGÀY_NHẬN SỐ_ĐÊM SỐ_KHÁCH HỌ_TÊN ĐIỆN_THOẠI` — tạo đặt phòng **đã xác nhận** ngay trong chat (vd `/taodat P1 25/12 2 3 Nguyễn Văn A 0909123456`). Phòng gọi theo `P1`, `P2`… (gõ `/taodat` để xem bảng) hoặc một đoạn tên duy nhất. Giá theo bảng giá và cọc theo Giá & chính sách; bị từ chối nếu trùng lịch, quá sức chứa hoặc phòng đang tạm ngưng. Bổ sung hồ sơ khách trên trang quản trị trước khi nhận phòng.
+- `/phongban` — các phòng đang bẩn/đang dọn, mỗi phòng một nút **Đã dọn xong**.
+- `/baocao` — báo cáo trong ngày (nhận/trả phòng, doanh thu đã trả phòng, khách đến ngày mai chưa đủ cọc, yêu cầu chờ, phòng cần dọn). Hàm `tgDailyReport` tự gửi báo cáo này cho chủ/quản lý lúc 21:00.

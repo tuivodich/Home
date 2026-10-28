@@ -9,6 +9,7 @@ const { createLoyalty } = require("./loyalty");
 const { createBackup } = require("./backup");
 const { getStorage } = require("firebase-admin/storage");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { sitemapXml } = require("./sitemap");
 
 initializeApp();
 const TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
@@ -88,3 +89,10 @@ const schedOpts = { region: REGION, timeZone: "Asia/Ho_Chi_Minh", secrets: [TOKE
 exports.tgStaffAlerts = onSchedule({ ...schedOpts, schedule: "*/15 * * * *" }, async () => { try { await botFor().staffAlerts(); } catch (e) { console.error("staffAlerts", e); } });
 /** 08:00 và 18:00 mỗi ngày: khách sắp nhận phòng chưa cọc; khách vừa trả phòng chưa có hồ sơ. */
 exports.tgReminders = onSchedule({ ...schedOpts, schedule: "0 8,18 * * *" }, async () => { try { await botFor().dailyReminders(); } catch (e) { console.error("dailyReminders", e); } });
+
+/** /sitemap.xml (hosting chuyển tiếp tới đây): danh sách trang công khai gồm từng phòng. */
+exports.sitemap = onRequest({ region: REGION, cors: false }, async (req, res) => {
+  try {
+    res.set("Cache-Control", "public, max-age=3600, s-maxage=3600").type("application/xml").status(200).send(await sitemapXml(getFirestore()));
+  } catch (e) { console.error("sitemap", e); res.status(500).send("error"); }
+});

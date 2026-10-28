@@ -6,7 +6,9 @@ export const isStaffRole = (r?: Role) => !!r && STAFF_ROLES.includes(r);
 export const isFrontRole = (r?: Role) => r === "owner" || r === "manager" || r === "reception";
 
 export interface UserDoc { name?: string; email: string; role: Role }
-export interface Room { id: string; name: string; type: "wood" | "concrete"; capacity: number; baseGuests?: number; price: number; status: "active" | "maintenance" }
+export interface Room { id: string; name: string; type: "wood" | "concrete"; capacity: number; baseGuests?: number; price: number; status: "active" | "maintenance";
+  /** Ảnh phòng (đường dẫn tải về trên Firebase Storage; ảnh đầu tiên là ảnh bìa) và giới thiệu hiển thị ở trang chi tiết phòng. */
+  photos?: string[]; desc?: string; descEn?: string; features?: string; featuresEn?: string }
 export type BookingStatus = "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled";
 export interface Booking {
   id: string; roomId: string; guestName: string; phone: string; checkIn: string; checkOut: string;

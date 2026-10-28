@@ -117,8 +117,20 @@ service cloud.firestore {
       allow write: if false;
     }
     match /rooms/{id} {
+      function okRoom(d) {
+        return d.keys().hasOnly(['name', 'type', 'capacity', 'baseGuests', 'price', 'status', 'photos', 'desc', 'descEn', 'features', 'featuresEn'])
+          && d.name is string && d.name.size() >= 1 && d.name.size() <= 100
+          && d.type in ['wood', 'concrete'] && d.status in ['active', 'maintenance']
+          && d.capacity is number && d.price is number && d.price >= 0
+          && (!('photos' in d) || (d.photos is list && d.photos.size() <= 8))
+          && (!('desc' in d) || (d.desc is string && d.desc.size() <= 3000))
+          && (!('descEn' in d) || (d.descEn is string && d.descEn.size() <= 3000))
+          && (!('features' in d) || (d.features is string && d.features.size() <= 1500))
+          && (!('featuresEn' in d) || (d.featuresEn is string && d.featuresEn.size() <= 1500));
+      }
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && okRoom(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // Lịch bận công khai: chỉ phòng + ngày + trạng thái, KHÔNG có tên/điện thoại khách.

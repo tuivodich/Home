@@ -10,6 +10,14 @@ service firebase.storage {
     function isAdmin() {
       return request.auth != null && role() in ['owner', 'manager'];
     }
+    // Ảnh phòng: ai cũng xem được (hiện trên website); chỉ chủ / quản lý tải lên và xóa.
+    match /rooms/{roomId}/{file} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
     // Ảnh giấy tờ khách: chỉ chủ / quản lý / lễ tân xem và tải lên; chỉ chủ / quản lý xóa.
     match /guests/{guestId}/{file} {
       allow read: if isFront();

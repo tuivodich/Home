@@ -23,7 +23,7 @@ const vi = {
   },
   rooms: {
     eyebrow: "Phòng nghỉ", title: "Chọn không gian của bạn", sub: "Giá hiển thị theo đêm. Bấm vào phòng để xem lịch trống.",
-    wood: "Nhà gỗ · Trên lầu", concrete: "Nhà xây dựng · Riêng biệt", perNight: "/ đêm", capacity: "Sức chứa", up: "người", view: "Xem lịch & đặt", empty: "Danh sách phòng đang được cập nhật.",
+    wood: "Nhà gỗ · Trên lầu", concrete: "Nhà xây dựng · Riêng biệt", perNight: "/ đêm", capacity: "Sức chứa", up: "người", view: "Xem lịch & đặt", detail: "Chi tiết", empty: "Danh sách phòng đang được cập nhật.",
   },
   features: {
     eyebrow: "Tiện nghi", title: "Mọi thứ bạn cần cho một kỳ nghỉ nhẹ nhàng",
@@ -151,7 +151,7 @@ const en: Dict = {
   },
   rooms: {
     eyebrow: "Rooms", title: "Choose your space", sub: "Prices are per night. Tap a room to see its availability.",
-    wood: "Wooden house · Upstairs", concrete: "Built house · Separate", perNight: "/ night", capacity: "Capacity", up: "guests", view: "View & book", empty: "Rooms are being updated.",
+    wood: "Wooden house · Upstairs", concrete: "Built house · Separate", perNight: "/ night", capacity: "Capacity", up: "guests", view: "View & book", detail: "Details", empty: "Rooms are being updated.",
   },
   features: {
     eyebrow: "Amenities", title: "Everything for a relaxed getaway",

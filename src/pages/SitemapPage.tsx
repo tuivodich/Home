@@ -1,5 +1,7 @@
 import { useL } from "../i18n";
 import { useG } from "../i18n/guest";
+import { useCollection } from "../lib/useCollection";
+import type { Room } from "../lib/types";
 import { useAuth } from "../lib/auth";
 import { useTitle } from "../lib/useTitle";
 import SiteLayout from "../layout/SiteLayout";
@@ -10,11 +12,13 @@ export default function SitemapPage() {
   const L = useL();
   const M = L.menu;
   const G = useG();
+  const { data: rooms } = useCollection<Room>("rooms");
   const { user } = useAuth();
   useTitle(M.sitemap);
 
   const groups: { title: string; items: [string, string][] }[] = [
     { title: M.home, items: [[M.top, "/"], [M.about, "/#about"], [M.rooms, "/#rooms"], [M.features, "/#features"]] },
+    ...(rooms.length ? [{ title: M.rooms, items: [...rooms].sort((a, b) => a.name.localeCompare(b.name, "vi", { numeric: true })).map((r): [string, string] => [r.name, `/phong/${r.id}`]) }] : []),
     { title: M.book, items: [[M.availability, "/#booking"], [M.faq, "/faq"]] },
     { title: M.exploreMenu, items: [[M.explore, "/explore"], [M.reviews, "/reviews"]] },
     { title: M.info, items: [[M.contact, "/#contact"], [M.privacy, "/privacy"], [M.sitemap, "/sitemap"]] },

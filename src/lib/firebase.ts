@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { connectStorageEmulator, getStorage } from "firebase/storage";
 
 // Cấu hình web của Firebase không phải bí mật; bảo mật do Firestore/Storage rules đảm nhiệm.
 const firebaseConfig = {
@@ -23,4 +23,5 @@ export const storage = getStorage(app);
 if (import.meta.env.VITE_USE_EMULATOR) {
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
   connectFirestoreEmulator(db, "127.0.0.1", 8089);
+  connectStorageEmulator(storage, "127.0.0.1", 9199);
 }

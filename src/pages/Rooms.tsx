@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { addDoc, collection, deleteDoc, doc, setDoc, writeBatch } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { addDoc, collection, deleteDoc, doc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { db, storage } from "../lib/firebase";
+import { shrinkImage } from "../lib/image";
 import { useCollection } from "../lib/useCollection";
 import { useMoney } from "../lib/useRate";
 import { useI18n } from "../i18n";
@@ -14,6 +16,39 @@ export default function Rooms() {
   const { money } = useMoney();
   const { data: rooms } = useCollection<Room>("rooms");
   const [form, setForm] = useState<Omit<Room, "id"> & { id?: string }>({ ...empty });
+
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoErr, setPhotoErr] = useState("");
+  const vi = lang === "vi";
+  const photos = form.photos ?? [];
+  const setPhotos = async (list: string[]) => {
+    if (!form.id) return;
+    await updateDoc(doc(db, "rooms", form.id), { photos: list });
+    setForm((f) => ({ ...f, photos: list }));
+  };
+  // Tải ảnh lên Storage (đã thu nhỏ) rồi ghi ngay vào phòng; ảnh đầu tiên là ảnh bìa.
+  const addPhotos = async (files: FileList | null) => {
+    if (!files || !form.id) return;
+    setPhotoBusy(true); setPhotoErr("");
+    try {
+      let list = [...photos];
+      for (const file of Array.from(files)) {
+        if (list.length >= 8) { setPhotoErr(vi ? "Tối đa 8 ảnh mỗi phòng." : "Up to 8 photos per room."); break; }
+        if (!file.type.startsWith("image/")) continue;
+        const blob = await shrinkImage(file);
+        const r = ref(storage, `rooms/${form.id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.jpg`);
+        await uploadBytes(r, blob, { contentType: "image/jpeg" });
+        list = [...list, await getDownloadURL(r)];
+      }
+      await setPhotos(list);
+    } catch (ex) { console.error("room photos", ex); setPhotoErr(vi ? "Không tải được ảnh. Vui lòng thử lại." : "Could not upload the photo. Please try again."); } finally { setPhotoBusy(false); }
+  };
+  const removePhoto = async (i: number) => {
+    if (!confirm(vi ? "Xóa ảnh này?" : "Delete this photo?")) return;
+    const url = photos[i];
+    try { await setPhotos(photos.filter((_, k) => k !== i)); await deleteObject(ref(storage, url)).catch(() => {}); } catch (ex) { console.error("remove photo", ex); setPhotoErr(vi ? "Không xóa được ảnh." : "Could not delete the photo."); }
+  };
+  const coverPhoto = (i: number) => setPhotos([photos[i], ...photos.filter((_, k) => k !== i)]).catch((ex) => console.error("cover", ex));
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
@@ -69,6 +104,31 @@ export default function Rooms() {
             <option value="active">{t("active")}</option><option value="maintenance">{t("maintenance")}</option>
           </select>
         </label>
+        <label>{vi ? "Giới thiệu phòng (tiếng Việt)" : "Description (Vietnamese)"}<textarea rows={4} maxLength={3000} value={form.desc ?? ""} onChange={(e) => setForm({ ...form, desc: e.target.value })} /></label>
+        <label>{vi ? "Giới thiệu phòng (tiếng Anh, để trống thì dùng bản tiếng Việt)" : "Description (English, empty = use Vietnamese)"}<textarea rows={3} maxLength={3000} value={form.descEn ?? ""} onChange={(e) => setForm({ ...form, descEn: e.target.value })} /></label>
+        <label>{vi ? "Tiện nghi riêng của phòng (mỗi dòng một mục, tiếng Việt)" : "Room features (one per line, Vietnamese)"}<textarea rows={4} maxLength={1500} value={form.features ?? ""} onChange={(e) => setForm({ ...form, features: e.target.value })} /></label>
+        <label>{vi ? "Tiện nghi (tiếng Anh, tùy chọn)" : "Room features (English, optional)"}<textarea rows={3} maxLength={1500} value={form.featuresEn ?? ""} onChange={(e) => setForm({ ...form, featuresEn: e.target.value })} /></label>
+        <div id="room-photos">
+          <strong>{vi ? "Ảnh phòng" : "Room photos"}</strong>
+          {!form.id ? <small> — {vi ? "Lưu phòng trước, rồi bấm Sửa để thêm ảnh." : "Save the room first, then press Edit to add photos."}</small> : (
+            <>
+              <div className="row" style={{ flexWrap: "wrap" }}>
+                {photos.map((u, i) => (
+                  <figure key={u} className="roomthumb">
+                    <img src={u} alt="" loading="lazy" />
+                    <figcaption>
+                      {i === 0 ? <small>{vi ? "Ảnh bìa" : "Cover"}</small> : <button type="button" className="ghost" onClick={() => coverPhoto(i)}>{vi ? "Làm ảnh bìa" : "Make cover"}</button>}
+                      <button type="button" className="ghost danger" onClick={() => removePhoto(i)}>{t("delete")}</button>
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+              <label>{vi ? "Thêm ảnh (tự thu nhỏ, tối đa 8 ảnh)" : "Add photos (auto-resized, up to 8)"}<input type="file" accept="image/*" multiple disabled={photoBusy || photos.length >= 8} onChange={(e) => { void addPhotos(e.target.files); e.target.value = ""; }} /></label>
+              {photoBusy && <small>{vi ? "Đang tải ảnh…" : "Uploading…"}</small>}
+              {photoErr && <p className="error">{photoErr}</p>}
+            </>
+          )}
+        </div>
         <div className="row">
           <button type="submit">{t("save")}</button>
           {form.id && <button type="button" className="ghost" onClick={() => setForm({ ...empty })}>{t("cancel")}</button>}

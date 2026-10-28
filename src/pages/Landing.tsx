@@ -28,7 +28,7 @@ function LandingBody() {
     const ok = (v: string | null) => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
     const a = params.get("checkIn"), b = params.get("checkOut");
     const valid = ok(a) && ok(b) && a! >= todayStr() && b! > a!;
-    return { checkIn: valid ? a! : todayStr(), checkOut: valid ? b! : addDays(todayStr(), 1), roomId: "", guests: 2 };
+    return { checkIn: valid ? a! : todayStr(), checkOut: valid ? b! : addDays(todayStr(), 1), roomId: params.get("roomId") ?? "", guests: 2 };
   });
   const [bookRoomId, setBookRoomId] = useState("");
   const wanted = useRef("");

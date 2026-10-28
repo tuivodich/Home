@@ -14,7 +14,7 @@ import { useMyTier } from "../lib/loyalty";
 /**
  * Menu chính (mỗi mục lớn có menu con, đều có trạng thái "đang xem"):
  * Trang chủ ▾ (đầu trang, giới thiệu, phòng nghỉ, tiện nghi) · Đặt phòng ▾ (kiểm tra phòng trống, hỏi & đáp)
- * · Khám phá ▾ (khu vực, cảm nhận của khách) · Thông tin ▾ (liên hệ, chính sách quyền riêng tư) · Tài khoản ▾.
+ * · Khám phá ▾ (điểm tham quan đẹp, cảm nhận của khách) · Thông tin ▾ (liên hệ, chính sách quyền riêng tư) · Tài khoản ▾.
  * Tên + vai trò, Đăng xuất và ngôn ngữ nằm ngoài menu, bên phải.
  */
 export default function Header() {
@@ -46,7 +46,7 @@ export default function Header() {
   const homeItems: DdItem[] = [it(M.top, "/"), it(M.about, "/#about"), it(M.rooms, "/#rooms"), it(M.features, "/#features")];
   const bookItems: DdItem[] = [it(M.availability, "/#booking"), it(M.faq, "/faq")];
   const exploreItems: DdItem[] = [it(M.explore, "/explore"), it(M.reviews, "/reviews")];
-  const infoItems: DdItem[] = [it(M.contact, "/#contact"), it(M.privacy, "/privacy")];
+  const infoItems: DdItem[] = [it(M.contact, "/#contact"), it(M.privacy, "/privacy"), it(M.sitemap, "/sitemap")];
   const accountItems: DdItem[] = [
     it(G.myAccount, "/profile"),
     it(L.myBookings, "/account"),

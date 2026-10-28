@@ -5,6 +5,7 @@ import { useCollection } from "../lib/useCollection";
 import { useMoney } from "../lib/useRate";
 import { useI18n } from "../i18n";
 import type { Room } from "../lib/types";
+import NumInput from "../components/NumInput";
 
 const empty = { name: "", type: "wood", capacity: 2, price: 500000, status: "active" } as const;
 
@@ -58,11 +59,11 @@ export default function Rooms() {
             <option value="wood">{t("wood")}</option><option value="concrete">{t("concrete")}</option>
           </select>
         </label>
-        <label>{t("capacity")}<input type="number" min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: +e.target.value })} /></label>
+        <label>{t("capacity")}<NumInput min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: +e.target.value })} /></label>
         <label>{lang === "vi" ? "Số khách đã gồm trong giá (vượt thì phụ thu thêm khách; để trống = bằng sức chứa)" : "Guests included in the price (more guests pay the extra-guest fee; empty = capacity)"}
-          <input type="number" min={1} max={form.capacity} value={form.baseGuests ?? ""} onChange={(e) => { const { baseGuests: _b, ...rest } = form; setForm(e.target.value ? { ...rest, baseGuests: Math.min(form.capacity, Math.max(1, +e.target.value)) } : rest); }} />
+          <NumInput allowEmpty min={1} max={form.capacity} value={form.baseGuests ?? ""} onChange={(e) => { const { baseGuests: _b, ...rest } = form; setForm(e.target.value ? { ...rest, baseGuests: Math.min(form.capacity, Math.max(1, +e.target.value)) } : rest); }} />
         </label>
-        <label>{t("pricePerNight")} (VNĐ)<input type="number" min={0} step={10000} value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></label>
+        <label>{t("pricePerNight")} (VNĐ)<NumInput min={0} step={10000} value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></label>
         <label>{t("status")}
           <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Room["status"] })}>
             <option value="active">{t("active")}</option><option value="maintenance">{t("maintenance")}</option>

@@ -8,6 +8,7 @@ import { BANKS, EMPTY_BANK, isBankReady, vietQrUrl, type Bank } from "../lib/ban
 import { DEFAULT_BOOKING_CFG, DEFAULT_PRICING, type BookingCfg, type PricingCfg, type PriceRule, type ServiceDef } from "../lib/pricing";
 import { useBank, usePricingConfig } from "../lib/usePricing";
 import { TIME_RE } from "../lib/hr";
+import NumInput from "../components/NumInput";
 
 const DAYS: [number, string, string][] = [[1, "T2", "Mon"], [2, "T3", "Tue"], [3, "T4", "Wed"], [4, "T5", "Thu"], [5, "T6", "Fri"], [6, "T7", "Sat"], [0, "CN", "Sun"]];
 const newId = () => `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
@@ -75,7 +76,7 @@ export default function PricingPage() {
 
       <div className="card" id="price-rules">
         <h3>{T("Giá theo ngày", "Price rules")}</h3>
-        <label>{T("Tăng giá cuối tuần (%)", "Weekend markup (%)")}<input type="number" min={-50} max={300} value={p.weekendPercent} onChange={(e) => setP({ ...p, weekendPercent: num(e.target.value) })} /></label>
+        <label>{T("Tăng giá cuối tuần (%)", "Weekend markup (%)")}<NumInput min={-50} max={300} value={p.weekendPercent} onChange={(e) => setP({ ...p, weekendPercent: num(e.target.value) })} /></label>
         <div className="row">
           <small>{T("Đêm cuối tuần (đêm bắt đầu từ ngày):", "Weekend nights (night starting on):")}</small>
           {DAYS.map(([d, vi, en]) => (
@@ -90,7 +91,7 @@ export default function PricingPage() {
                 <label>{T("Tên", "Name")}<input value={r.name} maxLength={40} onChange={(e) => patchRule(key, i, { name: e.target.value })} /></label>
                 <label>{T("Từ ngày", "From")}<DateInput value={r.from} onChange={(v) => patchRule(key, i, { from: v })} /></label>
                 <label>{T("Đến ngày", "To")}<DateInput value={r.to} onChange={(v) => patchRule(key, i, { to: v })} /></label>
-                <label>{T("Tăng/giảm %", "Change %")}<input type="number" min={-50} max={300} value={r.percent} onChange={(e) => patchRule(key, i, { percent: num(e.target.value) })} /></label>
+                <label>{T("Tăng/giảm %", "Change %")}<NumInput min={-50} max={300} value={r.percent} onChange={(e) => patchRule(key, i, { percent: num(e.target.value) })} /></label>
                 <button type="button" className="ghost danger" onClick={() => setP({ ...p, [key]: p[key].filter((_, k) => k !== i) })}>{T("Xóa", "Remove")}</button>
               </div>
             ))}
@@ -101,8 +102,8 @@ export default function PricingPage() {
           <h4 className="sub">{T("Giảm giá ở dài ngày", "Long-stay discount")}</h4>
           {p.longStay.map((r, i) => (
             <div className="row shiftform" key={i}>
-              <label>{T("Từ số đêm", "From nights")}<input type="number" min={2} max={60} value={r.minNights} onChange={(e) => setP({ ...p, longStay: p.longStay.map((x, k) => (k === i ? { ...x, minNights: num(e.target.value) } : x)) })} /></label>
-              <label>{T("Giảm (%)", "Discount (%)")}<input type="number" min={0} max={50} value={Math.abs(r.percent)} onChange={(e) => setP({ ...p, longStay: p.longStay.map((x, k) => (k === i ? { ...x, percent: -Math.abs(num(e.target.value)) } : x)) })} /></label>
+              <label>{T("Từ số đêm", "From nights")}<NumInput min={2} max={60} value={r.minNights} onChange={(e) => setP({ ...p, longStay: p.longStay.map((x, k) => (k === i ? { ...x, minNights: num(e.target.value) } : x)) })} /></label>
+              <label>{T("Giảm (%)", "Discount (%)")}<NumInput min={0} max={50} value={Math.abs(r.percent)} onChange={(e) => setP({ ...p, longStay: p.longStay.map((x, k) => (k === i ? { ...x, percent: -Math.abs(num(e.target.value)) } : x)) })} /></label>
               <button type="button" className="ghost danger" onClick={() => setP({ ...p, longStay: p.longStay.filter((_, k) => k !== i) })}>{T("Xóa", "Remove")}</button>
             </div>
           ))}
@@ -113,7 +114,7 @@ export default function PricingPage() {
 
       <div className="card" id="deposit-policy">
         <h3>{T("Đặt cọc, giờ nhận/trả phòng, chính sách hủy", "Deposit, check-in/out times, cancellation")}</h3>
-        <label>{T("Tiền cọc (% tổng tiền; 0 = không cọc)", "Deposit (% of total; 0 = none)")}<input type="number" min={0} max={100} value={c.depositPercent} onChange={(e) => setC({ ...c, depositPercent: Math.min(100, Math.max(0, num(e.target.value))) })} /></label>
+        <label>{T("Tiền cọc (% tổng tiền; 0 = không cọc)", "Deposit (% of total; 0 = none)")}<NumInput min={0} max={100} value={c.depositPercent} onChange={(e) => setC({ ...c, depositPercent: Math.min(100, Math.max(0, num(e.target.value))) })} /></label>
         <div className="row shiftform">
           <label>{T("Giờ nhận phòng", "Check-in time")}<input value={c.checkInTime} maxLength={5} placeholder="14:00" onChange={(e) => setC({ ...c, checkInTime: e.target.value })} /></label>
           <label>{T("Giờ trả phòng", "Check-out time")}<input value={c.checkOutTime} maxLength={5} placeholder="12:00" onChange={(e) => setC({ ...c, checkOutTime: e.target.value })} /></label>
@@ -122,8 +123,8 @@ export default function PricingPage() {
         <h4 className="sub">{T("Hoàn cọc khi hủy (theo số ngày trước ngày nhận phòng)", "Refund when cancelling (by days before check-in)")}</h4>
         {c.cancelTiers.map((t, i) => (
           <div className="row shiftform" key={i}>
-            <label>{T("Hủy trước ít nhất (ngày)", "Cancel at least (days) before")}<input type="number" min={0} max={365} value={t.daysBefore} onChange={(e) => setC({ ...c, cancelTiers: c.cancelTiers.map((x, k) => (k === i ? { ...x, daysBefore: num(e.target.value) } : x)) })} /></label>
-            <label>{T("Hoàn lại (%)", "Refund (%)")}<input type="number" min={0} max={100} value={t.refundPercent} onChange={(e) => setC({ ...c, cancelTiers: c.cancelTiers.map((x, k) => (k === i ? { ...x, refundPercent: Math.min(100, Math.max(0, num(e.target.value))) } : x)) })} /></label>
+            <label>{T("Hủy trước ít nhất (ngày)", "Cancel at least (days) before")}<NumInput min={0} max={365} value={t.daysBefore} onChange={(e) => setC({ ...c, cancelTiers: c.cancelTiers.map((x, k) => (k === i ? { ...x, daysBefore: num(e.target.value) } : x)) })} /></label>
+            <label>{T("Hoàn lại (%)", "Refund (%)")}<NumInput min={0} max={100} value={t.refundPercent} onChange={(e) => setC({ ...c, cancelTiers: c.cancelTiers.map((x, k) => (k === i ? { ...x, refundPercent: Math.min(100, Math.max(0, num(e.target.value))) } : x)) })} /></label>
             <button type="button" className="ghost danger" onClick={() => setC({ ...c, cancelTiers: c.cancelTiers.filter((_, k) => k !== i) })}>{T("Xóa", "Remove")}</button>
           </div>
         ))}
@@ -134,9 +135,9 @@ export default function PricingPage() {
 
       <div className="card" id="surcharges">
         <h3>{T("Phụ thu", "Surcharges")}</h3>
-        <label>{T("Thêm khách (VNĐ / người / đêm, khi vượt số khách đã gồm trong giá của phòng)", "Extra guest (VND / person / night, above the guests included in the room price)")}<input type="number" min={0} step={10000} value={c.extraGuestFee} onChange={(e) => setC({ ...c, extraGuestFee: Math.max(0, num(e.target.value)) })} /></label>
-        <label>{T("Nhận phòng sớm (VNĐ, khách tự chọn khi đặt)", "Early check-in (VND, optional for the guest)")}<input type="number" min={0} step={10000} value={c.earlyCheckInFee} onChange={(e) => setC({ ...c, earlyCheckInFee: Math.max(0, num(e.target.value)) })} /></label>
-        <label>{T("Trả phòng muộn (VNĐ, khách tự chọn khi đặt)", "Late check-out (VND, optional for the guest)")}<input type="number" min={0} step={10000} value={c.lateCheckOutFee} onChange={(e) => setC({ ...c, lateCheckOutFee: Math.max(0, num(e.target.value)) })} /></label>
+        <label>{T("Thêm khách (VNĐ / người / đêm, khi vượt số khách đã gồm trong giá của phòng)", "Extra guest (VND / person / night, above the guests included in the room price)")}<NumInput min={0} step={10000} value={c.extraGuestFee} onChange={(e) => setC({ ...c, extraGuestFee: Math.max(0, num(e.target.value)) })} /></label>
+        <label>{T("Nhận phòng sớm (VNĐ, khách tự chọn khi đặt)", "Early check-in (VND, optional for the guest)")}<NumInput min={0} step={10000} value={c.earlyCheckInFee} onChange={(e) => setC({ ...c, earlyCheckInFee: Math.max(0, num(e.target.value)) })} /></label>
+        <label>{T("Trả phòng muộn (VNĐ, khách tự chọn khi đặt)", "Late check-out (VND, optional for the guest)")}<NumInput min={0} step={10000} value={c.lateCheckOutFee} onChange={(e) => setC({ ...c, lateCheckOutFee: Math.max(0, num(e.target.value)) })} /></label>
         <small>{T("Để 0 thì không hiện lựa chọn nhận sớm / trả muộn khi đặt.", "Leave 0 to hide the early check-in / late check-out options when booking.")}</small>
       </div>
 
@@ -146,7 +147,7 @@ export default function PricingPage() {
         {c.services.map((s, i) => (
           <div className="row shiftform" key={s.id}>
             <label>{T("Tên dịch vụ", "Service")}<input value={s.name} maxLength={60} onChange={(e) => patchSvc(i, { name: e.target.value })} /></label>
-            <label>{T("Đơn giá (VNĐ)", "Price (VND)")}<input type="number" min={0} step={10000} value={s.price} onChange={(e) => patchSvc(i, { price: Math.max(0, num(e.target.value)) })} /></label>
+            <label>{T("Đơn giá (VNĐ)", "Price (VND)")}<NumInput min={0} step={10000} value={s.price} onChange={(e) => patchSvc(i, { price: Math.max(0, num(e.target.value)) })} /></label>
             <label>{T("Tính theo", "Charged")}
               <select value={s.unit} onChange={(e) => patchSvc(i, { unit: e.target.value as ServiceDef["unit"] })}>
                 <option value="once">{T("Mỗi lượt / suất", "Per use")}</option><option value="night">{T("Theo đêm", "Per night")}</option>

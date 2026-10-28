@@ -3,6 +3,7 @@ import Landing from "./pages/Landing";
 import Account from "./pages/Account";
 import MyProfile from "./pages/MyProfile";
 import ExplorePage from "./pages/ExplorePage";
+import SitemapPage from "./pages/SitemapPage";
 import InvoicePage from "./pages/InvoicePage";
 import PrivacyPage from "./pages/PrivacyPage";
 import FaqPage from "./pages/FaqPage";
@@ -19,6 +20,7 @@ export default function App() {
       <Route path="/account" element={<Account />} />
       <Route path="/profile" element={<MyProfile />} />
       <Route path="/explore" element={<ExplorePage />} />
+      <Route path="/sitemap" element={<SitemapPage />} />
       <Route path="/invoice/:id" element={<InvoicePage />} />
       <Route path="/app/*" element={<StaffShell />} />
       <Route path="*" element={<Navigate to="/" replace />} />

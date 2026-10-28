@@ -10,6 +10,7 @@ import { fmtDate, todayStr } from "../lib/format";
 import { downloadCsv, lastMonths, monthRange } from "../lib/hr";
 import { bookingCode } from "../lib/banks";
 import type { Booking } from "../lib/types";
+import NumInput from "../components/NumInput";
 
 export const EXPENSE_CATS = ["electric", "water", "salary", "maintenance", "supplies", "food", "marketing", "tax", "other"] as const;
 type Cat = (typeof EXPENSE_CATS)[number];
@@ -78,7 +79,7 @@ export default function ExpensesPage() {
             <div className="row shiftform">
               <label>{T("Ngày", "Date")}<DateInput required value={f.date} onChange={(v) => setF({ ...f, date: v })} /></label>
               <label>{T("Loại", "Category")}<select value={f.category} onChange={(e) => setF({ ...f, category: e.target.value as Cat })}>{EXPENSE_CATS.map((c) => <option key={c} value={c}>{CAT[c][lang === "vi" ? 0 : 1]}</option>)}</select></label>
-              <label>{T("Số tiền (VNĐ)", "Amount (VND)")}<input type="number" min={0} step={1000} value={f.amount || ""} onChange={(e) => setF({ ...f, amount: Math.max(0, +e.target.value || 0) })} /></label>
+              <label>{T("Số tiền (VNĐ)", "Amount (VND)")}<NumInput allowEmpty min={0} step={1000} value={f.amount || ""} onChange={(e) => setF({ ...f, amount: Math.max(0, +e.target.value || 0) })} /></label>
             </div>
             <div className="row shiftform">
               <label>{T("Nơi chi / nhà cung cấp", "Vendor")}<input maxLength={100} value={f.vendor} onChange={(e) => setF({ ...f, vendor: e.target.value })} /></label>

@@ -5,6 +5,7 @@ import type { Room } from "../lib/types";
 import type { Search } from "./availability";
 import { useTheme } from "../lib/theme";
 import ForestScene, { Drift, Fireflies, Garland, Snowfall } from "./ForestScene";
+import NumInput from "../components/NumInput";
 
 export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; search: Search; setSearch: (s: Search) => void }) {
   const L = useL();
@@ -47,7 +48,7 @@ export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; sear
           </select>
         </label>
         <label>{L.search.guests}
-          <input type="number" min={1} max={30} value={search.guests} onChange={(e) => set({ guests: Math.max(1, +e.target.value || 1) })} />
+          <NumInput min={1} max={30} value={search.guests} onChange={(e) => set({ guests: Math.max(1, +e.target.value || 1) })} />
         </label>
         <button className="lp-btn primary" type="submit">{L.search.go}</button>
       </form>

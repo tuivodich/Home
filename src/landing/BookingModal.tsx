@@ -18,6 +18,7 @@ import { useMoney } from "../lib/useRate";
 import { addDays, nightsBetween, todayStr } from "../lib/format";
 import type { Busy, Coupon, Room, UserDoc } from "../lib/types";
 import { rangeState, type Search } from "./availability";
+import NumInput from "../components/NumInput";
 
 const CODE_RE = /^[A-Z0-9-]{3,32}$/;
 
@@ -191,7 +192,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             </label>
             <label>{L.modal.phone}<input required type="tel" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} /></label>
             <label>{L.modal.email}<input required type="email" maxLength={200} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-            <label>{L.modal.guests}<input type="number" min={1} max={room.capacity} value={guests} onChange={(e) => setGuests(Math.max(1, Math.min(room.capacity, +e.target.value || 1)))} /></label>
+            <label>{L.modal.guests}<NumInput min={1} max={room.capacity} value={guests} onChange={(e) => setGuests(Math.max(1, Math.min(room.capacity, +e.target.value || 1)))} /></label>
             {(activeSvc.length > 0 || cfg.earlyCheckInFee > 0 || cfg.lateCheckOutFee > 0) && (
               <details className="lm-addons" open={Object.values(svc).some((n) => n > 0) || early || late}>
                 <summary>{P.addons}</summary>
@@ -201,7 +202,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
                 {activeSvc.map((s) => (
                   <label className="lm-addon" key={s.id}>
                     <span>{s.name}<br /><small>{money(s.price)} {s.unit === "night" ? P.perNight : P.perUse}</small></span>
-                    <input type="number" min={0} max={20} value={svc[s.id] ?? 0} onChange={(e) => setSvc({ ...svc, [s.id]: Math.max(0, Math.min(20, Math.floor(+e.target.value || 0))) })} />
+                    <NumInput min={0} max={20} value={svc[s.id] ?? 0} onChange={(e) => setSvc({ ...svc, [s.id]: Math.max(0, Math.min(20, Math.floor(+e.target.value || 0))) })} />
                   </label>
                 ))}
               </details>

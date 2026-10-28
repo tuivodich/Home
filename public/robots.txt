@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /account
+Disallow: /profile
+Disallow: /invoice/
+
+Sitemap: https://nhago.web.app/sitemap.xml

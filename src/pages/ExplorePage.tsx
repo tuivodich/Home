@@ -3,12 +3,12 @@ import { useAuth } from "../lib/auth";
 import { useI18n } from "../i18n";
 import { useX } from "../i18n/explore";
 import { CAT_EMOJI, PLACE_CATS, placeLink, saveExplore, useExplore, type Place, type PlaceCat } from "../lib/explore";
-import { useContact } from "../lib/contact";
+import { mapPoint, safeUrl, useContact } from "../lib/contact";
 import { useTitle } from "../lib/useTitle";
 import SiteLayout from "../layout/SiteLayout";
 import RichText from "../components/RichText";
 
-/** Khám phá khu vực: bản đồ nhúng, hướng dẫn đường đi và địa điểm gợi ý (chủ/quản lý chỉnh sửa được). */
+/** Điểm tham quan đẹp: bản đồ nhúng, hướng dẫn đường đi và địa điểm gợi ý (chủ/quản lý chỉnh sửa được). */
 export default function ExplorePage() {
   const X = useX();
   const { lang } = useI18n();
@@ -26,8 +26,11 @@ export default function ExplorePage() {
   const en = lang === "en";
   const pick = (vi: string, e: string) => (en && e.trim() ? e : vi);
   const address = contact.address.trim();
-  const embed = address ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed` : "";
-  const dirLink = address ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}` : "";
+  // Bản đồ nhúng mặc định ở lớp ảnh vệ tinh (t=k): ưu tiên tọa độ (ô tọa độ hoặc đường dẫn bản đồ dài), không có thì tìm theo địa chỉ.
+  const pt = mapPoint(contact);
+  const query = pt ? `${pt.lat},${pt.lng}` : address;
+  const embed = query ? `https://www.google.com/maps?q=${encodeURIComponent(query)}&t=k&z=17&output=embed` : "";
+  const dirLink = safeUrl(contact.mapUrl) ?? (query ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}` : "");
   const shown = ex.places.filter((p) => cat === "all" || p.cat === cat);
 
   const patchPlace = (i: number, p: Partial<Place>) => setDraft({ ...draft, places: draft.places.map((x, k) => (k === i ? { ...x, ...p } : x)) });
@@ -91,7 +94,7 @@ export default function ExplorePage() {
                     ? <iframe title={X.map} src={embed} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
                     : <p className="lp-muted">{X.noAddress}</p>}
                   {address && <p className="lp-muted">📍 {address}</p>}
-                  {address && <div className="lp-editor-actions"><a className="lp-btn primary sm" href={dirLink} target="_blank" rel="noopener noreferrer">{X.directions}</a></div>}
+                  {dirLink && <div className="lp-editor-actions"><a className="lp-btn primary sm" href={dirLink} target="_blank" rel="noopener noreferrer">{X.directions}</a></div>}
                 </div>
                 <div className="lp-panel">
                   <h2>{X.directionsTitle}</h2>

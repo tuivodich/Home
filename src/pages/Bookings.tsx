@@ -2,8 +2,12 @@ import { useState, type FormEvent } from "react";
 import DateInput from "../components/DateInput";
 import type { Precheckin } from "../landing/CheckinModal";
 import { useG } from "../i18n/guest";
+import { usePricingConfig } from "../lib/usePricing";
+import { daysUntil, depositFor, quoteLines, quoteStay, refundPercentFor } from "../lib/pricing";
+import { bookingCode } from "../lib/banks";
+import { useP } from "../i18n/pricing";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, doc, serverTimestamp, updateDoc, writeBatch } from "firebase/firestore";
+import { Timestamp, collection, doc, serverTimestamp, updateDoc, writeBatch } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "../lib/firebase";
 import { useCollection } from "../lib/useCollection";
@@ -18,7 +22,7 @@ import type { Booking, BookingStatus, Guest, Room } from "../lib/types";
 interface PriceEdit { id: string; total: number; code: string; coupon: { code: string; percent: number } | null; msg: string; busy: boolean }
 
 export default function Bookings() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { user, profile } = useAuth();
   const isAdmin = profile?.role === "owner" || profile?.role === "manager";
   const navigate = useNavigate();
@@ -28,6 +32,8 @@ export default function Bookings() {
   const { data: guests, loading: guestsLoading } = useCollection<Guest>("guests");
   const { data: pres } = useCollection<Precheckin>("precheckins");
   const G = useG();
+  const P = useP();
+  const { pricing, cfg } = usePricingConfig();
   const [err, setErr] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -43,7 +49,9 @@ export default function Bookings() {
   const roomName = (id: string) => rooms.find((r) => r.id === id)?.name ?? "?";
   const nights = nightsBetween(f.checkIn, f.checkOut);
   const room = rooms.find((r) => r.id === f.roomId);
-  const suggested = room ? room.price * Math.max(nights, 0) : 0;
+  const quote = room && nights > 0 ? quoteStay(room, f.checkIn, f.checkOut, f.guests, pricing, cfg, { couponPercent: coupon?.percent }) : null;
+  // Gợi ý giá theo bảng giá (cuối tuần/mùa/lễ/ở dài ngày, phụ thu thêm khách); chưa áp mã giảm giá.
+  const suggested = room && nights > 0 ? quoteStay(room, f.checkIn, f.checkOut, f.guests, pricing, cfg).total : 0;
   const base = f.total || suggested;
   const finalTotal = coupon ? discounted(base, coupon.percent) : base;
 
@@ -73,6 +81,8 @@ export default function Bookings() {
       w.set(bRef, {
         roomId: f.roomId, guestName: g.fullName.trim(), phone: g.phone.trim(), email: g.email.trim(),
         checkIn: f.checkIn, checkOut: f.checkOut, guests: f.guests, total: finalTotal, note: f.note,
+        lines: f.total ? [{ label: "Tiền phòng (nhập tay)", amount: base }, ...(coupon ? [{ label: `Mã giảm giá −${coupon.percent}%`, amount: -(base - finalTotal) }] : [])] : (quote ? quoteLines(quote, room?.name ?? "") : []),
+        ...(depositFor(finalTotal, cfg.depositPercent) > 0 ? { deposit: depositFor(finalTotal, cfg.depositPercent) } : {}),
         status: "confirmed", source: "staff", createdBy: uid,
         ...(coupon ? { couponCode: coupon.code, discountPercent: coupon.percent, originalTotal: base } : {}),
       });
@@ -104,6 +114,13 @@ export default function Bookings() {
       setErr(t("error"));
     } finally { setBusy(false); }
   };
+
+  // Ghi nhận tiền đã thu (số dương) hoặc đã hoàn (số âm) vào đặt phòng, kèm nhật ký.
+  const recordPayment = async (b: Booking, amount: number, note: string) => {
+    if (!amount) return;
+    await updateDoc(doc(db, "bookings", b.id), { paid: Math.max(0, (b.paid ?? 0) + amount), payLog: [...(b.payLog ?? []), { amount, at: Timestamp.now(), by: user?.uid ?? "", note }] });
+  };
+  const askAmount = (msg: string, def: number) => { const v = prompt(msg, String(Math.max(0, Math.round(def)))); const n = v === null ? 0 : Number(v.replace(/[^\d]/g, "")); return Number.isFinite(n) ? n : 0; };
 
   const setStatus = (id: string, status: BookingStatus) => updateDoc(doc(db, "bookings", id), { status });
 
@@ -181,6 +198,8 @@ export default function Bookings() {
             </div>
             <div>{roomName(b.roomId)} · {fmtDate(b.checkIn)} → {fmtDate(b.checkOut)} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>
             {pres.filter((p) => p.id === b.id).map((p) => <div key={p.id}><small>✓ {G.checkinTag}{p.status === "imported" ? ` (${G.imported})` : ""}{p.eta ? ` · ${G.etaShort} ${p.eta}` : ""}</small></div>)}
+            <div><small>{P.bookingCode}: <b>{bookingCode(b.id)}</b></small></div>
+            {((b.deposit ?? 0) > 0 || (b.paid ?? 0) > 0) && <div><small>{P.deposit}: {money(b.deposit ?? 0)} · {P.paid}: <b>{money(b.paid ?? 0)}</b> · {P.balance}: <b>{money(Math.max(0, b.total - (b.paid ?? 0)))}</b></small></div>}
             <div>{money(b.total)}{b.priceEditedBy && <small> ✎</small>}{b.phone && ` · ${b.phone}`}{b.email && ` · ${b.email}`}</div>
             {b.couponCode && <small>🏷 {t("couponApplied")} {b.couponCode} (−{b.discountPercent}%){b.originalTotal ? <> · {money(b.originalTotal)} → {money(b.total)}</> : ""}</small>}
             {b.note && <small>{b.note}</small>}
@@ -196,6 +215,20 @@ export default function Bookings() {
                 ))}
               </div>
               {b.status === "checked_in" && <button onClick={() => setStatus(b.id, "checked_out")}>{t("doCheckOut")}</button>}
+              {(b.deposit ?? 0) > 0 && (b.paid ?? 0) < b.deposit! && b.status !== "cancelled" && (
+                <button onClick={() => confirm(`${P.depositReceived}: ${b.deposit! - (b.paid ?? 0)} VNĐ?`) && recordPayment(b, b.deposit! - (b.paid ?? 0), "Đặt cọc")}>💰 {P.depositReceived}</button>
+              )}
+              {b.status !== "cancelled" && b.total - (b.paid ?? 0) > 0 && (
+                <button className="ghost" onClick={() => { const a = askAmount(lang === "vi" ? "Số tiền thu thêm (VNĐ):" : "Amount received (VND):", b.total - (b.paid ?? 0)); if (a > 0) recordPayment(b, a, lang === "vi" ? "Thanh toán" : "Payment"); }}>💵 {lang === "vi" ? "Thu thêm" : "Collect"}</button>
+              )}
+              {(b.paid ?? 0) > 0 && (
+                <button className="ghost" onClick={() => {
+                  const pct = b.status === "cancelled" ? refundPercentFor(daysUntil(b.cancelledAt ? new Date(b.cancelledAt.toMillis()).toISOString().slice(0, 10) : todayStr(), b.checkIn), cfg.cancelTiers) : 100;
+                  const a = askAmount(lang === "vi" ? "Số tiền hoàn lại (VNĐ):" : "Amount refunded (VND):", ((b.paid ?? 0) * pct) / 100);
+                  if (a > 0) recordPayment(b, -Math.min(a, b.paid ?? 0), lang === "vi" ? "Hoàn tiền" : "Refund");
+                }}>↩ {lang === "vi" ? "Hoàn tiền" : "Refund"}</button>
+              )}
+              {b.status !== "cancelled" && <Link className="ghost linkbtn" to={`/invoice/${b.id}`}>🧾 {P.invoice}</Link>}
               {isAdmin && (b.status === "confirmed" || b.status === "checked_in") && !editing && (
                 <button className="ghost" onClick={() => openPrice(b)}>💲 {t("editPrice")}</button>
               )}

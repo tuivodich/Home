@@ -15,6 +15,7 @@ import Attendance from "./pages/Attendance";
 import Accounts from "./pages/Accounts";
 import Roster from "./pages/Roster";
 import Timesheet from "./pages/Timesheet";
+import PricingPage from "./pages/PricingPage";
 import { useHr } from "./i18n/hr";
 
 export default function StaffShell() {
@@ -36,7 +37,7 @@ export default function StaffShell() {
   // Menu gọn: các mục liên quan gom vào nhóm thả xuống.
   const bookingItems: DdItem[] = [
     { label: t("bookings"), to: "/app/bookings" },
-    ...(admin ? [{ label: t("menuRooms"), to: "/app/rooms" }] : []),
+    ...(admin ? [{ label: t("menuRooms"), to: "/app/rooms" }, { label: lang === "vi" ? "Giá & chính sách" : "Prices & policies", to: "/app/pricing" }] : []),
     { label: t("history"), to: "/app/history" },
     ...(admin ? [{ label: t("coupons"), to: "/app/coupons" }] : []),
   ];
@@ -62,7 +63,7 @@ export default function StaffShell() {
       </header>
       <nav>
         <NavLink to="/app" end>{t("dashboard")}</NavLink>
-        {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/rooms", "/app/history", "/app/coupons")} />}
+        {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/rooms", "/app/pricing", "/app/history", "/app/coupons")} />}
         {front && <NavLink to="/app/guests">{t("guests")}</NavLink>}
         {admin
           ? <Dropdown className="st-dd" label={H.menu} items={hrItems} active={isIn("/app/accounts", "/app/attendance", "/app/roster", "/app/timesheet")} />
@@ -82,6 +83,7 @@ export default function StaffShell() {
           {admin && <Route path="coupons" element={<Coupons />} />}
           {admin && <Route path="reviews" element={<ReviewsAdmin />} />}
           {admin && <Route path="rooms" element={<Rooms />} />}
+          {admin && <Route path="pricing" element={<PricingPage />} />}
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>
       </main>

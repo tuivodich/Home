@@ -6,7 +6,7 @@ export const isStaffRole = (r?: Role) => !!r && STAFF_ROLES.includes(r);
 export const isFrontRole = (r?: Role) => r === "owner" || r === "manager" || r === "reception";
 
 export interface UserDoc { name?: string; email: string; role: Role }
-export interface Room { id: string; name: string; type: "wood" | "concrete"; capacity: number; price: number; status: "active" | "maintenance" }
+export interface Room { id: string; name: string; type: "wood" | "concrete"; capacity: number; baseGuests?: number; price: number; status: "active" | "maintenance" }
 export type BookingStatus = "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled";
 export interface Booking {
   id: string; roomId: string; guestName: string; phone: string; checkIn: string; checkOut: string;
@@ -14,6 +14,8 @@ export interface Booking {
   email?: string; createdBy?: string; source?: "online" | "staff";
   couponCode?: string; discountPercent?: number; originalTotal?: number; cancelReason?: "expired" | "customer";
   priceEditedBy?: string; slotId?: string;
+  lines?: { label: string; amount: number }[]; deposit?: number; paid?: number; cancelledAt?: { toMillis(): number };
+  payLog?: { amount: number; at: { toMillis(): number }; by: string; note: string }[];
 }
 
 /** Bản sao công khai của đặt phòng: chỉ phòng + ngày + trạng thái, không có dữ liệu cá nhân. */

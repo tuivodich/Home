@@ -309,3 +309,35 @@ test("khách: /lienhe đọc settings/contact, bỏ mục trống, escape HTML, 
   assert.doesNotMatch(t, /Zalo/);
   assert.doesNotMatch(t, /javascript/);
 });
+
+test("đặt cọc: thông báo có số tiền cọc + mã chuyển khoản + nút Đã nhận cọc; bấm nút ghi nhận thanh toán", async () => {
+  await reset();
+  await db.doc("bookings/b1").update({ deposit: 300000 });
+  const { tg, bot } = mk();
+  await bot.notify("cus", { type: "booking", id: "b1" });
+  assert.match(tg.sent[0].text, /Cọc: 300\.000 VNĐ/);
+  assert.match(tg.sent[0].text, /NHAGO B1/);
+  const rows = tg.sent[0].extra.reply_markup.inline_keyboard;
+  assert.equal(rows[1][0].callback_data, "pd:b1");
+  const cb = press(111, "pd:b1");
+  cb.callback_query.message.reply_markup = { inline_keyboard: rows };
+  await bot.handleUpdate(cb);
+  const b = (await db.doc("bookings/b1").get()).data();
+  assert.equal(b.paid, 300000);
+  assert.equal(b.payLog.length, 1);
+  assert.equal(b.payLog[0].amount, 300000);
+  assert.equal(b.status, "pending"); // chỉ ghi nhận cọc, chưa xác nhận
+  assert.match(tg.edits[0].text, /Đã ghi nhận cọc/);
+  assert.equal(tg.edits[0].extra.reply_markup.inline_keyboard.length, 1); // còn nút Xác nhận/Từ chối
+  await bot.handleUpdate(press(111, "pd:b1"));
+  assert.match(tg.answers.at(-1).text, /đã nhận đủ cọc/);
+  assert.equal((await db.doc("bookings/b1").get()).data().paid, 300000);
+});
+
+test("nút Đã nhận cọc không dùng được từ chat chưa liên kết", async () => {
+  await reset();
+  await db.doc("bookings/b1").update({ deposit: 300000 });
+  const { bot } = mk();
+  await bot.handleUpdate(press(999, "pd:b1"));
+  assert.equal((await db.doc("bookings/b1").get()).data().paid, undefined);
+});

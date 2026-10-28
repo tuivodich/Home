@@ -23,6 +23,12 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Chỉ **chủ/quản lý** đổi được ở *Cài đặt → Giao diện website* (lưu trong `settings/app`: `theme`, `themeAuto`, `effects`; luật Firestore kiểm tra giá trị hợp lệ). Khu quản lý của nhân viên giữ nguyên giao diện.
 - Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
 
+## Giá, đặt cọc QR, chính sách hủy, dịch vụ, hóa đơn
+- **Giá & chính sách** (*Đặt phòng → Giá & chính sách*, chủ/quản lý): tăng giá cuối tuần, mùa, ngày lễ (thay giá cuối tuần), giảm giá ở dài ngày; % tiền cọc, giờ nhận/trả phòng, mức hoàn cọc khi hủy, phụ thu thêm khách / nhận sớm / trả muộn, dịch vụ đi kèm (đón đưa, thuê xe máy, ăn sáng, BBQ, tour…). Mã giảm giá vẫn áp thêm cho tiền ở. Công thức: `src/lib/pricing.ts` (có kiểm thử `scripts/pricing.test.mts`).
+- **Tài khoản ngân hàng** do **chủ** thiết lập cùng trang. Khi đặt phòng (có cọc), khách thấy mã **VietQR** (ảnh từ img.vietqr.io) + nội dung chuyển khoản `NHAGO <mã đặt phòng>`; hãy quét thử mã trong trang để chắc đúng tài khoản.
+- Nhân viên bấm **Đã nhận cọc / Thu thêm / Hoàn tiền** ở *Đặt phòng* (hoặc nút 💰 trong Telegram); công nợ còn lại và nhật ký thanh toán lưu trong đặt phòng. **Hóa đơn / phiếu thu** (`/invoice/<id>`) in hoặc lưu PDF bằng hộp thoại in.
+- Giá tính ở máy khách; nhân viên luôn kiểm tra trước khi xác nhận (trang Đặt phòng hiện chi tiết giá và mã đặt phòng).
+
 ## Tài khoản của tôi, check-in online, khám phá khu vực
 - Người dùng (Google hoặc email) vào menu *Tài khoản → Tài khoản của tôi* để lưu họ tên, loại/số giấy tờ, quốc tịch, ngày sinh, điện thoại, email. Hộp thoại **Xác nhận đặt phòng** điền sẵn từ đây (vẫn sửa được); chỉ **chủ** sửa được hồ sơ của người khác (*Nhân sự → Tài khoản nhân viên → Hồ sơ*).
 - **Check-in online**: khi đặt phòng (hoặc sau đó ở trang *Đặt phòng của tôi*) khách điền giấy tờ và giờ đến dự kiến; nhân viên thấy ở *Khách lưu trú → Check-in online chờ xử lý*, bấm "Tạo hồ sơ" để điền sẵn vào biểu mẫu rồi lưu (ảnh giấy tờ vẫn chụp tại quầy).

@@ -92,7 +92,7 @@ const vi = {
     keep: "Không, giữ lại", doCancel: "Có, hủy đặt phòng", cancelling: "Đang hủy...", cancelFailed: "Không hủy được. Vui lòng thử lại hoặc liên hệ homestay.",
   },
   menu: {
-    home: "Trang chủ", book: "Đặt phòng", info: "Thông tin", account: "Tài khoản",
+    home: "Trang chủ", book: "Đặt phòng", info: "Thông tin", account: "Tài khoản", exploreMenu: "Khám phá", top: "Đầu trang",
     about: "Giới thiệu", rooms: "Phòng nghỉ", features: "Tiện nghi", availability: "Kiểm tra phòng trống",
     reviews: "Cảm nhận của khách", faq: "Hỏi & Đáp", privacy: "Chính sách quyền riêng tư", contact: "Liên hệ", explore: "Khám phá khu vực",
   },
@@ -220,7 +220,7 @@ const en: Dict = {
     keep: "No, keep it", doCancel: "Yes, cancel booking", cancelling: "Cancelling...", cancelFailed: "Could not cancel. Please try again or contact the homestay.",
   },
   menu: {
-    home: "Home", book: "Book", info: "Info", account: "Account",
+    home: "Home", book: "Book", info: "Info", account: "Account", exploreMenu: "Explore", top: "Top of page",
     about: "About", rooms: "Rooms", features: "Amenities", availability: "Check availability",
     reviews: "Guest reviews", faq: "FAQ", privacy: "Privacy policy", contact: "Contact", explore: "Explore the area",
   },

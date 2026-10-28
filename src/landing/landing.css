@@ -565,3 +565,15 @@ html { scroll-behavior: smooth; }
 .lm-addon small { color: var(--muted); }
 .lm-policy ul { margin: 0; padding-left: 18px; font-size: .88rem; color: var(--muted); }
 .lp-warn { color: var(--warn-fg); }
+
+/* Header: tên + vai trò và Đăng xuất nằm ngoài menu; mục menu con đang xem */
+.lp-who { font-size: .88rem; font-weight: 600; color: var(--head); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-who-mobile, .lp-logout-mobile { display: none; }
+.lp-nav .dd-menu a.on { background: var(--leaf); color: var(--gold-ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--orange); }
+@media (max-width: 1100px) { .lp-who { max-width: 130px; } }
+@media (max-width: 900px) {
+  .lp-who, .lp-logout { display: none; }
+  .lp-who-mobile { display: block; padding: 10px 4px; font-weight: 700; color: var(--head); border-bottom: 1px solid var(--line); }
+  .lp-logout-mobile { display: inline-flex; }
+}
+

@@ -37,7 +37,7 @@ export default function MailSettings({ isOwner }: { isOwner: boolean }) {
 
   return (
     <div className="card" id="mail-settings">
-      <h3>{vi ? "Email thông báo cho khách" : "Guest email notifications"}</h3>
+      <h3>{vi ? "Cài đặt email" : "Email settings"}</h3>
       <small>{vi
         ? "Khi bật, khách nhận email: đã nhận yêu cầu, đã xác nhận (kèm thông tin cọc/VietQR), không còn hiệu lực, và nhắc lịch trước ngày nhận phòng 1 ngày. Cần tài khoản gửi email (vd Gmail + mật khẩu ứng dụng) khai báo ở GitHub secrets SMTP_USER, SMTP_PASS — xem docs/email.md."
         : "When on, guests get emails: request received, confirmed (with deposit / VietQR details), no longer valid, and a reminder the day before check-in. Needs a sender account (e.g. Gmail app password) in GitHub secrets SMTP_USER, SMTP_PASS — see docs/email.md."}</small>

@@ -502,6 +502,12 @@ await check("token rejects extra fields", setDoc(doc(rec, "fcmTokens/tokD"), { .
 await check("nobody lists tokens", getDocs(collection(own, "fcmTokens")), false);
 await check("owner of the token deletes it", deleteDoc(doc(rec, "fcmTokens/tokA")), true);
 
+// ----- Gửi email hàng loạt -----
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "mailCampaigns/c1"), { subject: "x", sent: 1 }); });
+await check("manager reads the campaign history", getDoc(doc(mgr, "mailCampaigns/c1")), true);
+await check("reception CANNOT read the campaign history", getDoc(doc(rec, "mailCampaigns/c1")), false);
+await check("nobody writes campaign history from the client", setDoc(doc(own, "mailCampaigns/c2"), { subject: "x" }), false);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

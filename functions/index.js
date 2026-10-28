@@ -7,6 +7,7 @@ const { createTelegram } = require("./telegram");
 const { createBot, webhookSecret, safeEq, STAFF_COMMANDS, GUEST_COMMANDS } = require("./bot");
 const { createGuest, createMailer } = require("./guest");
 const { createPush } = require("./push");
+const { createCampaign } = require("./campaign");
 const { getMessaging } = require("firebase-admin/messaging");
 const { createLoyalty } = require("./loyalty");
 const { createBackup } = require("./backup");
@@ -78,6 +79,16 @@ exports.mailTest = onCall(opts, async (req) => {
   if (!m.enabled) throw new HttpsError("failed-precondition", "Chưa cấu hình tài khoản gửi email (secret SMTP_USER / SMTP_PASS).");
   try { await m.send({ from: m.from, to, subject: "Nhà Gỗ Homestay — email thử", text: "Cấu hình email hoạt động tốt." }); } catch (e) { throw new HttpsError("internal", e.message); }
   return { ok: true };
+});
+
+/** Chủ/quản lý gửi email tới nhiều khách (khuyến mãi, thông báo). Mỗi lần tối đa 100 địa chỉ; giao diện tự chia lô. */
+exports.mailCampaign = onCall({ ...opts, timeoutSeconds: 540, memory: "256MiB" }, async (req) => {
+  const uid = needAuth(req);
+  const role = (await getFirestore().doc(`users/${uid}`).get()).data()?.role;
+  if (!["owner", "manager"].includes(role)) throw new HttpsError("permission-denied", "Chỉ chủ/quản lý gửi email hàng loạt.");
+  try {
+    return await createCampaign({ db: getFirestore(), mailer: mailer() }).send({ uid, selfEmail: req.auth.token?.email, subject: req.data?.subject, body: req.data?.body, to: req.data?.to });
+  } catch (e) { throw e instanceof HttpsError ? e : new HttpsError(["invalid-argument", "failed-precondition"].includes(e.code) ? e.code : "internal", e.message); }
 });
 
 /** Cho giao diện biết đã có tài khoản gửi email hay chưa (không lộ thông tin tài khoản). */

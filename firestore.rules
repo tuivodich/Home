@@ -68,6 +68,11 @@ service cloud.firestore {
         && (!('fromName' in request.resource.data) || (request.resource.data.fromName is string && request.resource.data.fromName.size() <= 60))
         && (!('replyTo' in request.resource.data) || (request.resource.data.replyTo is string && request.resource.data.replyTo.size() <= 200));
     }
+    // Lịch sử gửi email hàng loạt (Cloud Functions ghi): chủ/quản lý xem.
+    match /mailCampaigns/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
     match /settings/mailState {
       allow read, write: if false;
     }

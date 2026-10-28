@@ -10,7 +10,6 @@ import { tgLinkCode, tgSetup } from "../lib/telegram";
 import { PALETTES, sceneSvg } from "../landing/forest";
 import { READY_THEMES, THEME_IDS, THEME_INFO, parseSettings, DEFAULT_MAX_PENDING, DEFAULT_SETTINGS, type SiteSettings, type ThemeId } from "../lib/theme";
 import NumInput from "../components/NumInput";
-import MailSettings from "../components/MailSettings";
 import PushSettings from "../components/PushSettings";
 
 export default function Settings() {
@@ -153,7 +152,6 @@ export default function Settings() {
         {ctErr && <p className="error">{ctErr}</p>}
       </div>
       <PushSettings />
-      <MailSettings isOwner={isOwner} />
       <div className="card" id="telegram">
         <h3>{vi ? "Bot Telegram" : "Telegram bot"}</h3>
         <small>{vi

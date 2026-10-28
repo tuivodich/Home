@@ -141,3 +141,16 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
 /* Dòng tên tài khoản + vai trò (menu Tài khoản và thanh đầu khu quản lý) */
 .dd-who { padding: 8px 14px 10px; font-weight: 700; font-size: .9rem; overflow-wrap: anywhere; border-bottom: 1px solid currentColor; border-bottom-color: color-mix(in srgb, currentColor 18%, transparent); margin-bottom: 4px; cursor: default; }
 .shell header .who { font-size: .85rem; opacity: .9; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Ô thống kê Tổng quan: nhỏ gọn; điện thoại xếp 2 ô một hàng */
+.grid.stats { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.stats .card { padding: 10px 12px; gap: 2px; margin: 0; }
+.stats big { font-size: 1.5rem; line-height: 1.15; }
+.stats .card > div { font-size: .8rem; line-height: 1.3; }
+.stats big.sm { font-size: 1.15rem; }
+@media (max-width: 640px) {
+  .grid.stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .stats .card { padding: 8px 10px; }
+  .stats big { font-size: 1.3rem; }
+  .stats .card > div { font-size: .74rem; }
+}

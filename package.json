@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:lib": "node --experimental-strip-types --test scripts/*.test.mts",
+    "test:emu": "firebase emulators:exec --only firestore --project demo-test \"npm ci --prefix tests && npm ci --prefix functions && node tests/rules.test.mjs && npm test --prefix functions\"",
+    "test": "npm run test:lib && npm run test:emu"
   },
   "dependencies": {
     "firebase": "^13.1.0",
@@ -18,6 +21,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "firebase-tools": "^15.34.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"
   }

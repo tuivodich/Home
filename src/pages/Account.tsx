@@ -13,7 +13,7 @@ import CheckinModal, { type Precheckin } from "../landing/CheckinModal";
 import { useProfileDoc } from "../lib/profile";
 import { useG } from "../i18n/guest";
 import TierBadge from "../components/TierBadge";
-import { loyaltyClaim } from "../lib/telegram";
+import { loyaltyClaim, tgGuestLink } from "../lib/telegram";
 import { useMyTier } from "../lib/loyalty";
 import { fillP } from "../i18n/pricing";
 import { useP } from "../i18n/pricing";
@@ -29,6 +29,14 @@ export default function Account() {
   const G = useG();
   const P = useP();
   const my = useMyTier(user?.uid);
+  const [tgLinked, setTgLinked] = useState<boolean | null>(null);
+  const [tgLink, setTgLink] = useState("");
+  const [tgBusy, setTgBusy] = useState(false);
+  const [tgErr, setTgErr] = useState("");
+  useEffect(() => {
+    if (!user) return;
+    return onSnapshot(query(collection(db, "tgGuests"), where("uid", "==", user.uid)), (s) => setTgLinked(!s.empty), () => setTgLinked(null));
+  }, [user]);
   const [claim, setClaim] = useState<{ code: string; percent: number; expiresAt: number } | null>(null);
   const [claimErr, setClaimErr] = useState("");
   const [claiming, setClaiming] = useState(false);
@@ -111,6 +119,26 @@ export default function Account() {
                 </div>
               );
             })()}
+          </div>
+        )}
+
+        {tgLinked !== null && (
+          <div className="lp-panel lp-tg">
+            <h3>{G.tgTitle}</h3>
+            {tgLinked ? <div className="lp-ok">✅ {G.tgLinked}</div> : (
+              <>
+                <div className="lp-muted lp-small">{G.tgDesc}</div>
+                <div>
+                  {tgLink
+                    ? <a className="lp-btn primary sm" href={tgLink} target="_blank" rel="noopener noreferrer">{G.tgOpen}</a>
+                    : <button className="lp-btn primary sm" disabled={tgBusy} onClick={async () => {
+                      setTgBusy(true); setTgErr("");
+                      try { setTgLink((await tgGuestLink()).link); } catch (ex) { console.error("tg link", ex); setTgErr(G.tgFail); } finally { setTgBusy(false); }
+                    }}>{G.tgBtn}</button>}
+                </div>
+                {tgErr && <p className="lp-error">{tgErr}</p>}
+              </>
+            )}
           </div>
         )}
 

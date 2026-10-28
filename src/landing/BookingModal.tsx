@@ -114,7 +114,8 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
       b.set(doc(db, "bookings", id), {
         roomId: room.id, guestName: name.trim(), phone: phone.trim(), email: email.trim(),
         checkIn, checkOut, guests, total,
-        code: bookingCode(id), lines: quoteLines(quote, room.name), ...(quote.deposit > 0 ? { deposit: quote.deposit } : {}),
+        code: bookingCode(id), lines: quoteLines(quote, room.name),
+        ...(early || late || Object.values(svc).some((n) => n > 0) ? { opts: { ...(early ? { early: true } : {}), ...(late ? { late: true } : {}), services: Object.fromEntries(Object.entries(svc).filter(([, n]) => n > 0)) } } : {}), ...(quote.deposit > 0 ? { deposit: quote.deposit } : {}),
         status: "pending", note: note.trim(), source: "online", createdBy: user.uid, slotId,
         ...(coupon ? { couponCode: coupon.code, discountPercent: coupon.percent, originalTotal: original } : {}),
       });

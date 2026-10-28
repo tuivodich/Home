@@ -46,3 +46,6 @@ npx firebase-tools emulators:exec --only firestore "npm test --prefix functions"
 
 ## Hàm theo lịch (Cloud Scheduler)
 `backupScheduled` (sao lưu), `tgStaffAlerts` và `tgReminders` (cảnh báo/nhắc của bot) chạy theo lịch nên cần bật **Cloud Scheduler API**: https://console.cloud.google.com/apis/library/cloudscheduler.googleapis.com?project=sisterhome . Nếu deploy báo thiếu quyền, thêm vai trò *Cloud Scheduler Admin* cho tài khoản dịch vụ deploy.
+
+## Khách liên kết Telegram
+Khách đăng nhập website → *Đặt phòng của tôi* → **Nhận thông báo qua Telegram** (mở bot với mã dùng một lần, 30 phút). Chat được lưu ở `tgGuests/{chatId}` (khác `tgChats` của nhân viên nên không nhận thông báo nội bộ). Khách nhận tin xác nhận/hủy/nhắc lịch, dùng `/cuatoi` để xem 5 đặt phòng gần nhất và `/huylienket` để ngừng nhận.

@@ -6,6 +6,7 @@ import { usePricingConfig } from "../lib/usePricing";
 import { daysUntil, depositFor, quoteLines, quoteStay, refundPercentFor } from "../lib/pricing";
 import { bookingCode } from "../lib/banks";
 import { markRoomDirty } from "../lib/housekeeping";
+import { guestNotify } from "../lib/telegram";
 import { useP } from "../i18n/pricing";
 import TierBadge from "../components/TierBadge";
 import { useTierLookup } from "../lib/loyalty";
@@ -130,6 +131,8 @@ export default function Bookings() {
 
   const setStatus = async (id: string, status: BookingStatus) => {
     await updateDoc(doc(db, "bookings", id), { status });
+    // Xác nhận/hủy → báo khách qua email/Telegram (nếu đã bật).
+    if (status === "confirmed" || status === "cancelled") guestNotify(id);
     // Khách trả phòng → phòng chuyển "Cần dọn" và báo buồng phòng qua Telegram.
     if (status === "checked_out") { const b = bookings.find((x) => x.id === id); if (b) await markRoomDirty(b.roomId, { uid: user?.uid ?? "", name: user?.displayName || user?.email || "" }); }
   };

@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
 import DateInput from "../components/DateInput";
+import type { Precheckin } from "../landing/CheckinModal";
+import { useG } from "../i18n/guest";
 import { Link, useNavigate } from "react-router-dom";
 import { collection, doc, serverTimestamp, updateDoc, writeBatch } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
@@ -24,6 +26,8 @@ export default function Bookings() {
   const { data: rooms } = useCollection<Room>("rooms");
   const { data: bookings } = useCollection<Booking>("bookings");
   const { data: guests, loading: guestsLoading } = useCollection<Guest>("guests");
+  const { data: pres } = useCollection<Precheckin>("precheckins");
+  const G = useG();
   const [err, setErr] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -176,6 +180,7 @@ export default function Bookings() {
               <span className={`tag ${b.status}`}>{expired ? t("expiredLabel") : t(b.status)}</span>
             </div>
             <div>{roomName(b.roomId)} · {fmtDate(b.checkIn)} → {fmtDate(b.checkOut)} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>
+            {pres.filter((p) => p.id === b.id).map((p) => <div key={p.id}><small>✓ {G.checkinTag}{p.status === "imported" ? ` (${G.imported})` : ""}{p.eta ? ` · ${G.etaShort} ${p.eta}` : ""}</small></div>)}
             <div>{money(b.total)}{b.priceEditedBy && <small> ✎</small>}{b.phone && ` · ${b.phone}`}{b.email && ` · ${b.email}`}</div>
             {b.couponCode && <small>🏷 {t("couponApplied")} {b.couponCode} (−{b.discountPercent}%){b.originalTotal ? <> · {money(b.originalTotal)} → {money(b.total)}</> : ""}</small>}
             {b.note && <small>{b.note}</small>}

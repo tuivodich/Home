@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useI18n, useL } from "../i18n";
+import { useG } from "../i18n/guest";
 import { site } from "../lib/siteConfig";
 import { isStaffRole } from "../lib/types";
 import Dropdown, { type DdItem } from "../components/Dropdown";
@@ -13,6 +14,7 @@ export default function Header() {
   const L = useL();
   const M = L.menu;
   const { lang, setLang, t } = useI18n();
+  const G = useG();
   const { user, profile, logout } = useAuth();
   const { open: openAuth } = useAuthUi();
   const [menu, setMenu] = useState(false);
@@ -24,12 +26,14 @@ export default function Header() {
     { label: M.about, to: "/#about" }, { label: M.rooms, to: "/#rooms" }, { label: M.features, to: "/#features" }, { label: M.availability, to: "/#booking" },
   ];
   const infoItems: DdItem[] = [
-    { label: M.reviews, to: "/reviews" }, { label: M.faq, to: "/faq" }, { label: M.privacy, to: "/privacy" }, { label: M.contact, to: "/#contact" },
+    { label: M.explore, to: "/explore" }, { label: M.reviews, to: "/reviews" }, { label: M.faq, to: "/faq" }, { label: M.privacy, to: "/privacy" }, { label: M.contact, to: "/#contact" },
   ];
   // Dòng đầu menu Tài khoản: tên (hoặc email) và vai trò, vd. "admin@gmail.com (Chủ)".
-  const who = `${profile?.name || user?.displayName || user?.email || ""} (${t(profile?.role ?? "customer")})`;
+  const whoName = profile?.name || user?.displayName || user?.email || "";
+  const whoRole = t(profile?.role ?? "customer");
   const accountItems: DdItem[] = [
-    { label: who, heading: true },
+    { label: whoName, sub: whoRole, heading: true },
+    { label: G.myAccount, to: "/profile" },
     { label: L.myBookings, to: "/account" },
     ...(staff ? [{ label: L.manage, to: "/app" }] : []),
     { label: L.reviews.write, to: "/reviews" },
@@ -44,7 +48,7 @@ export default function Header() {
         <nav className={`lp-nav ${menu ? "open" : ""}`} aria-label="Menu">
           <HashLink to="/#home" className={loc.pathname === "/" ? "lp-link" : "lp-link"}>{M.home}</HashLink>
           <Dropdown className="lp-dd" label={M.book} items={bookItems} active={loc.pathname === "/"} />
-          <Dropdown className="lp-dd" label={M.info} items={infoItems} active={onPage(["/reviews", "/faq", "/privacy"])} />
+          <Dropdown className="lp-dd" label={M.info} items={infoItems} active={onPage(["/explore", "/reviews", "/faq", "/privacy"])} />
           <div className="lp-nav-actions">
             {user
               ? <Dropdown className="lp-dd lp-dd-account" align="right" label={M.account} items={accountItems} />

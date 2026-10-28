@@ -10,15 +10,20 @@ import { useI18n } from "../i18n";
 import GuestInfo from "../components/GuestInfo";
 import GuestFields, { conflictsFor, emptyGuestForm, type GuestForm } from "../components/GuestFields";
 import type { Booking, Guest, Room } from "../lib/types";
+import type { Precheckin } from "../landing/CheckinModal";
+import { useG } from "../i18n/guest";
 
 export default function Guests() {
   const { t } = useI18n();
+  const G = useG();
   const { profile } = useAuth();
   const isAdmin = profile?.role === "owner" || profile?.role === "manager";
   const [params, setParams] = useSearchParams();
   const { data: guests } = useCollection<Guest>("guests");
   const { data: bookings } = useCollection<Booking>("bookings");
   const { data: rooms } = useCollection<Room>("rooms");
+  const { data: pres } = useCollection<Precheckin>("precheckins");
+  const waiting = pres.filter((p) => p.status === "submitted");
   const [f, setF] = useState<GuestForm>({ ...emptyGuestForm });
   const [bookingId, setBookingId] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -36,12 +41,13 @@ export default function Guests() {
     const b = bookings.find((x) => x.id === bid);
     if (!b) return;
     setEditing(null);
-    setF({ ...emptyGuestForm, fullName: b.guestName, phone: b.phone, email: b.email ?? "" });
+    const pre = pres.find((p) => p.id === b.id && p.status === "submitted");
+    setF(pre ? fromPre(pre) : { ...emptyGuestForm, fullName: b.guestName, phone: b.phone, email: b.email ?? "" });
     setBookingId(b.id);
     setPrefill(b.guestName);
     setParams({}, { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [params, bookings, setParams]);
+  }, [params, bookings, pres, setParams]);
 
   const linkedBooking = bookings.find((b) => b.id === bookingId);
   const live = conflictsFor(guests, f.docType, f.docNumber, f.fullName, editing?.id);
@@ -59,6 +65,15 @@ export default function Guests() {
       console.error("upload failed", ex);
       setUploadErr(`${t("uploadFailed")}: ${(ex as { code?: string }).code ?? ""} ${(ex as Error).message}`);
     }
+  };
+
+  const fromPre = (p: Precheckin): GuestForm => ({
+    ...emptyGuestForm, fullName: p.fullName, docType: p.docType, docNumber: p.docNumber, nationality: p.nationality, dob: p.dob, phone: p.phone, email: p.email,
+    note: [p.eta && `${G.etaShort} ${p.eta}`, p.note].filter(Boolean).join(" · "),
+  });
+  const fillFromCheckin = (p: Precheckin) => {
+    setEditing(null); setF(fromPre(p)); setBookingId(p.bookingId); setPrefill(p.fullName); setFile(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const reset = () => { setF({ ...emptyGuestForm }); setBookingId(""); setFile(null); setEditing(null); setPrefill(""); };
@@ -80,6 +95,8 @@ export default function Guests() {
         const gRef = await addDoc(collection(db, "guests"), { ...f, bookingId, docImagePath: "" });
         await uploadPhoto(gRef.id, gRef, "");
       }
+      // Có check-in online của đặt phòng này → đánh dấu đã chuyển thành hồ sơ.
+      if (bookingId && pres.some((p) => p.id === bookingId && p.status === "submitted")) await updateDoc(doc(db, "precheckins", bookingId), { status: "imported" });
       // Hồ sơ đã có → cho nhận phòng ngay nếu đặt phòng đang ở trạng thái "Đã xác nhận".
       if (checkInAfter && linkedBooking?.status === "confirmed") await updateDoc(doc(db, "bookings", linkedBooking.id), { status: "checked_in" });
       setNotice(warn);
@@ -109,6 +126,23 @@ export default function Guests() {
       <h2>{t("guests")}</h2>
       <p><small>🔒 {t("privacyNote")}</small></p>
       {notice && <p className="warn">⚠ {notice}</p>}
+      <div className="card" id="precheckins">
+        <h3>{G.precheckins} ({waiting.length})</h3>
+        <small>{G.precheckinsHint}</small>
+        {waiting.length === 0 && <small>{G.noPre}</small>}
+        {waiting.map((p) => {
+          const bk = bookings.find((x) => x.id === p.bookingId);
+          return (
+            <div className="row between" key={p.id}>
+              <span><b>{p.fullName}</b> · {t(p.docType)} {p.docNumber}{p.eta && ` · ${G.etaShort} ${p.eta}`}{bk && ` · ${rooms.find((r) => r.id === bk.roomId)?.name ?? "?"} ${fmtDate(bk.checkIn)} → ${fmtDate(bk.checkOut)}`}</span>
+              <span className="row">
+                <button type="button" onClick={() => fillFromCheckin(p)}>{G.createProfile}</button>
+                <button type="button" className="ghost" onClick={() => updateDoc(doc(db, "precheckins", p.id), { status: "imported" })}>{G.markImported}</button>
+              </span>
+            </div>
+          );
+        })}
+      </div>
       <form className="card" onSubmit={save}>
         {editing && <strong>✏️ {t("edit")}: {editing.fullName}</strong>}
         {prefill && <p className="info">{t("prefillFromBooking")} {prefill}.</p>}

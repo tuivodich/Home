@@ -154,3 +154,6 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
   .stats big { font-size: 1.3rem; }
   .stats .card > div { font-size: .74rem; }
 }
+
+.dd-role { color: #b8860b; font-weight: 700; }
+.shell header .who .dd-role { color: #ffd27a; }

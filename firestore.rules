@@ -241,6 +241,51 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Hồ sơ cá nhân của từng tài khoản (dùng điền sẵn khi đặt phòng): chính chủ sửa được; CHỈ CHỦ sửa được hồ sơ của người khác.
+    // Chủ/quản lý/lễ tân xem được để hỗ trợ khách.
+    match /profiles/{uid} {
+      function okProfile(d) {
+        return d.keys().hasOnly(['fullName', 'docType', 'docNumber', 'nationality', 'dob', 'phone', 'email', 'updatedAt'])
+          && d.fullName is string && d.fullName.size() <= 100
+          && d.docType in ['cccd', 'passport', 'license', 'other']
+          && d.docNumber is string && d.docNumber.size() <= 30
+          && d.nationality is string && d.nationality.size() <= 60
+          && d.dob is string && d.dob.size() <= 10
+          && d.phone is string && d.phone.size() <= 30
+          && d.email is string && d.email.size() <= 200;
+      }
+      allow read: if signedIn() && (request.auth.uid == uid || isFront());
+      allow create, update: if signedIn() && (request.auth.uid == uid || isOwner()) && okProfile(request.resource.data);
+      allow delete: if isOwner();
+    }
+
+    // Check-in online: khách điền trước họ tên, giấy tờ, giờ đến dự kiến cho đặt phòng của mình (id = mã đặt phòng);
+    // nhân viên chuyển thành hồ sơ "Khách lưu trú" rồi đánh dấu "imported".
+    match /precheckins/{bid} {
+      function okPre(d) {
+        return d.keys().hasOnly(['uid', 'bookingId', 'fullName', 'docType', 'docNumber', 'nationality', 'dob', 'phone', 'email', 'eta', 'note', 'status', 'updatedAt'])
+          && d.bookingId == bid && d.status == 'submitted'
+          && d.fullName is string && d.fullName.size() >= 1 && d.fullName.size() <= 100
+          && d.docType in ['cccd', 'passport', 'license', 'other']
+          && d.docNumber is string && d.docNumber.size() <= 30
+          && d.nationality is string && d.nationality.size() <= 60
+          && d.dob is string && d.dob.size() <= 10
+          && d.phone is string && d.phone.size() <= 30
+          && d.email is string && d.email.size() <= 200
+          && d.eta is string && (d.eta == '' || d.eta.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
+          && d.note is string && d.note.size() <= 300;
+      }
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isFront());
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid && okPre(request.resource.data)
+        && getAfter(/databases/$(database)/documents/bookings/$(bid)).data.createdBy == request.auth.uid;
+      allow update: if (signedIn() && resource.data.uid == request.auth.uid && resource.data.status == 'submitted'
+          && request.resource.data.uid == request.auth.uid && okPre(request.resource.data)
+          && get(/databases/$(database)/documents/bookings/$(bid)).data.status in ['pending', 'confirmed'])
+        || (isFront() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status in ['submitted', 'imported']);
+      allow delete: if isAdmin();
+    }
+
     match /guests/{id} {
       allow read, create, update: if isFront();
       allow delete: if isAdmin();

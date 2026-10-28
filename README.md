@@ -71,3 +71,6 @@ Không commit token bot Telegram hay service account. Token bot sẽ lưu bằng
 ## Điểm tham quan đẹp, bản đồ và SEO
 - Trang `/explore` (menu Khám phá → *Điểm tham quan đẹp*): bản đồ nhúng mặc định là **ảnh vệ tinh**. Vị trí lấy theo thứ tự: ô *Tọa độ bản đồ nhúng* ở Cài đặt → Thông tin liên hệ (vd `11.9404, 108.4583`: bấm chuột phải vào điểm trên Google Maps rồi chọn dòng số đầu tiên để sao chép), tọa độ có sẵn trong đường dẫn bản đồ dài, hoặc tìm theo địa chỉ. Link rút gọn `maps.app.goo.gl` không chứa tọa độ nên chỉ dùng cho nút chỉ đường.
 - `/sitemap` (Sơ đồ trang web, có ở menu Thông tin và chân trang), `public/sitemap.xml`, `public/robots.txt`, thẻ canonical/Open Graph và dữ liệu có cấu trúc (`LodgingBusiness`) trong `index.html`. Khi thêm trang công khai mới nhớ cập nhật `public/sitemap.xml`.
+
+## Kiểm thử tự động (CI)
+`npm test` chạy: tính giá và báo cáo (`scripts/*.test.mts`), luật Firestore (`tests/rules.test.mjs`) và bot/Cloud Functions (`functions/test`) trên Firestore Emulator (cần JDK 21). Workflow *Kiểm thử* chạy ở mỗi pull request; hai workflow deploy chạy `npm test` trước khi đăng nên lỗi sẽ chặn deploy.

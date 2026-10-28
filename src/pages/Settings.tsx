@@ -151,8 +151,8 @@ export default function Settings() {
       <div className="card" id="telegram">
         <h3>{vi ? "Bot Telegram" : "Telegram bot"}</h3>
         <small>{vi
-          ? "Nhận thông báo yêu cầu đặt phòng mới / khách hủy / cảm nhận mới ngay trên Telegram, bấm nút Xác nhận hoặc Từ chối ngay trong tin nhắn. Lệnh: /homnay, /cho, /trong."
-          : "Get new booking requests, cancellations and reviews on Telegram, and confirm or reject right from the message. Commands: /homnay, /cho, /trong."}</small>
+          ? "Nhận thông báo yêu cầu đặt phòng mới / khách hủy / cảm nhận mới ngay trên Telegram, bấm nút Xác nhận hoặc Từ chối ngay trong tin nhắn. Lệnh: /homnay, /cho, /doanhthu, /tra, /trong. Bot còn nhắc khi nhân viên đi muộn/quên ra ca, khách chưa cọc hoặc chưa có hồ sơ."
+          : "Get new booking requests, cancellations and reviews on Telegram, and confirm or reject right from the message. Commands: /homnay, /cho, /doanhthu, /tra, /trong. It also alerts on late/forgotten clock-outs and guests without deposit or profile."}</small>
         <div className="rolebar">
           {isOwner && <button type="button" className="ghost" disabled={tgBusy} onClick={() => tgRun(async () => { const r = await tgSetup(); setTgMsg(vi ? `Đã kết nối bot @${r.username}.` : `Bot @${r.username} connected.`); })}>{vi ? "Kết nối bot" : "Connect bot"}</button>}
           <button type="button" disabled={tgBusy} onClick={() => tgRun(async () => { setTgLink(await tgLinkCode()); })}>{vi ? "Liên kết Telegram của tôi" : "Link my Telegram"}</button>

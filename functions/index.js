@@ -4,7 +4,7 @@ const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { createTelegram } = require("./telegram");
-const { createBot, webhookSecret, safeEq, STAFF_COMMANDS } = require("./bot");
+const { createBot, webhookSecret, safeEq, STAFF_COMMANDS, GUEST_COMMANDS } = require("./bot");
 const { createLoyalty } = require("./loyalty");
 const { createBackup } = require("./backup");
 const { getStorage } = require("firebase-admin/storage");
@@ -49,12 +49,7 @@ exports.tgSetup = onCall(opts, async (req) => {
   try {
     const bot = await tg.getMe();
     await tg.setWebhook(url, webhookSecret(TOKEN.value()));
-    await tg.setMyCommands([
-      { command: "trong", description: "Phòng còn trống (vd /trong 25/12 27/12)" },
-      { command: "phong", description: "Các phòng và giá" },
-      { command: "lienhe", description: "Thông tin liên hệ" },
-      { command: "dat", description: "Mở trang đặt phòng" },
-    ]);
+    await tg.setMyCommands(GUEST_COMMANDS);
     // Chat nhân viên đã liên kết có menu riêng (đặt lại ở đây để đồng bộ khi nâng cấp).
     const staff = await getFirestore().collection("tgChats").get();
     await Promise.allSettled(staff.docs.map((d) => tg.setMyCommands(STAFF_COMMANDS, { type: "chat", chat_id: Number(d.id) })));
@@ -86,3 +81,10 @@ exports.backupList = onCall({ region: REGION }, wrap(async (req) => { await need
 exports.backupGet = onCall({ region: REGION, memory: "512MiB" }, wrap(async (req) => { await needOwner(req); return { name: req.data?.name, json: await backupFor().get(String(req.data?.name ?? "")) }; }));
 /** Mỗi ngày 02:00 (giờ Việt Nam): sao lưu nếu chủ đã bật (hằng ngày hoặc Chủ nhật hằng tuần). */
 exports.backupScheduled = onSchedule({ region: REGION, schedule: "0 2 * * *", timeZone: "Asia/Ho_Chi_Minh", timeoutSeconds: 540, memory: "512MiB" }, async () => { await backupFor().scheduled(); });
+
+// ===== Cảnh báo và nhắc tự động qua Telegram cho quản lý =====
+const schedOpts = { region: REGION, timeZone: "Asia/Ho_Chi_Minh", secrets: [TOKEN], timeoutSeconds: 120 };
+/** Mỗi 15 phút: báo nhân viên chưa vào ca / quên ra ca. */
+exports.tgStaffAlerts = onSchedule({ ...schedOpts, schedule: "*/15 * * * *" }, async () => { try { await botFor().staffAlerts(); } catch (e) { console.error("staffAlerts", e); } });
+/** 08:00 và 18:00 mỗi ngày: khách sắp nhận phòng chưa cọc; khách vừa trả phòng chưa có hồ sơ. */
+exports.tgReminders = onSchedule({ ...schedOpts, schedule: "0 8,18 * * *" }, async () => { try { await botFor().dailyReminders(); } catch (e) { console.error("dailyReminders", e); } });

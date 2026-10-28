@@ -109,7 +109,7 @@ await check("reception CANNOT edit rooms", setDoc(doc(rec, "rooms/r1"), { name: 
 await check("housekeeping reads bookings", getDocs(collection(hk, "bookings")), true);
 await check("housekeeping CANNOT read guests", getDoc(doc(hk, "guests/g1")), false);
 await check("housekeeping CANNOT write busy", updateDoc(doc(hk, "busy/b0"), { status: "x" }), false);
-await check("owner edits rooms", setDoc(doc(own, "rooms/r2"), { name: "P2", price: 1 }), true);
+await check("owner edits rooms", setDoc(doc(own, "rooms/r2"), { name: "P2", type: "wood", capacity: 2, price: 1, status: "active" }), true);
 await check("owner grants role", updateDoc(doc(own, "users/cust1"), { role: "reception" }), true);
 await check("owner deletes guest", deleteDoc(doc(own, "guests/g1")), true);
 
@@ -468,6 +468,16 @@ await check("backup settings reject keep=0", setDoc(doc(own, "settings/backup"),
 await check("nobody writes backup status from the client", setDoc(doc(own, "settings/backupStatus"), { ok: true }), false);
 await check("booking create accepts a code", (async () => { const w = writeBatch(lnu); w.set(doc(lnu, "pend", "lnu_3"), { uid: "lnu", n: 3, bookingId: "cd1" }); w.set(doc(lnu, "bookings", "cd1"), { ...good, createdBy: "lnu", slotId: "lnu_3", code: "ABCD1234" }); w.set(doc(lnu, "busy", "cd1"), busyDoc); await w.commit(); })(), true);
 await check("booking create rejects a lowercase code", (async () => { const w = writeBatch(lnu); w.set(doc(lnu, "pend", "lnu_4"), { uid: "lnu", n: 4, bookingId: "cd2" }); w.set(doc(lnu, "bookings", "cd2"), { ...good, createdBy: "lnu", slotId: "lnu_4", code: "abcd1234" }); w.set(doc(lnu, "busy", "cd2"), busyDoc); await w.commit(); })(), false);
+
+// ----- Phòng: ảnh và giới thiệu -----
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "rooms/rp1"), { name: "Phòng ảnh", type: "wood", capacity: 2, price: 500000, status: "active" }); });
+const roomBase = { name: "Phòng ảnh", type: "wood", capacity: 2, price: 500000, status: "active" };
+await check("manager adds photos + description to a room", updateDoc(doc(mgr, "rooms/rp1"), { photos: ["https://firebasestorage.googleapis.com/v0/b/x/o/a.jpg"], desc: "Phòng yên tĩnh", features: "Wifi\nBếp" }), true);
+await check("anyone reads the room", getDoc(doc(anon, "rooms/rp1")), true);
+await check("reception CANNOT edit rooms", updateDoc(doc(rec, "rooms/rp1"), { desc: "x" }), false);
+await check("room rejects more than 8 photos", setDoc(doc(mgr, "rooms/rp1"), { ...roomBase, photos: Array(9).fill("https://x.y/a.jpg") }), false);
+await check("room rejects an unknown field", setDoc(doc(mgr, "rooms/rp1"), { ...roomBase, hacked: true }), false);
+await check("room rejects an over-long description", setDoc(doc(mgr, "rooms/rp1"), { ...roomBase, desc: "x".repeat(3001) }), false);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();

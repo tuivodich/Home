@@ -68,13 +68,18 @@ export function RoomsShowcase({ rooms, search, setSearch }: { rooms: Room[]; sea
         <div className="lp-rooms">
           {rooms.map((r) => (
             <article key={r.id} className="lp-room reveal">
-              <div className="lp-room-img"><Icon name={r.type === "wood" ? "home" : "bed"} /></div>
+              <Link to={`/phong/${r.id}`} className="lp-room-img" aria-label={r.name}>
+                {r.photos?.[0] ? <img src={r.photos[0]} alt={r.name} loading="lazy" decoding="async" /> : <Icon name={r.type === "wood" ? "home" : "bed"} />}
+              </Link>
               <div className="lp-room-body">
                 <small>{r.type === "wood" ? L.rooms.wood : L.rooms.concrete}</small>
                 <h3>{r.name}</h3>
                 <div className="lp-muted">{L.rooms.capacity}: {r.capacity} {L.rooms.up}</div>
                 <div className="lp-price">{money(r.price)} <span>{L.rooms.perNight}</span></div>
-                <button className="lp-btn primary sm" onClick={() => view(r.id)}>{L.rooms.view}</button>
+                <div className="lp-room-actions">
+                  <button className="lp-btn primary sm" onClick={() => view(r.id)}>{L.rooms.view}</button>
+                  <Link className="lp-btn ghost sm" to={`/phong/${r.id}`}>{L.rooms.detail}</Link>
+                </div>
               </div>
             </article>
           ))}

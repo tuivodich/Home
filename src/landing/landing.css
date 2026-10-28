@@ -576,4 +576,5 @@ html { scroll-behavior: smooth; }
   .lp-who-mobile { display: block; padding: 10px 4px; font-weight: 700; color: var(--head); border-bottom: 1px solid var(--line); }
   .lp-logout-mobile { display: inline-flex; }
 }
-
+.lp-perks { display: grid; gap: 6px; margin-bottom: 18px; }
+.lp-perks h3 { margin-bottom: 4px; }

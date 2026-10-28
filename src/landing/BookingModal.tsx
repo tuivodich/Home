@@ -6,6 +6,7 @@ import { useBank, usePricingConfig } from "../lib/usePricing";
 import { quoteLines, quoteStay } from "../lib/pricing";
 import { fillP, policyLines, useP } from "../i18n/pricing";
 import PayPanel from "./PayPanel";
+import { bookingCode } from "../lib/banks";
 import { useG } from "../i18n/guest";
 import DateInput from "../components/DateInput";
 import { Link } from "react-router-dom";
@@ -112,7 +113,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
       b.set(doc(db, "bookings", id), {
         roomId: room.id, guestName: name.trim(), phone: phone.trim(), email: email.trim(),
         checkIn, checkOut, guests, total,
-        lines: quoteLines(quote, room.name), ...(quote.deposit > 0 ? { deposit: quote.deposit } : {}),
+        code: bookingCode(id), lines: quoteLines(quote, room.name), ...(quote.deposit > 0 ? { deposit: quote.deposit } : {}),
         status: "pending", note: note.trim(), source: "online", createdBy: user.uid, slotId,
         ...(coupon ? { couponCode: coupon.code, discountPercent: coupon.percent, originalTotal: original } : {}),
       });

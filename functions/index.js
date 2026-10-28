@@ -5,6 +5,10 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { createTelegram } = require("./telegram");
 const { createBot, webhookSecret, safeEq, STAFF_COMMANDS } = require("./bot");
+const { createLoyalty } = require("./loyalty");
+const { createBackup } = require("./backup");
+const { getStorage } = require("firebase-admin/storage");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 
 initializeApp();
 const TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
@@ -57,3 +61,28 @@ exports.tgSetup = onCall(opts, async (req) => {
     return { username: bot.username, url };
   } catch (e) { throw new HttpsError("internal", e.message); }
 });
+
+/** Thành viên nhận mã giảm giá riêng của hạng hiện tại (không cần token bot). */
+exports.loyaltyClaim = onCall({ region: REGION }, async (req) => {
+  const uid = needAuth(req);
+  try { return await createLoyalty({ db: getFirestore() }).claim(uid); } catch (e) { throw new HttpsError(e.code === "failed-precondition" ? "failed-precondition" : "internal", e.message); }
+});
+
+// ===== Sao lưu dữ liệu (chỉ chủ) =====
+const backupFor = () => createBackup({ db: getFirestore(), bucket: getStorage().bucket() });
+async function needOwner(req) {
+  const uid = needAuth(req);
+  if ((await getFirestore().doc(`users/${uid}`).get()).data()?.role !== "owner") throw new HttpsError("permission-denied", "Chỉ chủ mới sao lưu được.");
+  return uid;
+}
+const wrap = (fn) => async (req) => { try { return await fn(req); } catch (e) { throw e instanceof HttpsError ? e : new HttpsError(e.code === "invalid-argument" || e.code === "failed-precondition" ? e.code : "internal", e.message); } };
+
+exports.backupNow = onCall({ region: REGION, timeoutSeconds: 300, memory: "512MiB" }, wrap(async (req) => {
+  await needOwner(req);
+  const cfg = (await getFirestore().doc("settings/backup").get()).data();
+  return backupFor().run(cfg?.keep ?? 14);
+}));
+exports.backupList = onCall({ region: REGION }, wrap(async (req) => { await needOwner(req); return { files: await backupFor().list() }; }));
+exports.backupGet = onCall({ region: REGION, memory: "512MiB" }, wrap(async (req) => { await needOwner(req); return { name: req.data?.name, json: await backupFor().get(String(req.data?.name ?? "")) }; }));
+/** Mỗi ngày 02:00 (giờ Việt Nam): sao lưu nếu chủ đã bật (hằng ngày hoặc Chủ nhật hằng tuần). */
+exports.backupScheduled = onSchedule({ region: REGION, schedule: "0 2 * * *", timeZone: "Asia/Ho_Chi_Minh", timeoutSeconds: 540, memory: "512MiB" }, async () => { await backupFor().scheduled(); });

@@ -12,6 +12,10 @@ import { tgNotify } from "../lib/telegram";
 import CheckinModal, { type Precheckin } from "../landing/CheckinModal";
 import { useProfileDoc } from "../lib/profile";
 import { useG } from "../i18n/guest";
+import TierBadge from "../components/TierBadge";
+import { loyaltyClaim } from "../lib/telegram";
+import { useMyTier } from "../lib/loyalty";
+import { fillP } from "../i18n/pricing";
 import { useP } from "../i18n/pricing";
 import { useBank, usePricingConfig } from "../lib/usePricing";
 import { daysUntil, refundPercentFor } from "../lib/pricing";
@@ -24,6 +28,10 @@ export default function Account() {
   const { user, loading } = useAuth();
   const G = useG();
   const P = useP();
+  const my = useMyTier(user?.uid);
+  const [claim, setClaim] = useState<{ code: string; percent: number; expiresAt: number } | null>(null);
+  const [claimErr, setClaimErr] = useState("");
+  const [claiming, setClaiming] = useState(false);
   const { cfg } = usePricingConfig();
   const bank = useBank(!!user);
   const [payFor, setPayFor] = useState<Booking | null>(null);
@@ -83,7 +91,28 @@ export default function Account() {
       <main className="lp-page lp-account">
       <div className="lp-wrap">
         <h1 className="lp-account-title">{L.account.title}</h1>
-        <p className="lp-muted">{user.displayName || user.email}</p>
+        <p className="lp-muted">{user.displayName || user.email}<TierBadge tier={my.cfg.enabled ? my.tier : null} /></p>
+        {my.cfg.enabled && my.tier && (
+          <div className="lp-panel lp-perks">
+            <h3>{G.perks}</h3>
+            <div>{G.perksTier}: <TierBadge tier={my.tier} /> · {G.perksStays}: <b>{my.count}</b></div>
+            <div className="lp-muted lp-small">{my.next ? fillP(G.perksNext, { n: my.next.minBookings - my.count, t: my.next.name }) : G.perksTop}</div>
+            {(() => {
+              const mine = my.member?.claimed?.[my.tier.id];
+              if (my.tier.couponPercent <= 0) return <div className="lp-muted lp-small">{G.perksNone}</div>;
+              if (mine || claim) return <div className="lp-ok">{G.perksCode}: <b>{claim?.code ?? mine}</b>{claim ? ` (−${claim.percent}%, ${G.perksExpires} ${fmtDate(new Date(claim.expiresAt).toISOString().slice(0, 10))})` : ""}</div>;
+              return (
+                <div>
+                  <button className="lp-btn primary sm" disabled={claiming} onClick={async () => {
+                    setClaiming(true); setClaimErr("");
+                    try { setClaim(await loyaltyClaim()); } catch (ex) { console.error("claim", ex); setClaimErr(G.perksFail); } finally { setClaiming(false); }
+                  }}>{fillP(G.perksClaim, { p: my.tier.couponPercent, t: my.tier.name })}</button>
+                  {claimErr && <p className="lp-error">{claimErr}</p>}
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {!fetching && sorted.length === 0 && (
           <div className="lp-panel lp-center">

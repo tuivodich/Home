@@ -23,6 +23,13 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Chỉ **chủ/quản lý** đổi được ở *Cài đặt → Giao diện website* (lưu trong `settings/app`: `theme`, `themeAuto`, `effects`; luật Firestore kiểm tra giá trị hợp lệ). Khu quản lý của nhân viên giữ nguyên giao diện.
 - Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
 
+## Thành viên thân thiết, báo cáo, buồng phòng, chi phí, sao lưu
+- **Thành viên thân thiết** (*Đặt phòng → Thành viên thân thiết*): hạng (mặc định Đồng/Bạc/Vàng/Kim cương) tự thăng theo số lần ở (đặt phòng online đã trả phòng) do chủ/quản lý đặt; đặt tay cho từng khách được. Mỗi hạng có huy hiệu màu sau tên (header, đặt phòng của nhân viên) và **mã giảm giá riêng** (hạn 90 ngày, một lần, chỉ chủ mã dùng được) khách tự nhận ở *Đặt phòng của tôi* — hạng và mã do Cloud Functions (`loyaltyClaim`) kiểm tra ở máy chủ.
+- **Báo cáo doanh thu** (*Tài chính*): theo tháng/năm — doanh thu (ghi nhận khi trả phòng), lợi nhuận, công suất, giá bình quân, theo phòng/nguồn, tiền thu trong kỳ, chi phí; xuất CSV.
+- **Chi phí & công nợ**: ghi chi phí theo loại; khoản phải trả chưa thanh toán; khoản khách còn nợ (nút Thu tiền).
+- **Buồng phòng**: trạng thái Cần dọn / Đang dọn / Sẵn sàng; khách trả phòng thì phòng tự "Cần dọn" (kèm tin Telegram).
+- **Sao lưu** (chỉ chủ): tải JSON về máy; sao lưu ngay lên Cloud Storage; tự động mỗi ngày/tuần lúc 02:00 (giữ N bản). Cần Cloud Scheduler (xem `docs/telegram-bot.md`). Google Drive: tải file về rồi tải lên Drive (chưa tự động).
+
 ## Giá, đặt cọc QR, chính sách hủy, dịch vụ, hóa đơn
 - **Giá & chính sách** (*Đặt phòng → Giá & chính sách*, chủ/quản lý): tăng giá cuối tuần, mùa, ngày lễ (thay giá cuối tuần), giảm giá ở dài ngày; % tiền cọc, giờ nhận/trả phòng, mức hoàn cọc khi hủy, phụ thu thêm khách / nhận sớm / trả muộn, dịch vụ đi kèm (đón đưa, thuê xe máy, ăn sáng, BBQ, tour…). Mã giảm giá vẫn áp thêm cho tiền ở. Công thức: `src/lib/pricing.ts` (có kiểm thử `scripts/pricing.test.mts`).
 - **Tài khoản ngân hàng** do **chủ** thiết lập cùng trang. Khi đặt phòng (có cọc), khách thấy mã **VietQR** (ảnh từ img.vietqr.io) + nội dung chuyển khoản `NHAGO <mã đặt phòng>`; hãy quét thử mã trong trang để chắc đúng tài khoản.

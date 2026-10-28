@@ -5,7 +5,10 @@ import { useG } from "../i18n/guest";
 import { usePricingConfig } from "../lib/usePricing";
 import { daysUntil, depositFor, quoteLines, quoteStay, refundPercentFor } from "../lib/pricing";
 import { bookingCode } from "../lib/banks";
+import { markRoomDirty } from "../lib/housekeeping";
 import { useP } from "../i18n/pricing";
+import TierBadge from "../components/TierBadge";
+import { useTierLookup } from "../lib/loyalty";
 import { Link, useNavigate } from "react-router-dom";
 import { Timestamp, collection, doc, serverTimestamp, updateDoc, writeBatch } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
@@ -34,6 +37,7 @@ export default function Bookings() {
   const G = useG();
   const P = useP();
   const { pricing, cfg } = usePricingConfig();
+  const tiers = useTierLookup(bookings);
   const [err, setErr] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -81,6 +85,7 @@ export default function Bookings() {
       w.set(bRef, {
         roomId: f.roomId, guestName: g.fullName.trim(), phone: g.phone.trim(), email: g.email.trim(),
         checkIn: f.checkIn, checkOut: f.checkOut, guests: f.guests, total: finalTotal, note: f.note,
+        code: bookingCode(bRef.id),
         lines: f.total ? [{ label: "Tiền phòng (nhập tay)", amount: base }, ...(coupon ? [{ label: `Mã giảm giá −${coupon.percent}%`, amount: -(base - finalTotal) }] : [])] : (quote ? quoteLines(quote, room?.name ?? "") : []),
         ...(depositFor(finalTotal, cfg.depositPercent) > 0 ? { deposit: depositFor(finalTotal, cfg.depositPercent) } : {}),
         status: "confirmed", source: "staff", createdBy: uid,
@@ -122,7 +127,11 @@ export default function Bookings() {
   };
   const askAmount = (msg: string, def: number) => { const v = prompt(msg, String(Math.max(0, Math.round(def)))); const n = v === null ? 0 : Number(v.replace(/[^\d]/g, "")); return Number.isFinite(n) ? n : 0; };
 
-  const setStatus = (id: string, status: BookingStatus) => updateDoc(doc(db, "bookings", id), { status });
+  const setStatus = async (id: string, status: BookingStatus) => {
+    await updateDoc(doc(db, "bookings", id), { status });
+    // Khách trả phòng → phòng chuyển "Cần dọn" và báo buồng phòng qua Telegram.
+    if (status === "checked_out") { const b = bookings.find((x) => x.id === id); if (b) await markRoomDirty(b.roomId, { uid: user?.uid ?? "", name: user?.displayName || user?.email || "" }); }
+  };
 
   // Xác nhận / nhận phòng một yêu cầu đang "Chờ xác nhận": không được trùng với đặt phòng đã xác nhận / đang ở / đã trả của cùng phòng.
   const hasClash = (b: Booking) => bookings.some((o) => o.id !== b.id && o.roomId === b.roomId
@@ -193,7 +202,7 @@ export default function Bookings() {
         return (
           <div className="card" key={b.id}>
             <div className="row between">
-              <strong>{b.guestName}{b.source === "online" && <small> · {t("online")}</small>}</strong>
+              <strong>{b.guestName}<TierBadge tier={b.source === "online" ? tiers.tierOf(b.createdBy) : null} />{b.source === "online" && <small> · {t("online")}</small>}</strong>
               <span className={`tag ${b.status}`}>{expired ? t("expiredLabel") : t(b.status)}</span>
             </div>
             <div>{roomName(b.roomId)} · {fmtDate(b.checkIn)} → {fmtDate(b.checkOut)} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>

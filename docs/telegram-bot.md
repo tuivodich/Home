@@ -40,3 +40,6 @@ Bất kỳ ai nhắn bot cũng dùng được các lệnh dưới đây (dữ li
 npm ci --prefix functions
 npx firebase-tools emulators:exec --only firestore "npm test --prefix functions"
 ```
+
+## Hàm theo lịch (Cloud Scheduler)
+`backupScheduled` (sao lưu) và các cảnh báo/nhắc của bot chạy theo lịch nên cần bật **Cloud Scheduler API**: https://console.cloud.google.com/apis/library/cloudscheduler.googleapis.com?project=sisterhome . Nếu deploy báo thiếu quyền, thêm vai trò *Cloud Scheduler Admin* cho tài khoản dịch vụ deploy.

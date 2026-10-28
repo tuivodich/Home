@@ -16,6 +16,11 @@ import Accounts from "./pages/Accounts";
 import Roster from "./pages/Roster";
 import Timesheet from "./pages/Timesheet";
 import PricingPage from "./pages/PricingPage";
+import LoyaltyPage from "./pages/LoyaltyPage";
+import ReportsPage from "./pages/ReportsPage";
+import ExpensesPage from "./pages/ExpensesPage";
+import HousekeepingPage from "./pages/HousekeepingPage";
+import BackupPage from "./pages/BackupPage";
 import { useHr } from "./i18n/hr";
 
 export default function StaffShell() {
@@ -38,8 +43,13 @@ export default function StaffShell() {
   const bookingItems: DdItem[] = [
     { label: t("bookings"), to: "/app/bookings" },
     ...(admin ? [{ label: t("menuRooms"), to: "/app/rooms" }, { label: lang === "vi" ? "Giá & chính sách" : "Prices & policies", to: "/app/pricing" }] : []),
+    ...(admin ? [{ label: lang === "vi" ? "Thành viên thân thiết" : "Loyalty members", to: "/app/loyalty" }] : []),
     { label: t("history"), to: "/app/history" },
     ...(admin ? [{ label: t("coupons"), to: "/app/coupons" }] : []),
+  ];
+  const financeItems: DdItem[] = [
+    { label: lang === "vi" ? "Báo cáo doanh thu" : "Revenue report", to: "/app/reports" },
+    { label: lang === "vi" ? "Chi phí & công nợ" : "Expenses & debts", to: "/app/expenses" },
   ];
   const contentItems: DdItem[] = [
     { label: t("reviewsAdmin"), to: "/app/reviews" },
@@ -63,11 +73,14 @@ export default function StaffShell() {
       </header>
       <nav>
         <NavLink to="/app" end>{t("dashboard")}</NavLink>
-        {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/rooms", "/app/pricing", "/app/history", "/app/coupons")} />}
+        {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/rooms", "/app/pricing", "/app/loyalty", "/app/history", "/app/coupons")} />}
         {front && <NavLink to="/app/guests">{t("guests")}</NavLink>}
+        <NavLink to="/app/housekeeping">{lang === "vi" ? "Buồng phòng" : "Housekeeping"}</NavLink>
+        {admin && <Dropdown className="st-dd" label={lang === "vi" ? "Tài chính" : "Finance"} items={financeItems} active={isIn("/app/reports", "/app/expenses")} />}
         {admin
           ? <Dropdown className="st-dd" label={H.menu} items={hrItems} active={isIn("/app/accounts", "/app/attendance", "/app/roster", "/app/timesheet")} />
           : <NavLink to="/app/attendance">{H.attendance}</NavLink>}
+        {profile?.role === "owner" && <NavLink to="/app/backup">{lang === "vi" ? "Sao lưu" : "Backup"}</NavLink>}
         {admin && <Dropdown className="st-dd" label={t("menuContent")} items={contentItems} active={isIn("/app/reviews")} />}
       </nav>
       <main>
@@ -84,6 +97,11 @@ export default function StaffShell() {
           {admin && <Route path="reviews" element={<ReviewsAdmin />} />}
           {admin && <Route path="rooms" element={<Rooms />} />}
           {admin && <Route path="pricing" element={<PricingPage />} />}
+          {admin && <Route path="loyalty" element={<LoyaltyPage />} />}
+          {admin && <Route path="reports" element={<ReportsPage />} />}
+          {admin && <Route path="expenses" element={<ExpensesPage />} />}
+          <Route path="housekeeping" element={<HousekeepingPage />} />
+          {profile?.role === "owner" && <Route path="backup" element={<BackupPage />} />}
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>
       </main>

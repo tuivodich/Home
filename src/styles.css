@@ -184,3 +184,19 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
   .invoice-page { background: #fff; padding: 0; }
   .invoice { box-shadow: none; border-radius: 0; max-width: none; padding: 0; }
 }
+
+/* Huy hiệu hạng thành viên */
+.tier-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 700; letter-spacing: .02em; padding: 1px 9px; border-radius: 999px; margin-left: 6px; vertical-align: middle; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); white-space: nowrap; }
+
+/* Báo cáo: biểu đồ cột và thanh theo phòng */
+.barchart { width: 100%; height: auto; max-height: 240px; }
+.bar-rev { fill: var(--accent); } .bar-exp { fill: color-mix(in srgb, var(--accent) 35%, #c58a2b); }
+.bar-lbl { font-size: 10px; fill: currentColor; opacity: .7; }
+.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: middle; } .legend-dot.rev { background: var(--accent); } .legend-dot.exp { background: color-mix(in srgb, var(--accent) 35%, #c58a2b); }
+.roombar { display: grid; grid-template-columns: minmax(90px, 1fr) 2fr auto; gap: 4px 12px; align-items: center; }
+.roombar small { grid-column: 2 / -1; opacity: .75; }
+.bartrack { background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 6px; height: 12px; overflow: hidden; } .barfill { height: 100%; background: var(--accent); border-radius: 6px; min-width: 2px; }
+
+/* Buồng phòng */
+.hk { border-left: 5px solid #2e9b5b; } .hk-dirty { border-left-color: #c9372c; } .hk-cleaning { border-left-color: #d89b12; }
+.tag.hk-tag-ready { background: #d6f0dc; color: #1c6b34; } .tag.hk-tag-dirty { background: #fddcd8; color: #9a2a20; } .tag.hk-tag-cleaning { background: #fdeccb; color: #8a5a00; }

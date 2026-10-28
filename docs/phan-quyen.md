@@ -30,6 +30,11 @@ Vai trò: **Chủ** (`owner`), **Quản lý** (`manager`), **Lễ tân** (`recep
 | **Thiết lập tài khoản ngân hàng nhận cọc** (người đã đăng nhập đọc được để hiện mã QR khi đặt) | ✅ | ❌ | ❌ | ❌ | ❌ | đọc |
 | Ghi nhận đã nhận cọc / thu thêm / hoàn tiền; in hóa đơn mọi đặt phòng | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Xem/in hóa đơn của đặt phòng của chính mình | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Cấu hình thành viên thân thiết; đặt hạng thủ công cho khách | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Nhận mã giảm giá riêng của hạng của mình | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Báo cáo doanh thu; Chi phí & công nợ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Buồng phòng: xem và đổi trạng thái dọn phòng | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Sao lưu dữ liệu (tải về, Cloud Storage, tự động) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Chấm công cho chính mình (Vào ca / Ra ca), xem lịch ca và lịch sử của mình | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Lịch ca (danh mục ca, xếp ca), Bảng chấm công của mọi nhân viên, sửa/thêm/xóa lượt, xuất CSV | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cài đặt: thông tin liên hệ công khai (website + bot) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |

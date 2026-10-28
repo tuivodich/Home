@@ -8,6 +8,8 @@ import { isStaffRole } from "../lib/types";
 import Dropdown, { type DdItem } from "../components/Dropdown";
 import HashLink from "../components/HashLink";
 import { useAuthUi } from "../layout/authUi";
+import TierBadge from "../components/TierBadge";
+import { useMyTier } from "../lib/loyalty";
 
 /**
  * Menu chính (mỗi mục lớn có menu con, đều có trạng thái "đang xem"):
@@ -22,6 +24,9 @@ export default function Header() {
   const G = useG();
   const { user, profile, logout } = useAuth();
   const { open: openAuth } = useAuthUi();
+  const my = useMyTier(user?.uid);
+  // Huy hiệu hạng: luôn hiện với khách hàng; nhân viên chỉ khi có hạng đặt tay hoặc đã ở ít nhất một lần.
+  const badge = my.tier && (profile?.role === "customer" || profile?.role === "pending" || !!my.member?.tier || my.count > 0) ? my.tier : null;
   const [menu, setMenu] = useState(false);
   const loc = useLocation();
   useEffect(() => { setMenu(false); }, [loc.pathname, loc.hash]);
@@ -56,7 +61,7 @@ export default function Header() {
       <div className="lp-wrap lp-header-in">
         <HashLink to="/#home" className="lp-brand"><span className="lp-logo"><img src="/favicon.svg" alt="" width="38" height="38" /></span><span>{site.name}</span></HashLink>
         <nav className={`lp-nav ${menu ? "open" : ""}`} aria-label="Menu">
-          {user && <div className="lp-who-mobile">{whoName} <span className="dd-role">({whoRole})</span></div>}
+          {user && <div className="lp-who-mobile">{whoName}<TierBadge tier={badge} /> <span className="dd-role">({whoRole})</span></div>}
           <Dropdown className="lp-dd" label={M.home} items={homeItems} />
           <Dropdown className="lp-dd" label={M.book} items={bookItems} />
           <Dropdown className="lp-dd" label={M.exploreMenu} items={exploreItems} />
@@ -69,7 +74,7 @@ export default function Header() {
           </div>
         </nav>
         <div className="lp-tools">
-          {user && <span className="lp-who" title={user.email ?? ""}>{whoName} <span className="dd-role">({whoRole})</span></span>}
+          {user && <span className="lp-who" title={user.email ?? ""}>{whoName}<TierBadge tier={badge} /> <span className="dd-role">({whoRole})</span></span>}
           {user && <button className="lp-pill lp-logout" onClick={logout}>{L.signOut}</button>}
           <button className="lp-pill lp-lang" onClick={() => setLang(lang === "vi" ? "en" : "vi")} aria-label="Language">{lang === "vi" ? "EN" : "VI"}</button>
           <button className="lp-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>

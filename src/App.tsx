@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Account from "./pages/Account";
+import MyProfile from "./pages/MyProfile";
+import ExplorePage from "./pages/ExplorePage";
 import PrivacyPage from "./pages/PrivacyPage";
 import FaqPage from "./pages/FaqPage";
 import ReviewsPage from "./pages/ReviewsPage";
@@ -14,6 +16,8 @@ export default function App() {
       <Route path="/faq" element={<FaqPage />} />
       <Route path="/reviews" element={<ReviewsPage />} />
       <Route path="/account" element={<Account />} />
+      <Route path="/profile" element={<MyProfile />} />
+      <Route path="/explore" element={<ExplorePage />} />
       <Route path="/app/*" element={<StaffShell />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

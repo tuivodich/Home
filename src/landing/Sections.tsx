@@ -5,7 +5,7 @@ import { site } from "../lib/siteConfig";
 import { safeUrl, useContact, zaloHref } from "../lib/contact";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
-import Icon from "./Icon";
+import Icon, { type IconName } from "./Icon";
 import ForestScene, { Drift, Fireflies, MiniPines, Snowfall, TreeLine } from "./ForestScene";
 import { useTheme } from "../lib/theme";
 import HashLink from "../components/HashLink";
@@ -162,12 +162,12 @@ export function Testimonials() {
 export function Footer() {
   const L = useL();
   const c = useContact();
-  const rows: [string, string, string?][] = [
-    [L.footer.phone, c.phone, c.phone && `tel:${c.phone.replace(/[^\d+]/g, "")}`],
-    [L.footer.zalo, c.zalo, zaloHref(c.zalo)],
-    [L.footer.email, c.email, c.email && `mailto:${c.email}`],
-    [L.footer.address, c.address, safeUrl(c.mapUrl)],
-    [L.footer.facebook, c.facebook, safeUrl(c.facebook)],
+  const rows: [string, string, string | undefined, IconName][] = [
+    [L.footer.phone, c.phone, c.phone && `tel:${c.phone.replace(/[^\d+]/g, "")}`, "phone"],
+    [L.footer.zalo, c.zalo, zaloHref(c.zalo), "chat"],
+    [L.footer.email, c.email, c.email && `mailto:${c.email}`, "mail"],
+    [L.footer.address, c.address, safeUrl(c.mapUrl), "pin"],
+    [L.footer.facebook, c.facebook, safeUrl(c.facebook), "facebook"],
   ];
   const shown = rows.filter(([, v]) => v);
   const { theme, effects } = useTheme();
@@ -190,13 +190,15 @@ export function Footer() {
         </div>
         <div>
           <h4>{L.footer.info}</h4>
-          <Link to="/reviews">{L.menu.reviews}</Link><Link to="/faq">{L.menu.faq}</Link><Link to="/privacy">{L.menu.privacy}</Link>
+          <Link to="/explore">{L.menu.explore}</Link><Link to="/reviews">{L.menu.reviews}</Link><Link to="/faq">{L.menu.faq}</Link><Link to="/privacy">{L.menu.privacy}</Link>
         </div>
         <div>
           <h4>{L.footer.contact}</h4>
           {shown.length === 0 && <p className="lp-muted-l">{L.footer.contactSoon}</p>}
-          {shown.map(([k, v, href]) => (
-            <div key={k}>{href ? <a href={href} target="_blank" rel="noopener noreferrer">{k}: {v}</a> : <span>{k}: {v}</span>}</div>
+          {shown.map(([k, v, href, icon]) => (
+            <div key={k} className="lp-contact-row">{href
+              ? <a href={href} target="_blank" rel="noopener noreferrer"><Icon name={icon} />{k}: {v}</a>
+              : <span><Icon name={icon} />{k}: {v}</span>}</div>
           ))}
         </div>
       </div>

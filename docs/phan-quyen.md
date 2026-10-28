@@ -22,6 +22,10 @@ Vai trò: **Chủ** (`owner`), **Quản lý** (`manager`), **Lễ tân** (`recep
 | Phòng: thêm, sửa giá, bảo trì, xóa | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cài đặt: tỷ giá USD, bật/tắt tự từ chối yêu cầu quá hạn | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Sửa nội dung cảm nhận của khách (kể cả đã duyệt) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hồ sơ cá nhân "Tài khoản của tôi" — xem/sửa của chính mình | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Xem hồ sơ cá nhân của người khác | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Sửa hồ sơ cá nhân của người khác** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Check-in online: khách điền cho đặt phòng của mình; nhân viên xem và chuyển thành hồ sơ khách | ✅ | ✅ | ✅ (xem) | ❌ | ❌ | ✅ (của mình) |
 | Chấm công cho chính mình (Vào ca / Ra ca), xem lịch ca và lịch sử của mình | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Lịch ca (danh mục ca, xếp ca), Bảng chấm công của mọi nhân viên, sửa/thêm/xóa lượt, xuất CSV | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cài đặt: thông tin liên hệ công khai (website + bot) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |

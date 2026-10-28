@@ -9,6 +9,9 @@ import { useI18n, useL } from "../i18n";
 import { fmtDate, nightsBetween, todayStr } from "../lib/format";
 import { isStaffRole, type Booking, type Room } from "../lib/types";
 import { tgNotify } from "../lib/telegram";
+import CheckinModal, { type Precheckin } from "../landing/CheckinModal";
+import { useProfileDoc } from "../lib/profile";
+import { useG } from "../i18n/guest";
 import { useSiteTheme } from "../lib/theme";
 import "../landing/landing.css";
 
@@ -17,6 +20,10 @@ export default function Account() {
   const { t, lang, setLang } = useI18n();
   const { user, profile, loading, logout } = useAuth();
   const siteTheme = useSiteTheme();
+  const G = useG();
+  const { profile: myProfile } = useProfileDoc(user?.uid);
+  const [pres, setPres] = useState<Precheckin[]>([]);
+  const [checkinFor, setCheckinFor] = useState<Booking | null>(null);
   const { money } = useMoney();
   const { data: rooms } = useCollection<Room>("rooms");
   const [mine, setMine] = useState<Booking[]>([]);
@@ -32,6 +39,13 @@ export default function Account() {
       setMine(snap.docs.map((d) => ({ ...(d.data() as object), id: d.id }) as Booking));
       setFetching(false);
     }, (e) => { console.error("my bookings", e); setFetching(false); });
+  }, [uid]);
+
+  // Check-in online của tôi (mỗi đặt phòng một bản, id = mã đặt phòng).
+  useEffect(() => {
+    if (!uid) return;
+    return onSnapshot(query(collection(db, "precheckins"), where("uid", "==", uid)),
+      (snap) => setPres(snap.docs.map((d) => ({ ...(d.data() as object), id: d.id }) as Precheckin)), (e) => console.error("my checkins", e));
   }, [uid]);
 
   // Chỉ hiện đặt phòng khách tự đặt online (đặt phòng do nhân viên nhập hộ không nằm ở đây).
@@ -63,6 +77,7 @@ export default function Account() {
       <div className="lp-wrap">
         <div className="lp-account-bar">
           <Link to="/" className="lp-pill">{L.account.back}</Link>
+          <Link to="/profile" className="lp-pill">{G.myAccount}</Link>
           <span className="lp-spacer" />
           <button className="lp-pill" onClick={() => setLang(lang === "vi" ? "en" : "vi")}>{lang === "vi" ? "EN" : "VI"}</button>
           {isStaffRole(profile?.role) && <Link className="lp-pill solid" to="/app">{L.account.staffLink}</Link>}
@@ -88,9 +103,13 @@ export default function Account() {
               <div>{fmtDate(b.checkIn)} → {fmtDate(b.checkOut)} · {nightsBetween(b.checkIn, b.checkOut)} {L.booking.nights}</div>
               <div className="lp-muted">{money(b.total)} · 👤 {b.guests}</div>
               {b.couponCode && <div className="lp-muted lp-small">🏷 {b.couponCode} (−{b.discountPercent}%)</div>}
+              {pres.some((p) => p.id === b.id) && <div className="lp-small lp-ok">✓ {G.checkinSent}</div>}
             </div>
             <div className="lp-booking-side">
               <span className={`lp-status ${expired ? "cancelled" : b.status}`}>{expired ? L.account.expired : t(b.status)}</span>
+              {((b.status === "pending" && !stale) || b.status === "confirmed") && (
+                <button className="lp-pill solid" onClick={() => setCheckinFor(b)}>{pres.some((p) => p.id === b.id) ? G.checkinEdit : G.checkinBtn}</button>
+              )}
               {((b.status === "pending" && !stale) || b.status === "confirmed") && (
                 <button className="lp-pill" onClick={() => { setCancelErr(""); setConfirming(b); }}>{L.account.cancel}</button>
               )}
@@ -101,6 +120,7 @@ export default function Account() {
         {sorted.some((b) => b.status === "checked_in") && <p className="lp-muted lp-small">{L.account.contactToChange}</p>}
       </div>
 
+      {checkinFor && user && <CheckinModal booking={checkinFor} existing={pres.find((p) => p.id === checkinFor.id)} base={myProfile} uid={user.uid} onClose={() => setCheckinFor(null)} />}
       {confirming && (
         <div className="lm-overlay" onClick={() => !cancelling && setConfirming(null)} role="dialog" aria-modal="true" aria-labelledby="cancel-title">
           <div className="lm-modal" onClick={(e) => e.stopPropagation()}>

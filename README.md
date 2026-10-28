@@ -23,6 +23,11 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Chỉ **chủ/quản lý** đổi được ở *Cài đặt → Giao diện website* (lưu trong `settings/app`: `theme`, `themeAuto`, `effects`; luật Firestore kiểm tra giá trị hợp lệ). Khu quản lý của nhân viên giữ nguyên giao diện.
 - Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
 
+## Tài khoản của tôi, check-in online, khám phá khu vực
+- Người dùng (Google hoặc email) vào menu *Tài khoản → Tài khoản của tôi* để lưu họ tên, loại/số giấy tờ, quốc tịch, ngày sinh, điện thoại, email. Hộp thoại **Xác nhận đặt phòng** điền sẵn từ đây (vẫn sửa được); chỉ **chủ** sửa được hồ sơ của người khác (*Nhân sự → Tài khoản nhân viên → Hồ sơ*).
+- **Check-in online**: khi đặt phòng (hoặc sau đó ở trang *Đặt phòng của tôi*) khách điền giấy tờ và giờ đến dự kiến; nhân viên thấy ở *Khách lưu trú → Check-in online chờ xử lý*, bấm "Tạo hồ sơ" để điền sẵn vào biểu mẫu rồi lưu (ảnh giấy tờ vẫn chụp tại quầy).
+- Trang **Khám phá khu vực** (`/explore`): bản đồ nhúng theo địa chỉ ở *Thông tin liên hệ*, hướng dẫn đường đi, địa điểm gợi ý theo nhóm; chủ/quản lý chỉnh ngay trên trang (đang là nội dung mẫu).
+
 ## Chấm công và ca làm nhân viên
 - **Nhân viên** (mọi vai trò nhân viên): *Nhân sự → Chấm công*: bấm **Vào ca / Ra ca** (giờ lấy từ máy chủ, không lùi giờ được), xem ca hôm nay, lịch 7 ngày tới và các lượt gần đây (có báo đi muộn).
 - **Chủ/quản lý**: *Nhân sự → Lịch ca* (danh mục ca kể cả ca qua đêm, xếp ca theo tuần, sao chép từ tuần trước) và *Bảng chấm công* (tổng hợp tháng: ngày công, giờ làm, đi muộn, vắng; chi tiết từng lượt; sửa/thêm/xóa; xuất CSV mở bằng Excel). Đi muộn = vào ca trễ hơn 10 phút so với giờ bắt đầu ca (`GRACE_MIN` trong `src/lib/hr.ts`).

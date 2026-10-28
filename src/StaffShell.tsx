@@ -56,7 +56,7 @@ export default function StaffShell() {
       <header>
         <Link to="/" className="brand"><img className="brandicon" src="/favicon.svg" alt="" width="24" height="24" /> {t("appName")}</Link>
         <span className="spacer" />
-        <span className="who" title={user.email ?? ""}>{profile?.name || user.displayName || user.email} ({t(profile?.role ?? "customer")})</span>
+        <span className="who" title={user.email ?? ""}>{profile?.name || user.displayName || user.email} <span className="dd-role">({t(profile?.role ?? "customer")})</span></span>
         <button className="ghost" onClick={() => setLang(lang === "vi" ? "en" : "vi")}>{lang === "vi" ? "EN" : "VI"}</button>
         <button className="ghost" onClick={logout}>{t("logout")}</button>
       </header>

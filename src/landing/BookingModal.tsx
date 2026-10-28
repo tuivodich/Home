@@ -1,6 +1,8 @@
 import { tgNotify } from "../lib/telegram";
 import { DEFAULT_MAX_PENDING } from "../lib/theme";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { EMPTY_PROFILE, useProfileDoc, type Profile } from "../lib/profile";
+import { useG } from "../i18n/guest";
 import DateInput from "../components/DateInput";
 import { Link } from "react-router-dom";
 import { collection, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch } from "firebase/firestore";
@@ -18,7 +20,9 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
   room: Room; search: Search; user: User; profile: UserDoc | null; busy: Busy[]; onClose: () => void;
 }) {
   const L = useL();
+  const G = useG();
   const { money } = useMoney();
+  const { profile: saved, loading: profLoading } = useProfileDoc(user.uid);
   // Khách có thể đổi ngày ngay trong hộp thoại; giá và tình trạng phòng tính lại theo ngày mới.
   const [checkIn, setCheckIn] = useState(search.checkIn);
   const [checkOut, setCheckOut] = useState(search.checkOut);
@@ -36,6 +40,22 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
   const [err, setErr] = useState("");
   const [busyNow, setBusyNow] = useState(false);
   const [done, setDone] = useState(false);
+  // Check-in online (tùy chọn): giấy tờ, ngày sinh, quốc tịch, giờ đến dự kiến; có thể lưu luôn vào Tài khoản của tôi.
+  const [ci, setCi] = useState<Profile>({ ...EMPTY_PROFILE });
+  const [eta, setEta] = useState("");
+  const [saveToAccount, setSaveToAccount] = useState(true);
+  const [sentCheckin, setSentCheckin] = useState(false);
+  const seeded = useRef(false);
+  // Điền sẵn từ "Tài khoản của tôi" một lần khi đọc xong; mọi ô vẫn sửa được.
+  useEffect(() => {
+    if (profLoading || seeded.current) return;
+    seeded.current = true;
+    if (!saved) return;
+    if (saved.fullName) setName(saved.fullName);
+    if (saved.phone) setPhone(saved.phone);
+    if (saved.email) setEmail(saved.email);
+    setCi({ ...EMPTY_PROFILE, docType: saved.docType, docNumber: saved.docNumber, nationality: saved.nationality || EMPTY_PROFILE.nationality, dob: saved.dob });
+  }, [profLoading, saved]);
 
   const original = nights > 0 ? room.price * nights : 0;
   const total = coupon ? Math.round(original * (100 - coupon.percent) / 100) : original;
@@ -84,9 +104,23 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
       // Bản sao công khai (không có dữ liệu cá nhân) để mọi người thấy phòng đang được giữ chỗ.
       b.set(doc(db, "busy", id), { roomId: room.id, checkIn, checkOut, status: "pending" });
       // Đánh dấu mã đã dùng trong CÙNG lần ghi: nếu ai đó vừa dùng mã này, cả đặt phòng bị từ chối (không thể dùng 2 lần).
+      const wantsCheckin = !!ci.docNumber.trim();
+      if (wantsCheckin) {
+        b.set(doc(db, "precheckins", id), {
+          uid: user.uid, bookingId: id, fullName: name.trim(), docType: ci.docType, docNumber: ci.docNumber.trim(), nationality: ci.nationality.trim(),
+          dob: ci.dob, phone: phone.trim(), email: email.trim(), eta, note: "", status: "submitted", updatedAt: serverTimestamp(),
+        });
+      }
+      if (saveToAccount && name.trim()) {
+        b.set(doc(db, "profiles", user.uid), {
+          fullName: name.trim(), docType: ci.docType, docNumber: ci.docNumber.trim(), nationality: ci.nationality.trim(), dob: ci.dob,
+          phone: phone.trim(), email: email.trim(), updatedAt: serverTimestamp(),
+        });
+      }
       if (coupon) b.update(doc(db, "coupons", coupon.code), { used: true, usedBy: user.uid, usedAt: serverTimestamp(), bookingId: id });
       await b.commit();
       tgNotify("booking", id);
+      setSentCheckin(wantsCheckin);
       setDone(true);
     } catch (ex) {
       console.error("booking failed", ex);
@@ -104,6 +138,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             <div className="lm-tick">✓</div>
             <h3>{L.modal.doneTitle}</h3>
             <p>{L.modal.doneText}</p>
+            {sentCheckin && <p className="lm-ok">✓ {G.checkinDone}</p>}
             <Link className="lm-btn" to="/account">{L.modal.viewMine}</Link>
             <button className="lm-link" onClick={onClose}>{L.modal.cancel}</button>
           </div>
@@ -139,6 +174,20 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             <label>{L.modal.phone}<input required type="tel" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} /></label>
             <label>{L.modal.email}<input required type="email" maxLength={200} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
             <label>{L.modal.guests}<input type="number" min={1} max={room.capacity} value={guests} onChange={(e) => setGuests(Math.max(1, Math.min(room.capacity, +e.target.value || 1)))} /></label>
+            <details className="lm-checkin">
+              <summary>{G.checkinTitle}</summary>
+              <p className="lm-muted lm-small">{G.checkinHint}</p>
+              <label>{G.docType}
+                <select value={ci.docType} onChange={(e) => setCi({ ...ci, docType: e.target.value as Profile["docType"] })}>
+                  {(["cccd", "passport", "license", "other"] as const).map((k) => <option key={k} value={k}>{G[k]}</option>)}
+                </select>
+              </label>
+              <label>{G.docNumber}<input maxLength={30} value={ci.docNumber} onChange={(e) => setCi({ ...ci, docNumber: e.target.value })} /></label>
+              <label>{G.nationality}<input maxLength={60} value={ci.nationality} onChange={(e) => setCi({ ...ci, nationality: e.target.value })} /></label>
+              <label>{G.dob}<DateInput value={ci.dob} onChange={(v) => setCi({ ...ci, dob: v })} /></label>
+              <label>{G.eta}<input inputMode="numeric" maxLength={5} placeholder={G.etaPh} pattern="([01][0-9]|2[0-3]):[0-5][0-9]|" value={eta} onChange={(e) => setEta(e.target.value)} /></label>
+              <label className="lm-check"><input type="checkbox" checked={saveToAccount} onChange={(e) => setSaveToAccount(e.target.checked)} /><span>{G.saveToAccount}</span></label>
+            </details>
             <div>
               <label>{L.modal.coupon}
                 <div className="lm-coupon">

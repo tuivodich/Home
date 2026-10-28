@@ -41,8 +41,8 @@ service cloud.firestore {
     // Cài đặt chung (tỷ giá, giao diện website…): ai cũng đọc, chỉ chủ/quản lý ghi.
     // Giao diện: chỉ nhận các mã hợp lệ, hiệu ứng / tự động theo mùa là true/false.
     match /settings/{id} {
-      allow read: if id != 'bank';
-      allow write: if isAdmin() && !(id in ['contact', 'pricing', 'booking', 'bank', 'loyalty', 'backup', 'backupStatus'])
+      allow read: if !(id in ['bank', 'mail', 'mailState']);
+      allow write: if isAdmin() && !(id in ['contact', 'pricing', 'booking', 'bank', 'loyalty', 'backup', 'backupStatus', 'mail', 'mailState'])
         && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel'])
         && (!('themeAuto' in request.resource.data) || request.resource.data.themeAuto is bool)
         && (!('effects' in request.resource.data) || request.resource.data.effects is bool)
@@ -58,6 +58,18 @@ service cloud.firestore {
         && okText(request.resource.data, 'phone') && okText(request.resource.data, 'zalo')
         && okText(request.resource.data, 'email') && okText(request.resource.data, 'address') && okText(request.resource.data, 'coords')
         && okUrl(request.resource.data, 'facebook') && okUrl(request.resource.data, 'mapUrl');
+    }
+    // Email gửi khách: chủ bật/tắt; chủ và quản lý xem. mailState do Cloud Functions ghi.
+    match /settings/mail {
+      allow read: if isAdmin();
+      allow write: if isOwner()
+        && request.resource.data.keys().hasOnly(['enabled', 'fromName', 'replyTo'])
+        && request.resource.data.enabled is bool
+        && (!('fromName' in request.resource.data) || (request.resource.data.fromName is string && request.resource.data.fromName.size() <= 60))
+        && (!('replyTo' in request.resource.data) || (request.resource.data.replyTo is string && request.resource.data.replyTo.size() <= 200));
+    }
+    match /settings/mailState {
+      allow read, write: if false;
     }
     // Bảng giá (cuối tuần, mùa, lễ, ở dài ngày): ai cũng đọc để tính giá; chủ/quản lý sửa.
     match /settings/pricing {
@@ -156,7 +168,7 @@ service cloud.firestore {
       allow create: if isFront() || (signedIn()
         && request.resource.data.keys().hasOnly(['roomId', 'guestName', 'phone', 'email', 'checkIn', 'checkOut',
                                                   'guests', 'total', 'status', 'note', 'source', 'createdBy',
-                                                  'couponCode', 'discountPercent', 'originalTotal', 'slotId', 'lines', 'deposit', 'code'])
+                                                  'couponCode', 'discountPercent', 'originalTotal', 'slotId', 'lines', 'deposit', 'code', 'opts'])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.source == 'online'
@@ -170,6 +182,7 @@ service cloud.firestore {
         && request.resource.data.total is number
         && request.resource.data.email is string && request.resource.data.email.size() <= 200
         && (!('code' in request.resource.data) || (request.resource.data.code is string && request.resource.data.code.matches('^[A-Z0-9]{1,12}$')))
+        && (!('opts' in request.resource.data) || request.resource.data.opts is map)
         && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 30))
         && (!('deposit' in request.resource.data) || (request.resource.data.deposit is number && request.resource.data.deposit >= 0 && request.resource.data.deposit <= request.resource.data.total))
         // Mỗi yêu cầu phải chiếm một khe giữ chỗ của chính khách (tối đa maxPending khe) được tạo cùng lần ghi.
@@ -364,6 +377,12 @@ service cloud.firestore {
     }
 
     // Hạng thành viên đặt tay (members/{uid}.tier); các mã ưu đãi đã nhận do Cloud Functions ghi vào `claimed`.
+    // Chat Telegram của khách đã liên kết (Cloud Functions ghi); khách chỉ xem của mình.
+    match /tgGuests/{chatId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
     match /members/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isFront());
       allow write: if isOwner() && request.resource.data.keys().hasOnly(['tier', 'claimed', 'updatedAt', 'updatedBy'])

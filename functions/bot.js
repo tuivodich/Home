@@ -49,6 +49,7 @@ const GUEST_COMMANDS = [
   { command: "chinhsach", description: "Giờ nhận/trả phòng, đặt cọc, hủy phòng" },
   { command: "diachi", description: "Địa chỉ và bản đồ" },
   { command: "tra", description: "Tra trạng thái đặt phòng (vd /tra AB12CD34)" },
+  { command: "cuatoi", description: "Đặt phòng của tôi (cần liên kết tài khoản)" },
   { command: "lienhe", description: "Thông tin liên hệ" },
   { command: "dat", description: "Mở trang đặt phòng" },
 ];
@@ -71,7 +72,7 @@ function memAllow(mem, chatId, nowMs) {
   return e.n <= LIMITS.memPerMin;
 }
 
-function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map() }) {
+function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map(), guest }) {
   const FieldValue = require("firebase-admin/firestore").FieldValue;
   const code8 = randomCode ?? (() => crypto.randomBytes(6).toString("base64url").replace(/[-_]/g, "x").slice(0, 8).toUpperCase());
   const get = async (path) => { const s = await db.doc(path).get(); return s.exists ? { id: s.id, ...s.data() } : null; };
@@ -108,7 +109,15 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       const b = await get(`bookings/${id}`);
       if (!b || b.createdBy !== uid || b.status !== "pending" || b.source !== "online") return { sent: 0 };
       if (!(await once(`b_${id}`))) return { sent: 0 };
-      return { sent: await sendAll(await bookingText(b, "🔔 <b>Yêu cầu đặt phòng mới</b>"), buttons(id, b)) };
+      // Tính lại giá theo bảng giá máy chủ trước khi báo nhân viên; khách nhận tin "đã nhận yêu cầu" (email/Telegram) với giá đúng.
+      let note = "";
+      if (guest) {
+        const v = await guest.verifyBooking(id).catch((e) => { console.error("verify", e); return {}; });
+        if (v.corrected) note = `\n⚠️ Giá khách gửi lên khác bảng giá (${money(v.from)} → ${money(v.to)}), hệ thống đã điều chỉnh.`;
+        guest.dispatch(id, "received").catch((e) => console.error("guest received", e));
+      }
+      const fresh = (await get(`bookings/${id}`)) ?? b;
+      return { sent: await sendAll((await bookingText(fresh, "🔔 <b>Yêu cầu đặt phòng mới</b>")) + note, buttons(id, fresh)) };
     }
     if (type === "cancel") {
       const b = await get(`bookings/${id}`);
@@ -144,12 +153,23 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     return { code, username: me.username, link: `https://t.me/${me.username}?start=${code}` };
   }
 
+  /** Khách (tài khoản thường) tạo mã/đường dẫn liên kết Telegram để nhận thông báo đặt phòng của mình. */
+  async function guestLinkCode(uid) {
+    const u = await get(`users/${uid}`);
+    if (!u) throw Object.assign(new Error("Chưa có tài khoản."), { code: "permission-denied" });
+    const code = code8();
+    await db.doc(`tgLinks/${code}`).set({ uid, kind: "guest", exp: now().getTime() + 30 * 60 * 1000 });
+    const me = await tg.getMe();
+    return { code, username: me.username, link: `https://t.me/${me.username}?start=${code}` };
+  }
+
   // ===== Xử lý hành động trên yêu cầu đặt phòng =====
   async function decide(action, id, actor) {
     const b = await get(`bookings/${id}`);
     if (!b) return { ok: false, text: "Không tìm thấy đặt phòng (có thể đã bị xóa)." };
     if (b.status !== "pending") return { ok: false, text: `Yêu cầu này đã được xử lý (${b.status === "cancelled" ? "đã hủy/từ chối" : "đã xác nhận"}).` };
     if (action === "cf") {
+      if (guest) await guest.verifyBooking(id).catch((e) => console.error("verify", e));
       const all = (await db.collection("bookings").where("roomId", "==", b.roomId).get()).docs;
       const clash = all.find((d) => d.id !== id && LIVE.includes(d.data().status) && overlaps(d.data().checkIn, d.data().checkOut, b.checkIn, b.checkOut));
       if (clash) return { ok: false, text: "⚠️ Trùng lịch với một đặt phòng đã xác nhận cùng phòng. Hãy xử lý trên trang quản trị." };
@@ -158,6 +178,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       w.set(db.doc(`busy/${id}`), { roomId: b.roomId, checkIn: b.checkIn, checkOut: b.checkOut, status: "confirmed" });
       if (b.slotId) w.delete(db.doc(`pend/${b.slotId}`));
       await w.commit();
+      if (guest) guest.dispatch(id, "confirmed").catch((e) => console.error("guest confirmed", e));
       return { ok: true, text: `✅ Đã xác nhận bởi ${esc(actor)}` };
     }
     const w = db.batch();
@@ -165,6 +186,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     w.delete(db.doc(`busy/${id}`));
     if (b.slotId) w.delete(db.doc(`pend/${b.slotId}`));
     await w.commit();
+    if (guest) guest.dispatch(id, "cancelled").catch((e) => console.error("guest cancelled", e));
     return { ok: true, text: `❌ Đã từ chối bởi ${esc(actor)}` };
   }
 
@@ -190,7 +212,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
 
   // ===== Lệnh trong chat =====
   const STAFF_HELP = "Lệnh nhân viên:\n/homnay — khách nhận/trả phòng hôm nay và số yêu cầu chờ\n/cho — yêu cầu đang chờ xác nhận\n/doanhthu — doanh thu tuần hoặc tháng (<code>/doanhthu thang</code>; chủ, quản lý)\n/tra MÃ — tra đặt phòng theo mã\n/huylienket — ngừng nhận thông báo ở chat này\n\nLệnh chung: /trong, /gia, /phong, /tiennghi, /chinhsach, /diachi, /lienhe";
-  const GUEST_HELP = "Tôi có thể giúp bạn:\n/trong — xem phòng còn trống (vd <code>/trong 25/12 27/12</code> hoặc <code>/trong 25/12</code> cho 1 đêm)\n/gia — báo giá nhanh (vd <code>/gia 2 4</code> = 2 đêm, 4 khách; thêm ngày nhận: <code>/gia 2 4 25/12</code>)\n/phong — các phòng và giá\n/tiennghi — tiện nghi\n/chinhsach — giờ nhận/trả phòng, đặt cọc, hủy phòng\n/diachi — địa chỉ và bản đồ\n/tra MÃ — tra trạng thái đặt phòng bằng mã\n/lienhe — thông tin liên hệ\n/dat — mở trang đặt phòng";
+  const GUEST_HELP = "Tôi có thể giúp bạn:\n/trong — xem phòng còn trống (vd <code>/trong 25/12 27/12</code> hoặc <code>/trong 25/12</code> cho 1 đêm)\n/gia — báo giá nhanh (vd <code>/gia 2 4</code> = 2 đêm, 4 khách; thêm ngày nhận: <code>/gia 2 4 25/12</code>)\n/phong — các phòng và giá\n/tiennghi — tiện nghi\n/chinhsach — giờ nhận/trả phòng, đặt cọc, hủy phòng\n/diachi — địa chỉ và bản đồ\n/tra MÃ — tra trạng thái đặt phòng bằng mã\n/cuatoi — đặt phòng của tôi (sau khi liên kết tài khoản trên website)\n/lienhe — thông tin liên hệ\n/dat — mở trang đặt phòng";
   const webBtn = (label, path = "") => ({ reply_markup: { inline_keyboard: [[{ text: label, url: `${site.url}${path}` }]] } });
   const bookPath = (inD, outD) => `/?checkIn=${inD}&checkOut=${outD}#booking`;
 
@@ -410,6 +432,12 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       const link = await get(`tgLinks/${code}`);
       if (!link || link.exp < now().getTime()) return tg.sendMessage(chatId, "Mã liên kết không đúng hoặc đã hết hạn (30 phút). Nhân viên hãy tạo mã mới ở trang quản trị.");
       const u = await get(`users/${link.uid}`);
+      if (link.kind === "guest") {
+        if (!u) return tg.sendMessage(chatId, "Không tìm thấy tài khoản.");
+        await db.doc(`tgGuests/${chatId}`).set({ uid: link.uid, name: msg.from?.first_name ?? "", linkedAt: FieldValue.serverTimestamp() });
+        await db.doc(`tgLinks/${code}`).delete();
+        return tg.sendMessage(chatId, `✅ Đã liên kết Telegram với tài khoản ${esc(u.email ?? "của bạn")}. Bạn sẽ nhận thông báo đặt phòng (xác nhận, nhắc lịch) tại đây. Gõ /cuatoi để xem đặt phòng, /huylienket để ngừng nhận.`);
+      }
       if (!u || !FRONT.includes(u.role)) return tg.sendMessage(chatId, "Tài khoản này không còn quyền nhân viên.");
       await db.doc(`tgChats/${chatId}`).set({ uid: link.uid, role: u.role, email: u.email ?? "", name: msg.chat.title ?? msg.from?.first_name ?? "", type: msg.chat.type, linkedAt: FieldValue.serverTimestamp() });
       await db.doc(`tgLinks/${code}`).delete();
@@ -427,6 +455,22 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     if (cmd === "/chinhsach") return policy(chatId);
     if (cmd === "/tra") return lookup(chatId, rest.join(" "));
     if (cmd === "/dat") { const r = parseRange(rest.join(" ")); return tg.sendMessage(chatId, "Bấm nút bên dưới để chọn phòng và gửi yêu cầu đặt phòng (cần đăng nhập Google hoặc email).", webBtn("🌐 Đặt phòng trên website", r.error ? "/#booking" : bookPath(r.d1, r.d2))); }
+
+    // Khách đã liên kết tài khoản: xem đặt phòng của mình và ngừng nhận thông báo.
+    if (!linked && (cmd === "/cuatoi" || cmd === "/huylienket")) {
+      const g = await get(`tgGuests/${chatId}`);
+      if (cmd === "/huylienket") {
+        if (!g) return tg.sendMessage(chatId, "Lệnh này dành cho nhân viên homestay.");
+        await db.doc(`tgGuests/${chatId}`).delete();
+        return tg.sendMessage(chatId, "Đã ngừng nhận thông báo đặt phòng ở chat này.");
+      }
+      if (!g) return tg.sendMessage(chatId, "Chat này chưa liên kết tài khoản. Vào website → Tài khoản → Đặt phòng của tôi, bấm “Nhận thông báo qua Telegram”.", webBtn("🌐 Đặt phòng của tôi", "/account"));
+      const mine = (await db.collection("bookings").where("createdBy", "==", g.uid).get()).docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => b.checkIn.localeCompare(a.checkIn)).slice(0, 5);
+      if (!mine.length) return tg.sendMessage(chatId, "Bạn chưa có đặt phòng nào.", webBtn("🌐 Đặt phòng", "/#booking"));
+      const rows = [];
+      for (const b of mine) rows.push(`• <b>${esc(b.code || String(b.id).replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase())}</b> — ${STATUS_VI[b.status] ?? esc(b.status)}\n   ${esc(await roomName(b.roomId))} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)} · ${money(b.total)}`);
+      return tg.sendMessage(chatId, `📒 <b>Đặt phòng của bạn</b>\n${rows.join("\n")}`, webBtn("🌐 Xem chi tiết", "/account"));
+    }
 
     // Lệnh nhân viên: chỉ chat đã liên kết.
     if (["/homnay", "/cho", "/doanhthu", "/huylienket"].includes(cmd)) {
@@ -532,7 +576,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     return { sent, deposit: dep.length, noProfile: noProfile.length };
   }
 
-  return { notify, linkCode, handleUpdate, decide, staffAlerts, dailyReminders };
+  return { notify, linkCode, guestLinkCode, handleUpdate, decide, staffAlerts, dailyReminders };
 }
 
 module.exports = { createBot, webhookSecret, safeEq, parseDate, todayVN, FRONT, LIMITS, STAFF_COMMANDS, GUEST_COMMANDS };

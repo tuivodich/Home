@@ -479,6 +479,18 @@ await check("room rejects more than 8 photos", setDoc(doc(mgr, "rooms/rp1"), { .
 await check("room rejects an unknown field", setDoc(doc(mgr, "rooms/rp1"), { ...roomBase, hacked: true }), false);
 await check("room rejects an over-long description", setDoc(doc(mgr, "rooms/rp1"), { ...roomBase, desc: "x".repeat(3001) }), false);
 
+// ----- Email khách, Telegram khách -----
+await check("owner turns guest email on", setDoc(doc(own, "settings/mail"), { enabled: true, fromName: "Nhà Gỗ", replyTo: "a@x.vn" }), true);
+await check("manager reads the mail setting", getDoc(doc(mgr, "settings/mail")), true);
+await check("manager CANNOT change the mail setting", setDoc(doc(mgr, "settings/mail"), { enabled: false }), false);
+await check("mail setting rejects unknown fields", setDoc(doc(own, "settings/mail"), { enabled: true, smtpPass: "x" }), false);
+await check("customer CANNOT read the mail setting", getDoc(doc(c1, "settings/mail")), false);
+await check("nobody reads mailState from the client", getDoc(doc(own, "settings/mailState")), false);
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "tgGuests/555"), { uid: "cust1" }); });
+await check("customer reads own Telegram link (query by uid)", getDocs(query(collection(c1, "tgGuests"), where("uid", "==", "cust1"))), true);
+await check("customer CANNOT read someone else's Telegram link", getDocs(query(collection(c1, "tgGuests"), where("uid", "==", "cust2"))), false);
+await check("customer CANNOT write a Telegram link", setDoc(doc(c1, "tgGuests/666"), { uid: "cust1" }), false);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

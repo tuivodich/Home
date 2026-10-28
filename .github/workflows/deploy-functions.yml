@@ -32,6 +32,8 @@ jobs:
         env:
           SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
         run: |
           if [ -z "$BOT_TOKEN" ]; then
             echo "::notice::Chưa có secret TELEGRAM_BOT_TOKEN trong GitHub → bỏ qua deploy bot. Xem docs/telegram-bot.md."
@@ -41,4 +43,7 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
           # Lưu token vào Secret Manager (không nằm trong mã nguồn); chỉ tạo phiên bản mới khi giá trị đổi.
           printf '%s' "$BOT_TOKEN" | npx firebase-tools functions:secrets:set TELEGRAM_BOT_TOKEN --data-file - --force --project sisterhome
+          # Tài khoản gửi email (tùy chọn): chưa có thì lưu "-" để hàm vẫn triển khai được và email bị tắt.
+          printf '%s' "${SMTP_USER:--}" | npx firebase-tools functions:secrets:set SMTP_USER --data-file - --force --project sisterhome
+          printf '%s' "${SMTP_PASS:--}" | npx firebase-tools functions:secrets:set SMTP_PASS --data-file - --force --project sisterhome
           npx firebase-tools deploy --only functions --project sisterhome --force

@@ -5,6 +5,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { createTelegram } = require("./telegram");
 const { createBot, webhookSecret, safeEq, STAFF_COMMANDS, GUEST_COMMANDS } = require("./bot");
+const { createGuest, createMailer } = require("./guest");
 const { createLoyalty } = require("./loyalty");
 const { createBackup } = require("./backup");
 const { getStorage } = require("firebase-admin/storage");
@@ -13,12 +14,17 @@ const { sitemapXml } = require("./sitemap");
 
 initializeApp();
 const TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
+// Tài khoản gửi email (vd Gmail + mật khẩu ứng dụng). Giá trị "-" = chưa cấu hình: email bị tắt, Telegram vẫn chạy.
+const SMTP_USER = defineSecret("SMTP_USER");
+const SMTP_PASS = defineSecret("SMTP_PASS");
 const REGION = "us-central1";
-const opts = { region: REGION, secrets: [TOKEN] };
+const opts = { region: REGION, secrets: [TOKEN, SMTP_USER, SMTP_PASS] };
 
 // Bộ đếm tin nhắn trong bộ nhớ dùng chung giữa các yêu cầu của cùng một instance.
 const mem = new Map();
-const botFor = () => createBot({ db: getFirestore(), tg: createTelegram(TOKEN.value()), mem });
+const mailer = () => createMailer({ user: SMTP_USER.value(), pass: SMTP_PASS.value() });
+const guestFor = (tg) => createGuest({ db: getFirestore(), tg, mailer: mailer() });
+const botFor = () => { const tg = createTelegram(TOKEN.value()); return createBot({ db: getFirestore(), tg, mem, guest: guestFor(tg) }); };
 const needAuth = (req) => { if (!req.auth) throw new HttpsError("unauthenticated", "Cần đăng nhập."); return req.auth.uid; };
 const asHttpsError = (e) => (e instanceof HttpsError ? e : new HttpsError(e.code === "permission-denied" ? "permission-denied" : "internal", e.message));
 
@@ -37,6 +43,46 @@ exports.tgNotify = onCall(opts, async (req) => {
 /** Nhân viên tạo mã/đường dẫn liên kết chat Telegram của mình. */
 exports.tgLinkCode = onCall(opts, async (req) => {
   try { return await botFor().linkCode(needAuth(req)); } catch (e) { throw asHttpsError(e); }
+});
+
+/** Khách tạo mã/đường dẫn liên kết Telegram với tài khoản của mình để nhận thông báo đặt phòng. */
+exports.tgGuestLink = onCall(opts, async (req) => {
+  try { return await botFor().guestLinkCode(needAuth(req)); } catch (e) { throw asHttpsError(e); }
+});
+
+/** Nhân viên vừa đổi trạng thái đặt phòng trên web (xác nhận/hủy): báo khách qua email/Telegram (chỉ một lần mỗi loại). */
+exports.guestNotify = onCall(opts, async (req) => {
+  const uid = needAuth(req);
+  const role = (await getFirestore().doc(`users/${uid}`).get()).data()?.role;
+  if (!["owner", "manager", "reception"].includes(role)) throw new HttpsError("permission-denied", "Chỉ nhân viên lễ tân trở lên.");
+  const id = String(req.data?.id ?? "");
+  const b = (await getFirestore().doc(`bookings/${id}`).get()).data();
+  if (!b) return { sent: false };
+  const kind = b.status === "confirmed" ? "confirmed" : b.status === "cancelled" ? "cancelled" : "";
+  if (!kind) return { sent: false };
+  const g = guestFor(createTelegram(TOKEN.value()));
+  const r = await g.dispatch(id, kind);
+  return { sent: !!(r.email || r.telegram), ...r };
+});
+
+/** Chủ gửi thử một email để kiểm tra cấu hình SMTP. */
+exports.mailTest = onCall(opts, async (req) => {
+  const uid = needAuth(req);
+  if ((await getFirestore().doc(`users/${uid}`).get()).data()?.role !== "owner") throw new HttpsError("permission-denied", "Chỉ chủ mới gửi thử được.");
+  const to = String(req.data?.to ?? "").trim();
+  if (!/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(to)) throw new HttpsError("invalid-argument", "Email không hợp lệ.");
+  const m = mailer();
+  if (!m.enabled) throw new HttpsError("failed-precondition", "Chưa cấu hình tài khoản gửi email (secret SMTP_USER / SMTP_PASS).");
+  try { await m.send({ from: m.from, to, subject: "Nhà Gỗ Homestay — email thử", text: "Cấu hình email hoạt động tốt." }); } catch (e) { throw new HttpsError("internal", e.message); }
+  return { ok: true };
+});
+
+/** Cho giao diện biết đã có tài khoản gửi email hay chưa (không lộ thông tin tài khoản). */
+exports.mailStatus = onCall(opts, async (req) => {
+  const uid = needAuth(req);
+  const role = (await getFirestore().doc(`users/${uid}`).get()).data()?.role;
+  if (!["owner", "manager"].includes(role)) throw new HttpsError("permission-denied", "Chỉ chủ/quản lý.");
+  return { configured: mailer().enabled };
 });
 
 /** Chủ đăng ký webhook cho bot (bấm một lần ở Cài đặt, hoặc khi đổi token). */
@@ -84,11 +130,22 @@ exports.backupGet = onCall({ region: REGION, memory: "512MiB" }, wrap(async (req
 exports.backupScheduled = onSchedule({ region: REGION, schedule: "0 2 * * *", timeZone: "Asia/Ho_Chi_Minh", timeoutSeconds: 540, memory: "512MiB" }, async () => { await backupFor().scheduled(); });
 
 // ===== Cảnh báo và nhắc tự động qua Telegram cho quản lý =====
-const schedOpts = { region: REGION, timeZone: "Asia/Ho_Chi_Minh", secrets: [TOKEN], timeoutSeconds: 120 };
+const schedOpts = { region: REGION, timeZone: "Asia/Ho_Chi_Minh", secrets: [TOKEN, SMTP_USER, SMTP_PASS], timeoutSeconds: 120 };
 /** Mỗi 15 phút: báo nhân viên chưa vào ca / quên ra ca. */
 exports.tgStaffAlerts = onSchedule({ ...schedOpts, schedule: "*/15 * * * *" }, async () => { try { await botFor().staffAlerts(); } catch (e) { console.error("staffAlerts", e); } });
 /** 08:00 và 18:00 mỗi ngày: khách sắp nhận phòng chưa cọc; khách vừa trả phòng chưa có hồ sơ. */
-exports.tgReminders = onSchedule({ ...schedOpts, schedule: "0 8,18 * * *" }, async () => { try { await botFor().dailyReminders(); } catch (e) { console.error("dailyReminders", e); } });
+exports.tgReminders = onSchedule({ ...schedOpts, schedule: "0 8,18 * * *" }, async () => {
+  try { await botFor().dailyReminders(); } catch (e) { console.error("dailyReminders", e); }
+  try { await guestFor(createTelegram(TOKEN.value())).reminders(); } catch (e) { console.error("guest reminders", e); }
+});
+/** Mỗi 15 phút: tính lại giá các yêu cầu mới và gửi email/Telegram cho khách theo trạng thái đặt phòng (kể cả khi xác nhận trên web). */
+exports.bookingSweep = onSchedule({ ...schedOpts, schedule: "*/15 * * * *" }, async () => {
+  try {
+    const g = guestFor(createTelegram(TOKEN.value()));
+    const r = await g.sweep();
+    console.log("bookingSweep", JSON.stringify(r));
+  } catch (e) { console.error("bookingSweep", e); }
+});
 
 /** /sitemap.xml (hosting chuyển tiếp tới đây): danh sách trang công khai gồm từng phòng. */
 exports.sitemap = onRequest({ region: REGION, cors: false }, async (req, res) => {

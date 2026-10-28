@@ -77,3 +77,8 @@ Không commit token bot Telegram hay service account. Token bot sẽ lưu bằng
 
 ## Ảnh và trang chi tiết phòng
 *Đặt phòng → Thiết lập phòng → Sửa*: thêm giới thiệu (Việt/Anh), tiện nghi riêng (mỗi dòng một mục) và tối đa 8 ảnh (tự thu nhỏ còn cạnh dài 1600px, tải lên Firebase Storage `rooms/{id}/…`, ai cũng xem được; ảnh đầu tiên là ảnh bìa). Mỗi phòng có trang `/phong/:id` (thư viện ảnh, giá, sức chứa, dữ liệu có cấu trúc `HotelRoom` cho Google) và thẻ phòng ở trang chủ hiện ảnh bìa. Lưu phòng trước rồi bấm Sửa mới thêm ảnh được.
+
+## Kiểm tra giá phía máy chủ, email và Telegram cho khách
+- **Giá không còn tin vào trình duyệt**: mỗi yêu cầu đặt phòng online được Cloud Functions tính lại theo bảng giá hiện hành (`functions/pricing.js`, có test so khớp với `src/lib/pricing.ts`) ngay khi khách báo bot (`tgNotify`), trước khi nhân viên xác nhận trên Telegram và mỗi 15 phút (`bookingSweep`). Nếu lệch, `total`/`deposit`/`lines` được sửa, đặt phòng ghi `priceCorrected` và quản lý nhận cảnh báo Telegram. Khách chọn nhận sớm/trả muộn/dịch vụ được lưu ở trường `opts`.
+- **Email cho khách** (đã nhận yêu cầu / xác nhận / không còn hiệu lực / nhắc lịch): xem [`docs/email.md`](docs/email.md). Bật ở Cài đặt → *Email thông báo cho khách*.
+- **Telegram cho khách**: ở *Đặt phòng của tôi* khách bấm *Nhận thông báo qua Telegram* để liên kết; từ đó nhận cùng thông báo và dùng `/cuatoi`, `/huylienket` trong bot.

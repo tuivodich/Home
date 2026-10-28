@@ -11,6 +11,14 @@ export function tgNotify(type: "booking" | "cancel" | "review" | "dirty", id?: s
 }
 
 export const tgLinkCode = () => call<void, { code: string; username: string; link: string }>("tgLinkCode")().then((r) => r.data);
+export const tgGuestLink = () => call<void, { code: string; username: string; link: string }>("tgGuestLink")().then((r) => r.data);
+/** Nhân viên vừa xác nhận/hủy đặt phòng trên web: báo khách (email/Telegram). Lỗi không ảnh hưởng thao tác. */
+export function guestNotify(id: string) {
+  if (import.meta.env.VITE_USE_EMULATOR) return;
+  call<{ id: string }, { sent: boolean }>("guestNotify")({ id }).catch((e) => console.warn("guestNotify", e));
+}
+export const mailTest = (to: string) => call<{ to: string }, { ok: boolean }>("mailTest")({ to }).then((r) => r.data);
+export const mailStatus = () => call<void, { configured: boolean }>("mailStatus")().then((r) => r.data);
 export const tgSetup = () => call<void, { username: string; url: string }>("tgSetup")().then((r) => r.data);
 
 /** Thành viên nhận mã giảm giá riêng của hạng hiện tại (Cloud Functions kiểm tra hạng ở máy chủ; mỗi hạng một mã). */

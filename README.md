@@ -6,7 +6,7 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Đăng nhập email/mật khẩu hoặc Google; phân quyền: chủ, quản lý, lễ tân, buồng phòng, bảo vệ, khách hàng (bảng quyền chi tiết: [`docs/phan-quyen.md`](docs/phan-quyen.md))
 - Trang **Lịch sử** thống kê các đặt phòng đã trả phòng / đã hủy (doanh thu, lọc theo tháng, tìm kiếm; chỉ **chủ** được hoàn tác trả phòng / khôi phục đặt phòng đã hủy)
 - Quản lý phòng, đặt/hủy/nhận/trả phòng (chặn trùng lịch), lịch phòng 14 ngày
-- Khách lưu trú + ảnh CCCD/hộ chiếu/bằng lái (Firebase Storage, chỉ chủ/quản lý/lễ tân xem)
+- Khách hàng (menu *Khách hàng → Quản lý khách hàng*) + ảnh CCCD/hộ chiếu/bằng lái (Firebase Storage, chỉ chủ/quản lý/lễ tân xem)
 
 ## Trang giới thiệu và đặt phòng công khai
 - `/` trang giới thiệu (hero, phòng, tiện nghi, lịch phòng trống). Ai cũng xem được lịch, **không cần đăng nhập**; chỉ cần đăng nhập (Google hoặc email) khi bấm *Đặt phòng*.
@@ -23,11 +23,11 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Chỉ **chủ/quản lý** đổi được ở *Cài đặt → Giao diện website* (lưu trong `settings/app`: `theme`, `themeAuto`, `effects`; luật Firestore kiểm tra giá trị hợp lệ). Khu quản lý của nhân viên giữ nguyên giao diện.
 - Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
 
-## Thành viên thân thiết, báo cáo, buồng phòng, chi phí, sao lưu
-- **Thành viên thân thiết** (*Đặt phòng → Thành viên thân thiết*): hạng (mặc định Đồng/Bạc/Vàng/Kim cương) tự thăng theo số lần ở (đặt phòng online đã trả phòng) do chủ/quản lý đặt; chỉ **chủ** đặt tay hạng cho từng khách được (quản lý chỉ xem); khách xem hạng của mình ở mục cuối trang *Tài khoản của tôi* (không tự đổi được). Mỗi hạng có huy hiệu màu sau tên (header, đặt phòng của nhân viên) và **mã giảm giá riêng** (hạn 90 ngày, một lần, chỉ chủ mã dùng được) khách tự nhận ở *Đặt phòng của tôi* — hạng và mã do Cloud Functions (`loyaltyClaim`) kiểm tra ở máy chủ.
+## Khách hàng thân thiết, báo cáo, dọn phòng, chi phí, sao lưu
+- **Khách hàng thân thiết** (*Khách hàng → Khách hàng thân thiết*): hạng (mặc định Đồng/Bạc/Vàng/Kim cương) tự thăng theo số lần ở (đặt phòng online đã trả phòng) do chủ/quản lý đặt; chỉ **chủ** đặt tay hạng cho từng khách được (quản lý chỉ xem); khách xem hạng của mình ở mục cuối trang *Tài khoản của tôi* (không tự đổi được). Mỗi hạng có huy hiệu màu sau tên (header, đặt phòng của nhân viên) và **mã giảm giá riêng** (hạn 90 ngày, một lần, chỉ chủ mã dùng được) khách tự nhận ở *Đặt phòng của tôi* — hạng và mã do Cloud Functions (`loyaltyClaim`) kiểm tra ở máy chủ.
 - **Báo cáo doanh thu** (*Tài chính*): theo tháng/năm — doanh thu (ghi nhận khi trả phòng), lợi nhuận, công suất, giá bình quân, theo phòng/nguồn, tiền thu trong kỳ, chi phí; xuất CSV.
 - **Chi phí & công nợ**: ghi chi phí theo loại; khoản phải trả chưa thanh toán; khoản khách còn nợ (nút Thu tiền).
-- **Buồng phòng**: trạng thái Cần dọn / Đang dọn / Sẵn sàng; khách trả phòng thì phòng tự "Cần dọn" (kèm tin Telegram).
+- **Dọn phòng** (*Quản lý dọn phòng*): trạng thái Cần dọn / Đang dọn / Sẵn sàng; khách trả phòng thì phòng tự "Cần dọn" (kèm tin Telegram).
 - **Sao lưu** (chỉ chủ): tải JSON về máy; sao lưu ngay lên Cloud Storage; tự động mỗi ngày/tuần lúc 02:00 (giữ N bản). Cần Cloud Scheduler (xem `docs/telegram-bot.md`). Google Drive: tải file về rồi tải lên Drive (chưa tự động).
 
 ## Giá, đặt cọc QR, chính sách hủy, dịch vụ, hóa đơn
@@ -80,7 +80,7 @@ Không commit token bot Telegram hay service account. Token bot sẽ lưu bằng
 
 ## Kiểm tra giá phía máy chủ, email và Telegram cho khách
 - **Giá không còn tin vào trình duyệt**: mỗi yêu cầu đặt phòng online được Cloud Functions tính lại theo bảng giá hiện hành (`functions/pricing.js`, có test so khớp với `src/lib/pricing.ts`) ngay khi khách báo bot (`tgNotify`), trước khi nhân viên xác nhận trên Telegram và mỗi 15 phút (`bookingSweep`). Nếu lệch, `total`/`deposit`/`lines` được sửa, đặt phòng ghi `priceCorrected` và quản lý nhận cảnh báo Telegram. Khách chọn nhận sớm/trả muộn/dịch vụ được lưu ở trường `opts`.
-- **Email cho khách** (đã nhận yêu cầu / xác nhận / không còn hiệu lực / nhắc lịch): xem [`docs/email.md`](docs/email.md). Bật ở Cài đặt → *Email thông báo cho khách*.
+- **Email cho khách** (đã nhận yêu cầu / xác nhận / không còn hiệu lực / nhắc lịch): xem [`docs/email.md`](docs/email.md). Bật ở *Quản lý email → Cài đặt email*. Thư khuyến mãi/thông báo gửi nhiều khách ở *Quản lý email → Gửi email khách hàng* (tìm kiếm, chọn tất cả, mỗi lô tối đa 100 địa chỉ, chỉ gửi tới địa chỉ đã có trong hệ thống, lưu lịch sử gửi).
 - **Telegram cho khách**: ở *Đặt phòng của tôi* khách bấm *Nhận thông báo qua Telegram* để liên kết; từ đó nhận cùng thông báo và dùng `/cuatoi`, `/huylienket` trong bot.
 
 ## Bot nhân viên, mã QR nhận phòng, thông báo đẩy

@@ -8,10 +8,13 @@ Khách nhận email khi: **đã nhận yêu cầu**, **đã xác nhận** (kèm 
    - `SMTP_USER` = địa chỉ Gmail (vd `nhago.homestay@gmail.com`)
    - `SMTP_PASS` = mật khẩu ứng dụng (16 ký tự)
 3. Actions → *Deploy Cloud Functions* → Run workflow (secrets được lưu vào Secret Manager, không nằm trong mã nguồn).
-4. Quản trị → Cài đặt → *Email thông báo cho khách*: tích **Gửi email cho khách**, bấm Lưu lại, nhập email của bạn rồi **Gửi thử**.
+4. Quản trị → *Quản lý email → Cài đặt email*: tích **Gửi email cho khách**, bấm Lưu lại, nhập email của bạn rồi **Gửi thử**.
 
 Lần chạy đầu của bộ quét (mỗi 15 phút) ghi nhận các đặt phòng đang có là "đã báo" nên khách cũ không bị gửi hàng loạt.
 
 ## Ghi chú
 - Gmail giới hạn khoảng 500 email/ngày (đủ cho homestay). Nếu cần địa chỉ gửi riêng/độ tin cậy cao hơn, dùng dịch vụ SMTP như Resend, Brevo (đổi `host` trong `functions/guest.js` → `createMailer`).
 - Email chỉ gửi cho đặt phòng khách tự đặt trên website (`source = online`).
+
+## Gửi email khuyến mãi / thông báo cho nhiều khách
+*Quản lý email → Gửi email khách hàng* (chủ và quản lý): nhập tiêu đề, nội dung, tìm khách theo tên hoặc email, bấm **Chọn tất cả** (hoặc tích từng người) rồi **Gửi**. Nên bấm **Gửi thử cho tôi** trước. Mỗi lô tối đa 100 địa chỉ (giao diện tự chia lô); chỉ gửi tới địa chỉ đã có trong hệ thống (tài khoản khách, email trong đặt phòng); thư có dòng cuối mời khách trả lời nếu không muốn nhận thêm. Lịch sử gửi nằm cuối trang. Gmail giới hạn khoảng 500 thư mỗi ngày.

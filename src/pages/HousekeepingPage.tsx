@@ -8,7 +8,7 @@ import type { Booking, Room } from "../lib/types";
 
 const LABEL: Record<RoomClean, [string, string]> = { ready: ["Sẵn sàng", "Ready"], dirty: ["Cần dọn", "Needs cleaning"], cleaning: ["Đang dọn", "Cleaning"] };
 
-/** Quản lý buồng phòng: trạng thái bẩn / đang dọn / sẵn sàng của từng phòng, việc ưu tiên trong ngày, nhận dọn, ghi chú. */
+/** Quản lý dọn phòng: trạng thái bẩn / đang dọn / sẵn sàng của từng phòng, việc ưu tiên trong ngày, nhận dọn, ghi chú. */
 export default function HousekeepingPage() {
   const { lang } = useI18n();
   const T = (vi: string, en: string) => (lang === "vi" ? vi : en);
@@ -38,7 +38,7 @@ export default function HousekeepingPage() {
 
   return (
     <section>
-      <h2>{T("Quản lý buồng phòng", "Housekeeping")}</h2>
+      <h2>{T("Quản lý dọn phòng", "Room cleaning")}</h2>
       <p><small>{T("Phòng tự chuyển “Cần dọn” khi khách trả phòng (và có tin nhắn Telegram kèm nút “Đã dọn xong”).", "A room becomes “Needs cleaning” when the guest checks out (with a Telegram message and a “Cleaned” button).")}</small></p>
       {err && <p className="error">{err}</p>}
       {urgent > 0 && <p className="warn">⚠ {urgent} {T("phòng chưa sẵn sàng mà có khách nhận phòng hôm nay — ưu tiên dọn!", "room(s) not ready with a guest arriving today — clean first!")}</p>}

@@ -12,7 +12,7 @@ import NumInput from "../components/NumInput";
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const newId = (name: string) => `${name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "").slice(0, 12) || "tier"}${Math.random().toString(36).slice(2, 5)}`;
 
-/** Thành viên thân thiết (chủ/quản lý): cấu hình hạng và mã giảm giá riêng; xem hạng từng khách và đặt hạng thủ công. */
+/** Khách hàng thân thiết (chủ/quản lý): cấu hình hạng và mã giảm giá riêng; xem hạng từng khách và đặt hạng thủ công. */
 export default function LoyaltyPage() {
   const { lang } = useI18n();
   const T = (vi: string, en: string) => (lang === "vi" ? vi : en);
@@ -53,7 +53,7 @@ export default function LoyaltyPage() {
 
   return (
     <section>
-      <h2>{T("Thành viên thân thiết", "Loyalty members")}</h2>
+      <h2>{T("Khách hàng thân thiết", "Loyal customers")}</h2>
       <p><small>{T("Khách tự thăng hạng theo số lần đã ở (đặt phòng online đã trả phòng). Mỗi hạng có huy hiệu màu riêng hiện sau tên và một mã giảm giá riêng khách tự nhận ở trang Đặt phòng của tôi (mỗi hạng một mã, hạn 90 ngày, dùng một lần, độc lập với bảng giá).", "Guests are promoted automatically by completed stays (online bookings that were checked out). Each tier has a coloured badge after the name and a personal coupon guests can claim on My bookings (one per tier, valid 90 days, single use, independent of pricing).")}</small></p>
       {msg && <p className="ok-msg" role="status">{msg}</p>}
       {err && <p className="error">{err}</p>}

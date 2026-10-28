@@ -206,3 +206,6 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
 .roomthumb img { width: 140px; height: 100px; object-fit: cover; border-radius: 8px; display: block; }
 .roomthumb figcaption { display: grid; gap: 4px; }
 .card.focus { outline: 3px solid var(--accent, #d9a441); box-shadow: 0 0 0 6px rgba(217, 164, 65, .25); }
+
+/* Danh sách chọn người nhận email */
+.mail-list { max-height: 320px; overflow-y: auto; display: grid; gap: 4px; border: 1px solid var(--line); border-radius: 10px; padding: 8px; }

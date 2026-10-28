@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import DateInput from "../components/DateInput";
 import type { Precheckin } from "../landing/CheckinModal";
 import { useG } from "../i18n/guest";
@@ -191,8 +191,11 @@ export default function Bookings() {
   };
 
   // Chỉ hiện các đặt phòng đang hoạt động; "Đã trả phòng" và "Đã hủy" xem ở trang Lịch sử.
-  const sorted = bookings.filter((b) => b.status === "pending" || b.status === "confirmed" || b.status === "checked_in")
-    .sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+  // Quét mã QR của khách (/app/bookings?b=ID): đưa đặt phòng đó lên đầu và làm nổi bật, kể cả đã trả phòng/hủy.
+  const focusId = new URLSearchParams(window.location.search).get("b") ?? "";
+  const sorted = bookings.filter((b) => b.status === "pending" || b.status === "confirmed" || b.status === "checked_in" || b.id === focusId)
+    .sort((a, b) => (a.id === focusId ? -1 : b.id === focusId ? 1 : b.checkIn.localeCompare(a.checkIn)));
+  useEffect(() => { if (focusId) document.getElementById(`b-${focusId}`)?.scrollIntoView({ block: "center" }); }, [focusId, bookings.length]);
 
   return (
     <section>
@@ -204,7 +207,7 @@ export default function Bookings() {
         const expired = b.status === "cancelled" && b.cancelReason === "expired";
         const editing = pe?.id === b.id ? pe : null;
         return (
-          <div className="card" key={b.id}>
+          <div className={`card${b.id === focusId ? " focus" : ""}`} id={`b-${b.id}`} key={b.id}>
             <div className="row between">
               <strong>{b.guestName}<TierBadge tier={b.source === "online" ? tiers.tierOf(b.createdBy) : null} />{b.source === "online" && <small> · {t("online")}</small>}</strong>
               <span className={`tag ${b.status}`}>{expired ? t("expiredLabel") : t(b.status)}</span>

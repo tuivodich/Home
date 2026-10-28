@@ -377,6 +377,17 @@ service cloud.firestore {
     }
 
     // Hạng thành viên đặt tay (members/{uid}.tier); các mã ưu đãi đã nhận do Cloud Functions ghi vào `claimed`.
+    // Token thông báo đẩy của thiết bị nhân viên: tự đăng ký/xóa token của mình; Cloud Functions đọc khi gửi.
+    match /fcmTokens/{token} {
+      allow get: if isFront() && resource.data.uid == request.auth.uid;
+      allow list: if false;
+      allow create, update: if isFront() && request.resource.data.keys().hasOnly(['uid', 'ua', 'at'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 120
+        && request.resource.data.at == request.time;
+      allow delete: if isFront() && resource.data.uid == request.auth.uid;
+    }
+
     // Chat Telegram của khách đã liên kết (Cloud Functions ghi); khách chỉ xem của mình.
     match /tgGuests/{chatId} {
       allow read: if signedIn() && resource.data.uid == request.auth.uid;

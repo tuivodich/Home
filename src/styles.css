@@ -205,3 +205,4 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
 .roomthumb { margin: 0; width: 140px; display: grid; gap: 4px; }
 .roomthumb img { width: 140px; height: 100px; object-fit: cover; border-radius: 8px; display: block; }
 .roomthumb figcaption { display: grid; gap: 4px; }
+.card.focus { outline: 3px solid var(--accent, #d9a441); box-shadow: 0 0 0 6px rgba(217, 164, 65, .25); }

@@ -6,6 +6,8 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { createTelegram } = require("./telegram");
 const { createBot, webhookSecret, safeEq, STAFF_COMMANDS, GUEST_COMMANDS } = require("./bot");
 const { createGuest, createMailer } = require("./guest");
+const { createPush } = require("./push");
+const { getMessaging } = require("firebase-admin/messaging");
 const { createLoyalty } = require("./loyalty");
 const { createBackup } = require("./backup");
 const { getStorage } = require("firebase-admin/storage");
@@ -24,7 +26,8 @@ const opts = { region: REGION, secrets: [TOKEN, SMTP_USER, SMTP_PASS] };
 const mem = new Map();
 const mailer = () => createMailer({ user: SMTP_USER.value(), pass: SMTP_PASS.value() });
 const guestFor = (tg) => createGuest({ db: getFirestore(), tg, mailer: mailer() });
-const botFor = () => { const tg = createTelegram(TOKEN.value()); return createBot({ db: getFirestore(), tg, mem, guest: guestFor(tg) }); };
+const pushFor = () => createPush({ db: getFirestore(), messaging: getMessaging() });
+const botFor = () => { const tg = createTelegram(TOKEN.value()); return createBot({ db: getFirestore(), tg, mem, guest: guestFor(tg), push: pushFor() }); };
 const needAuth = (req) => { if (!req.auth) throw new HttpsError("unauthenticated", "Cần đăng nhập."); return req.auth.uid; };
 const asHttpsError = (e) => (e instanceof HttpsError ? e : new HttpsError(e.code === "permission-denied" ? "permission-denied" : "internal", e.message));
 
@@ -153,3 +156,6 @@ exports.sitemap = onRequest({ region: REGION, cors: false }, async (req, res) =>
     res.set("Cache-Control", "public, max-age=3600, s-maxage=3600").type("application/xml").status(200).send(await sitemapXml(getFirestore()));
   } catch (e) { console.error("sitemap", e); res.status(500).send("error"); }
 });
+
+/** 21:00 hằng ngày: báo cáo trong ngày gửi chủ/quản lý qua Telegram. */
+exports.tgDailyReport = onSchedule({ ...schedOpts, schedule: "0 21 * * *" }, async () => { try { await botFor().dailyReport(); } catch (e) { console.error("dailyReport", e); } });

@@ -491,6 +491,17 @@ await check("customer reads own Telegram link (query by uid)", getDocs(query(col
 await check("customer CANNOT read someone else's Telegram link", getDocs(query(collection(c1, "tgGuests"), where("uid", "==", "cust2"))), false);
 await check("customer CANNOT write a Telegram link", setDoc(doc(c1, "tgGuests/666"), { uid: "cust1" }), false);
 
+// ----- Thông báo đẩy -----
+const pushDoc = { uid: "recep1", ua: "Chrome", at: serverTimestamp() };
+await check("reception registers a push token for themselves", setDoc(doc(rec, "fcmTokens/tokA"), pushDoc), true);
+await check("reception reads back their own token", getDoc(doc(rec, "fcmTokens/tokA")), true);
+await check("another staff CANNOT read it", getDoc(doc(mgr, "fcmTokens/tokA")), false);
+await check("cannot register a token for another user", setDoc(doc(rec, "fcmTokens/tokB"), { ...pushDoc, uid: "mgr1" }), false);
+await check("customer CANNOT register a push token", setDoc(doc(c1, "fcmTokens/tokC"), { ...pushDoc, uid: "cust1" }), false);
+await check("token rejects extra fields", setDoc(doc(rec, "fcmTokens/tokD"), { ...pushDoc, role: "owner" }), false);
+await check("nobody lists tokens", getDocs(collection(own, "fcmTokens")), false);
+await check("owner of the token deletes it", deleteDoc(doc(rec, "fcmTokens/tokA")), true);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

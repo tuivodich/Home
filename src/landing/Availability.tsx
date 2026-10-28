@@ -5,6 +5,8 @@ import { useMoney } from "../lib/useRate";
 import { addDays, nightsBetween, todayStr } from "../lib/format";
 import type { Busy, Room } from "../lib/types";
 import { nightState, rangeState, type Cell, type Search } from "./availability";
+import { usePricingConfig } from "../lib/usePricing";
+import { quoteStay } from "../lib/pricing";
 
 const DAYS = 14;
 const WEEKDAYS_VI = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -15,6 +17,7 @@ export default function Availability({ rooms, busy, search, setSearch, onBook }:
 }) {
   const L = useL();
   const { money } = useMoney();
+  const { pricing, cfg } = usePricingConfig();
   const isVi = L.nav.home === "Trang chủ";
   const [start, setStart] = useState(todayStr());
   const set = (patch: Partial<Search>) => setSearch({ ...search, ...patch });
@@ -72,7 +75,7 @@ export default function Availability({ rooms, busy, search, setSearch, onBook }:
                   </div>
                   <div className="lp-result-mid">
                     <span className={`lp-badge ${ok ? "free" : st === "held" ? "held" : "booked"}`}>{note}</span>
-                    {ok && <div className="lp-muted">{L.booking.estimate}: {money(r.price * nights)} · {nights} {L.booking.nights}</div>}
+                    {ok && <div className="lp-muted">{L.booking.estimate}: {money(quoteStay(r, search.checkIn, search.checkOut, search.guests, pricing, cfg).total)} · {nights} {L.booking.nights}</div>}
                   </div>
                   <button className="lp-btn primary sm" disabled={!ok} onClick={() => onBook(r.id)}>{L.booking.book}</button>
                 </div>

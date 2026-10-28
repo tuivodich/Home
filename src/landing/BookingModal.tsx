@@ -2,6 +2,10 @@ import { tgNotify } from "../lib/telegram";
 import { DEFAULT_MAX_PENDING } from "../lib/theme";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EMPTY_PROFILE, useProfileDoc, type Profile } from "../lib/profile";
+import { useBank, usePricingConfig } from "../lib/usePricing";
+import { quoteLines, quoteStay } from "../lib/pricing";
+import { fillP, policyLines, useP } from "../i18n/pricing";
+import PayPanel from "./PayPanel";
 import { useG } from "../i18n/guest";
 import DateInput from "../components/DateInput";
 import { Link } from "react-router-dom";
@@ -21,6 +25,13 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
 }) {
   const L = useL();
   const G = useG();
+  const P = useP();
+  const { pricing, cfg } = usePricingConfig();
+  const bank = useBank(true);
+  const [svc, setSvc] = useState<Record<string, number>>({});
+  const [early, setEarly] = useState(false);
+  const [late, setLate] = useState(false);
+  const [doneId, setDoneId] = useState("");
   const { money } = useMoney();
   const { profile: saved, loading: profLoading } = useProfileDoc(user.uid);
   // Khách có thể đổi ngày ngay trong hộp thoại; giá và tình trạng phòng tính lại theo ngày mới.
@@ -57,8 +68,11 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
     setCi({ ...EMPTY_PROFILE, docType: saved.docType, docNumber: saved.docNumber, nationality: saved.nationality || EMPTY_PROFILE.nationality, dob: saved.dob });
   }, [profLoading, saved]);
 
-  const original = nights > 0 ? room.price * nights : 0;
-  const total = coupon ? Math.round(original * (100 - coupon.percent) / 100) : original;
+  // Giá tính theo bảng giá (cuối tuần/mùa/lễ/ở dài ngày), phụ thu và dịch vụ; mã giảm giá áp lên tiền ở.
+  const quote = quoteStay(room, checkIn, checkOut, guests, pricing, cfg, { early, late, services: svc, couponPercent: coupon?.percent });
+  const original = quote.originalTotal;
+  const total = quote.total;
+  const activeSvc = cfg.services.filter((s) => s.active);
 
   const applyCoupon = async () => {
     const c = code.trim().toUpperCase();
@@ -98,6 +112,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
       b.set(doc(db, "bookings", id), {
         roomId: room.id, guestName: name.trim(), phone: phone.trim(), email: email.trim(),
         checkIn, checkOut, guests, total,
+        lines: quoteLines(quote, room.name), ...(quote.deposit > 0 ? { deposit: quote.deposit } : {}),
         status: "pending", note: note.trim(), source: "online", createdBy: user.uid, slotId,
         ...(coupon ? { couponCode: coupon.code, discountPercent: coupon.percent, originalTotal: original } : {}),
       });
@@ -120,6 +135,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
       if (coupon) b.update(doc(db, "coupons", coupon.code), { used: true, usedBy: user.uid, usedAt: serverTimestamp(), bookingId: id });
       await b.commit();
       tgNotify("booking", id);
+      setDoneId(id);
       setSentCheckin(wantsCheckin);
       setDone(true);
     } catch (ex) {
@@ -139,6 +155,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             <h3>{L.modal.doneTitle}</h3>
             <p>{L.modal.doneText}</p>
             {sentCheckin && <p className="lm-ok">✓ {G.checkinDone}</p>}
+            {quote.deposit > 0 && <PayPanel bank={bank} amount={quote.deposit} bookingId={doneId} />}
             <Link className="lm-btn" to="/account">{L.modal.viewMine}</Link>
             <button className="lm-link" onClick={onClose}>{L.modal.cancel}</button>
           </div>
@@ -147,14 +164,14 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             <h3>{L.modal.title}</h3>
             <div className="lm-summary">
               <strong>{room.name}</strong>
-              <div>{nights > 0 ? `${nights} ${L.booking.nights}` : "—"}</div>
-              {coupon ? (
-                <>
-                  <div>{L.modal.original}: <s>{money(original)}</s></div>
-                  <div>{L.modal.total}: <b>{money(total)}</b> <span className="lm-off">−{coupon.percent}%</span></div>
-                </>
-              ) : (
-                <div>{L.booking.estimate}: <b>{money(original)}</b></div>
+              <div>{nights > 0 ? `${nights} ${L.booking.nights}` : "—"} · {fillP(P.checkInFrom, { t: cfg.checkInTime })} · {fillP(P.checkOutBefore, { t: cfg.checkOutTime })}</div>
+              {nights > 0 && (
+                <div className="price-table" aria-label={P.breakdown}>
+                  {quoteLines(quote, room.name).map((l, i) => <div key={i} className={l.amount < 0 ? "neg" : ""}><span>{l.label}</span><span>{l.amount < 0 ? "−" : ""}{money(Math.abs(l.amount))}</span></div>)}
+                  <div className="sum"><span>{coupon ? L.modal.total : L.booking.estimate}{coupon && <> <span className="lm-off">−{coupon.percent}%</span></>}</span><b>{money(total)}</b></div>
+                  {quote.deposit > 0 && <div><span>{P.deposit} ({cfg.depositPercent}%) — {P.depositNote}</span><b>{money(quote.deposit)}</b></div>}
+                  {quote.deposit > 0 && <div><span>{P.balance} — {P.dueAtArrival}</span><span>{money(total - quote.deposit)}</span></div>}
+                </div>
               )}
             </div>
             <div className="lm-dates">
@@ -174,6 +191,24 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             <label>{L.modal.phone}<input required type="tel" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} /></label>
             <label>{L.modal.email}<input required type="email" maxLength={200} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
             <label>{L.modal.guests}<input type="number" min={1} max={room.capacity} value={guests} onChange={(e) => setGuests(Math.max(1, Math.min(room.capacity, +e.target.value || 1)))} /></label>
+            {(activeSvc.length > 0 || cfg.earlyCheckInFee > 0 || cfg.lateCheckOutFee > 0) && (
+              <details className="lm-addons" open={Object.values(svc).some((n) => n > 0) || early || late}>
+                <summary>{P.addons}</summary>
+                <p className="lm-muted lm-small">{P.addonsHint}</p>
+                {cfg.earlyCheckInFee > 0 && <label className="lm-check"><input type="checkbox" checked={early} onChange={(e) => setEarly(e.target.checked)} /><span>{P.early} (+{money(cfg.earlyCheckInFee)})</span></label>}
+                {cfg.lateCheckOutFee > 0 && <label className="lm-check"><input type="checkbox" checked={late} onChange={(e) => setLate(e.target.checked)} /><span>{P.late} (+{money(cfg.lateCheckOutFee)})</span></label>}
+                {activeSvc.map((s) => (
+                  <label className="lm-addon" key={s.id}>
+                    <span>{s.name}<br /><small>{money(s.price)} {s.unit === "night" ? P.perNight : P.perUse}</small></span>
+                    <input type="number" min={0} max={20} value={svc[s.id] ?? 0} onChange={(e) => setSvc({ ...svc, [s.id]: Math.max(0, Math.min(20, Math.floor(+e.target.value || 0))) })} />
+                  </label>
+                ))}
+              </details>
+            )}
+            <details className="lm-policy">
+              <summary>{P.policy}</summary>
+              <ul>{policyLines(P, cfg, (n) => `${n.toLocaleString("vi-VN")} VNĐ`, room.baseGuests ?? room.capacity).map((l, i) => <li key={i}>{l}</li>)}</ul>
+            </details>
             <details className="lm-checkin">
               <summary>{G.checkinTitle}</summary>
               <p className="lm-muted lm-small">{G.checkinHint}</p>

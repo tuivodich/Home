@@ -9,7 +9,7 @@ import type { Room } from "../lib/types";
 const empty = { name: "", type: "wood", capacity: 2, price: 500000, status: "active" } as const;
 
 export default function Rooms() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { money } = useMoney();
   const { data: rooms } = useCollection<Room>("rooms");
   const [form, setForm] = useState<Omit<Room, "id"> & { id?: string }>({ ...empty });
@@ -59,6 +59,9 @@ export default function Rooms() {
           </select>
         </label>
         <label>{t("capacity")}<input type="number" min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: +e.target.value })} /></label>
+        <label>{lang === "vi" ? "Số khách đã gồm trong giá (vượt thì phụ thu thêm khách; để trống = bằng sức chứa)" : "Guests included in the price (more guests pay the extra-guest fee; empty = capacity)"}
+          <input type="number" min={1} max={form.capacity} value={form.baseGuests ?? ""} onChange={(e) => { const { baseGuests: _b, ...rest } = form; setForm(e.target.value ? { ...rest, baseGuests: Math.min(form.capacity, Math.max(1, +e.target.value)) } : rest); }} />
+        </label>
         <label>{t("pricePerNight")} (VNĐ)<input type="number" min={0} step={10000} value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></label>
         <label>{t("status")}
           <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Room["status"] })}>

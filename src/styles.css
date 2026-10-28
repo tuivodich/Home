@@ -157,3 +157,30 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
 
 .dd-role { color: #b8860b; font-weight: 700; }
 .shell header .who .dd-role { color: #ffd27a; }
+
+/* Hóa đơn: nền trắng chữ đen ở mọi giao diện; khi in chỉ còn nội dung hóa đơn */
+.invoice-page { background: #eee9dd; min-height: 100vh; padding: 16px; color: #1c1c1c; font-family: "Be Vietnam Pro", system-ui, sans-serif; }
+.invoice-actions { max-width: 820px; margin: 0 auto 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.invoice-actions a { text-decoration: none; padding: 8px 14px; border-radius: 10px; border: 1px solid #bbb; color: #1c1c1c; background: #fff; }
+.invoice { max-width: 820px; margin: 0 auto; background: #fff; color: #1c1c1c; padding: 36px 40px; border-radius: 8px; box-shadow: 0 6px 24px rgba(0, 0, 0, .15); position: relative; line-height: 1.5; }
+.invoice header { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; border-bottom: 2px solid #1d4a38; padding-bottom: 16px; margin-bottom: 18px; }
+.invoice h1 { font-family: "Lora", Georgia, serif; font-size: 1.5rem; color: #1d4a38; margin: 0 0 4px; }
+.invoice h2 { font-size: 1.15rem; letter-spacing: .04em; margin: 0 0 6px; color: #1d4a38; }
+.invoice h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: #6a5a45; margin: 0 0 4px; }
+.invoice .invoice-meta { text-align: right; }
+.invoice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 18px; }
+.invoice table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; }
+.invoice th, .invoice td { padding: 8px 6px; border-bottom: 1px solid #e3ddd0; text-align: left; vertical-align: top; }
+.invoice th { font-size: .78rem; text-transform: uppercase; color: #6a5a45; }
+.invoice .num { text-align: right; white-space: nowrap; }
+.invoice tfoot .sum td { font-weight: 700; border-top: 2px solid #1d4a38; }
+.invoice table.small td, .invoice table.small th { font-size: .88rem; }
+.invoice footer { margin-top: 18px; padding-top: 12px; border-top: 1px dashed #c9bfa8; font-size: .85rem; color: #4a3d2c; }
+.invoice footer ul { margin: 6px 0 0; padding-left: 18px; }
+.invoice-stamp { display: inline-block; transform: rotate(-3deg); border: 3px solid #1c6b34; color: #1c6b34; padding: 6px 16px; font-weight: 800; letter-spacing: .08em; border-radius: 8px; opacity: .85; margin: 0 0 14px; }
+@media (max-width: 600px) { .invoice { padding: 20px 16px; } .invoice-grid { grid-template-columns: 1fr; } .invoice .invoice-meta { text-align: left; } }
+@media print {
+  .no-print { display: none !important; }
+  .invoice-page { background: #fff; padding: 0; }
+  .invoice { box-shadow: none; border-radius: 0; max-width: none; padding: 0; }
+}

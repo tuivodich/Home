@@ -75,9 +75,13 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     `👤 <b>${esc(b.guestName)}</b> · ${esc(b.phone)}${b.email ? ` · ${esc(b.email)}` : ""}`,
     `🛏 ${esc(await roomName(b.roomId))} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)} (${nights(b.checkIn, b.checkOut)} đêm) · ${b.guests} khách`,
     `💰 ${money(b.total)}${b.couponCode ? ` · 🏷 ${esc(b.couponCode)} (−${b.discountPercent}%)` : ""}`,
+    b.deposit > 0 ? `🏦 Cọc: ${money(b.deposit)}${(b.paid ?? 0) >= b.deposit ? " (đã nhận)" : ""} · Mã chuyển khoản: <code>NHAGO ${String(b.id).replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase()}</code>` : "",
     b.note ? `📝 ${esc(b.note)}` : "",
   ].filter(Boolean).join("\n");
-  const buttons = (id) => ({ reply_markup: { inline_keyboard: [[{ text: "✅ Xác nhận", callback_data: `cf:${id}` }, { text: "❌ Từ chối", callback_data: `rj:${id}` }]] } });
+  const buttons = (id, b) => ({ reply_markup: { inline_keyboard: [
+    [{ text: "✅ Xác nhận", callback_data: `cf:${id}` }, { text: "❌ Từ chối", callback_data: `rj:${id}` }],
+    ...(b && b.deposit > 0 && (b.paid ?? 0) < b.deposit ? [[{ text: "💰 Đã nhận cọc", callback_data: `pd:${id}` }]] : []),
+  ] } });
 
   // ===== Thông báo do ứng dụng gọi (đã xác thực tài khoản khách) =====
   async function notify(uid, { type, id }) {
@@ -85,7 +89,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       const b = await get(`bookings/${id}`);
       if (!b || b.createdBy !== uid || b.status !== "pending" || b.source !== "online") return { sent: 0 };
       if (!(await once(`b_${id}`))) return { sent: 0 };
-      return { sent: await sendAll(await bookingText(b, "🔔 <b>Yêu cầu đặt phòng mới</b>"), buttons(id)) };
+      return { sent: await sendAll(await bookingText(b, "🔔 <b>Yêu cầu đặt phòng mới</b>"), buttons(id, b)) };
     }
     if (type === "cancel") {
       const b = await get(`bookings/${id}`);
@@ -137,6 +141,18 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     return { ok: true, text: `❌ Đã từ chối bởi ${esc(actor)}` };
   }
 
+  /** Ghi nhận khách đã chuyển cọc (nút "Đã nhận cọc"): cộng vào `paid` và ghi nhật ký thanh toán. */
+  async function markDeposit(id, actor) {
+    const b = await get(`bookings/${id}`);
+    if (!b) return { ok: false, text: "Không tìm thấy đặt phòng." };
+    const paid = b.paid ?? 0;
+    if (!(b.deposit > 0) || paid >= b.deposit) return { ok: false, text: "Đặt phòng này đã nhận đủ cọc (hoặc không yêu cầu cọc)." };
+    const amount = b.deposit - paid;
+    const { Timestamp } = require("firebase-admin/firestore");
+    await db.doc(`bookings/${id}`).update({ paid: paid + amount, payLog: [...(b.payLog ?? []), { amount, at: Timestamp.fromDate(now()), by: `telegram:${actor}`, note: "Đặt cọc" }] });
+    return { ok: true, text: `💰 Đã ghi nhận cọc ${money(amount)} bởi ${esc(actor)}` };
+  }
+
   // ===== Lệnh trong chat =====
   const STAFF_HELP = "Lệnh nhân viên:\n/homnay — khách nhận/trả phòng hôm nay\n/cho — yêu cầu đang chờ xác nhận\n/huylienket — ngừng nhận thông báo ở chat này\n\nLệnh chung: /trong, /phong, /lienhe";
   const GUEST_HELP = "Tôi có thể giúp bạn:\n/trong — xem phòng còn trống (vd <code>/trong 25/12 27/12</code> hoặc <code>/trong 25/12</code> cho 1 đêm)\n/phong — các phòng và giá\n/lienhe — thông tin liên hệ\n/dat — mở trang đặt phòng";
@@ -162,7 +178,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     const snap = await db.collection("bookings").where("status", "==", "pending").get();
     const items = snap.docs.map((x) => ({ id: x.id, ...x.data() })).sort((a, b) => a.checkIn.localeCompare(b.checkIn));
     if (!items.length) return tg.sendMessage(chatId, "Không có yêu cầu nào đang chờ xác nhận 👍");
-    for (const b of items.slice(0, 10)) await tg.sendMessage(chatId, await bookingText(b, "⏳ <b>Chờ xác nhận</b>"), buttons(b.id));
+    for (const b of items.slice(0, 10)) await tg.sendMessage(chatId, await bookingText(b, "⏳ <b>Chờ xác nhận</b>"), buttons(b.id, b));
     if (items.length > 10) await tg.sendMessage(chatId, `… và ${items.length - 10} yêu cầu nữa, xem trên trang quản trị.`);
   }
 
@@ -293,17 +309,19 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     const chatId = String(cb.message?.chat?.id ?? "");
     if (!memAllow(mem, chatId, now().getTime())) return;
     const [action, id] = String(cb.data ?? "").split(":");
-    if (!["cf", "rj"].includes(action) || !id) return tg.answerCallbackQuery(cb.id, "Thao tác không hợp lệ");
+    if (!["cf", "rj", "pd"].includes(action) || !id) return tg.answerCallbackQuery(cb.id, "Thao tác không hợp lệ");
     const linked = await get(`tgChats/${chatId}`);
     const u = linked && (await get(`users/${linked.uid}`));
     if (!u || !FRONT.includes(u.role)) return tg.answerCallbackQuery(cb.id, "Chat chưa liên kết hoặc không đủ quyền");
     const actor = cb.from?.first_name || u.email || "nhân viên";
-    const r = await decide(action, id, actor);
+    const r = action === "pd" ? await markDeposit(id, actor) : await decide(action, id, actor);
     await tg.answerCallbackQuery(cb.id, r.ok ? "Đã xong" : r.text.replace(/<[^>]+>/g, "").slice(0, 150));
     if (cb.message) {
       const base = cb.message.text ?? "";
       // Giữ nguyên nội dung cũ, thay hàng nút bằng kết quả.
-      await tg.editMessageText(chatId, cb.message.message_id, `${esc(base)}\n\n${r.text}`, { reply_markup: { inline_keyboard: [] } }).catch(() => {});
+      // Nút "Đã nhận cọc": giữ lại Xác nhận/Từ chối; Xác nhận/Từ chối: bỏ hết nút.
+      const kb = action === "pd" && r.ok ? (cb.message.reply_markup?.inline_keyboard ?? []).map((row) => row.filter((x) => x.callback_data !== cb.data)).filter((row) => row.length) : [];
+      await tg.editMessageText(chatId, cb.message.message_id, `${esc(base)}\n\n${r.text}`, { reply_markup: { inline_keyboard: kb } }).catch(() => {});
     }
   }
 

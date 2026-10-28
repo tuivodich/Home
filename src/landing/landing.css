@@ -547,3 +547,21 @@ html { scroll-behavior: smooth; }
 .lp-place-dist { color: var(--gold-ink); font-weight: 600; }
 .lp-place .lp-pill { justify-self: start; }
 @media (max-width: 800px) { .lp-explore-top { grid-template-columns: 1fr; } .lp-map iframe { height: 260px; } }
+/* Thanh toán cọc bằng QR, bảng chi tiết giá, dịch vụ */
+.pay-panel { display: grid; gap: 8px; text-align: left; width: 100%; }
+.pay-panel h4 { font-family: "Lora", Georgia, serif; font-size: 1.15rem; color: var(--head); }
+.pay-qr { display: grid; place-items: center; background: #fff; border-radius: 16px; padding: 10px; justify-self: center; }
+.pay-qr img { display: block; max-width: 100%; height: auto; }
+.pay-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: .92rem; }
+.pay-row span { color: var(--muted); min-width: 120px; }
+.pay-row b { color: var(--head); overflow-wrap: anywhere; flex: 1; }
+.price-table { display: grid; gap: 4px; font-size: .9rem; }
+.price-table div { display: flex; justify-content: space-between; gap: 12px; }
+.price-table .neg { color: var(--ok-fg); }
+.price-table .sum { font-weight: 700; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 2px; }
+.lm-addons, .lm-policy { border: 1px dashed var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
+.lm-addons summary, .lm-policy summary { cursor: pointer; font-weight: 700; color: var(--head); }
+.lm-addon { display: grid; grid-template-columns: 1fr 84px; gap: 10px; align-items: center; }
+.lm-addon small { color: var(--muted); }
+.lm-policy ul { margin: 0; padding-left: 18px; font-size: .88rem; color: var(--muted); }
+.lp-warn { color: var(--warn-fg); }

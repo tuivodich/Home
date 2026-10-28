@@ -41,8 +41,8 @@ service cloud.firestore {
     // Cài đặt chung (tỷ giá, giao diện website…): ai cũng đọc, chỉ chủ/quản lý ghi.
     // Giao diện: chỉ nhận các mã hợp lệ, hiệu ứng / tự động theo mùa là true/false.
     match /settings/{id} {
-      allow read: if true;
-      allow write: if isAdmin() && id != 'contact'
+      allow read: if id != 'bank';
+      allow write: if isAdmin() && !(id in ['contact', 'pricing', 'booking', 'bank'])
         && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel'])
         && (!('themeAuto' in request.resource.data) || request.resource.data.themeAuto is bool)
         && (!('effects' in request.resource.data) || request.resource.data.effects is bool)
@@ -58,6 +58,41 @@ service cloud.firestore {
         && okText(request.resource.data, 'phone') && okText(request.resource.data, 'zalo')
         && okText(request.resource.data, 'email') && okText(request.resource.data, 'address')
         && okUrl(request.resource.data, 'facebook') && okUrl(request.resource.data, 'mapUrl');
+    }
+    // Bảng giá (cuối tuần, mùa, lễ, ở dài ngày): ai cũng đọc để tính giá; chủ/quản lý sửa.
+    match /settings/pricing {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['weekendDays', 'weekendPercent', 'seasons', 'holidays', 'longStay'])
+        && request.resource.data.weekendDays is list && request.resource.data.weekendDays.size() <= 7
+        && request.resource.data.weekendPercent is number && request.resource.data.weekendPercent >= -50 && request.resource.data.weekendPercent <= 300
+        && request.resource.data.seasons is list && request.resource.data.seasons.size() <= 20
+        && request.resource.data.holidays is list && request.resource.data.holidays.size() <= 40
+        && request.resource.data.longStay is list && request.resource.data.longStay.size() <= 10;
+    }
+    // Đặt cọc, giờ nhận/trả phòng, chính sách hủy, phụ thu, dịch vụ đi kèm: công khai để hiển thị khi đặt; chủ/quản lý sửa.
+    match /settings/booking {
+      function okFee(d, k) { return !(k in d) || (d[k] is number && d[k] >= 0 && d[k] <= 100000000); }
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['depositPercent', 'checkInTime', 'checkOutTime', 'cancelTiers', 'cancelNote', 'extraGuestFee', 'earlyCheckInFee', 'lateCheckOutFee', 'services'])
+        && request.resource.data.depositPercent is number && request.resource.data.depositPercent >= 0 && request.resource.data.depositPercent <= 100
+        && request.resource.data.checkInTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && request.resource.data.checkOutTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && request.resource.data.cancelTiers is list && request.resource.data.cancelTiers.size() <= 10
+        && request.resource.data.cancelNote is string && request.resource.data.cancelNote.size() <= 1000
+        && okFee(request.resource.data, 'extraGuestFee') && okFee(request.resource.data, 'earlyCheckInFee') && okFee(request.resource.data, 'lateCheckOutFee')
+        && request.resource.data.services is list && request.resource.data.services.size() <= 30;
+    }
+    // Tài khoản nhận cọc: chỉ người đã đăng nhập đọc (để hiện mã QR khi đặt phòng); CHỈ CHỦ được thiết lập.
+    match /settings/bank {
+      allow read: if signedIn();
+      allow write: if isOwner()
+        && request.resource.data.keys().hasOnly(['bankBin', 'bankName', 'accountNo', 'accountName'])
+        && request.resource.data.bankBin.matches('^[0-9]{6}$')
+        && request.resource.data.bankName is string && request.resource.data.bankName.size() <= 80
+        && request.resource.data.accountNo.matches('^[0-9A-Za-z]{4,30}$')
+        && request.resource.data.accountName is string && request.resource.data.accountName.size() >= 1 && request.resource.data.accountName.size() <= 80;
     }
     match /rooms/{id} {
       allow read: if true;
@@ -87,7 +122,7 @@ service cloud.firestore {
       allow create: if isFront() || (signedIn()
         && request.resource.data.keys().hasOnly(['roomId', 'guestName', 'phone', 'email', 'checkIn', 'checkOut',
                                                   'guests', 'total', 'status', 'note', 'source', 'createdBy',
-                                                  'couponCode', 'discountPercent', 'originalTotal', 'slotId'])
+                                                  'couponCode', 'discountPercent', 'originalTotal', 'slotId', 'lines', 'deposit'])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.source == 'online'
@@ -100,6 +135,8 @@ service cloud.firestore {
         && request.resource.data.guests is int && request.resource.data.guests >= 1 && request.resource.data.guests <= 30
         && request.resource.data.total is number
         && request.resource.data.email is string && request.resource.data.email.size() <= 200
+        && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 30))
+        && (!('deposit' in request.resource.data) || (request.resource.data.deposit is number && request.resource.data.deposit >= 0 && request.resource.data.deposit <= request.resource.data.total))
         // Mỗi yêu cầu phải chiếm một khe giữ chỗ của chính khách (tối đa maxPending khe) được tạo cùng lần ghi.
         && request.resource.data.slotId is string
         && getAfter(/databases/$(database)/documents/pend/$(request.resource.data.slotId)).data.bookingId == id
@@ -118,6 +155,8 @@ service cloud.firestore {
       // chỉ được đổi trạng thái sang "cancelled" (kèm lý do "customer" nếu có).
       // Lễ tân chỉ đổi được trạng thái; giá và mã giảm giá chỉ chủ/quản lý sửa được.
       allow update: if isOwner()
+        // Ghi nhận tiền đã thu / hoàn (cọc, thu thêm) ở mọi trạng thái: chủ, quản lý, lễ tân.
+        || (isFront() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid', 'payLog']))
         || (!(resource.data.status in ['checked_out', 'cancelled']) && (isAdmin()
           || (isFront() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason']))
           || (signedIn()
@@ -125,8 +164,9 @@ service cloud.firestore {
             && resource.data.source == 'online'
             && resource.data.status in ['pending', 'confirmed']
             && request.resource.data.status == 'cancelled'
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason'])
-            && (!('cancelReason' in request.resource.data) || request.resource.data.cancelReason == 'customer'))));
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason', 'cancelledAt'])
+            && (!('cancelReason' in request.resource.data) || request.resource.data.cancelReason == 'customer')
+            && (!('cancelledAt' in request.resource.data) || request.resource.data.cancelledAt == request.time))));
       allow delete: if isAdmin();
     }
 

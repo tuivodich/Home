@@ -9,7 +9,6 @@ import CalendarPage from "./pages/Calendar";
 import Bookings from "./pages/Bookings";
 import Guests from "./pages/Guests";
 import Rooms from "./pages/Rooms";
-import Settings from "./pages/Settings";
 import Coupons from "./pages/Coupons";
 import History from "./pages/History";
 import ReviewsAdmin from "./pages/ReviewsAdmin";
@@ -49,7 +48,6 @@ export default function StaffShell() {
     { label: H.attendance, to: "/app/attendance" },
     ...(admin ? [{ label: H.roster, to: "/app/roster" }, { label: H.timesheet, to: "/app/timesheet" }] : []),
   ];
-  const setupItems: DdItem[] = [{ label: t("rooms"), to: "/app/rooms" }, { label: t("settings"), to: "/app/settings" }];
 
   return (
     <div className="shell">
@@ -69,7 +67,7 @@ export default function StaffShell() {
           ? <Dropdown className="st-dd" label={H.menu} items={hrItems} active={isIn("/app/attendance", "/app/roster", "/app/timesheet")} />
           : <NavLink to="/app/attendance">{H.attendance}</NavLink>}
         {admin && <Dropdown className="st-dd" label={t("menuContent")} items={contentItems} active={isIn("/app/reviews")} />}
-        {admin && <Dropdown className="st-dd" label={t("menuSetup")} items={setupItems} active={isIn("/app/rooms", "/app/settings")} />}
+        {admin && <NavLink to="/app/rooms">{t("menuRooms")}</NavLink>}
       </nav>
       <main>
         <Routes>
@@ -84,7 +82,6 @@ export default function StaffShell() {
           {admin && <Route path="coupons" element={<Coupons />} />}
           {admin && <Route path="reviews" element={<ReviewsAdmin />} />}
           {admin && <Route path="rooms" element={<Rooms />} />}
-          {admin && <Route path="settings" element={<Settings />} />}
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>
       </main>

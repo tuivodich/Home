@@ -6,6 +6,8 @@ import { safeUrl, useContact, zaloHref } from "../lib/contact";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
 import Icon from "./Icon";
+import ForestScene, { Drift, Fireflies, Snowfall, TreeLine } from "./ForestScene";
+import { useTheme } from "../lib/theme";
 import HashLink from "../components/HashLink";
 import Stars from "../components/Stars";
 import ReviewCard from "../components/ReviewCard";
@@ -86,14 +88,18 @@ export function Features() {
   const L = useL();
   return (
     <section id="features" className="lp-section forest">
+      <TreeLine seed={11} />
+      <div className="lp-feat-bg" aria-hidden="true"><i /><i /><i /><b /></div>
       <div className="lp-wrap">
         <div className="lp-head reveal">
           <span className="lp-eyebrow">{L.features.eyebrow}</span>
           <h2>{L.features.title}</h2>
+          <span className="lp-orn" aria-hidden="true"><i /><em>✦</em><i /></span>
         </div>
         <div className="lp-grid">
-          {L.features.items.map((f) => (
-            <div key={f.t} className="lp-feature reveal">
+          {L.features.items.map((f, i) => (
+            <div key={f.t} className="lp-feature reveal" style={{ ["--i" as string]: i }}>
+              <span className="lp-feat-no" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
               <div className="lp-ico"><Icon name={f.i} /></div>
               <h3>{f.t}</h3>
               <p>{f.d}</p>
@@ -164,8 +170,14 @@ export function Footer() {
     [L.footer.facebook, c.facebook, safeUrl(c.facebook)],
   ];
   const shown = rows.filter(([, v]) => v);
+  const { theme, effects } = useTheme();
   return (
     <footer id="contact" className="lp-footer">
+      <TreeLine seed={29} />
+      <div className="lp-foot-bg" aria-hidden="true">
+        <ForestScene theme={theme} id="foot" />
+        {effects && <>{theme !== "mist" && <Fireflies count={10} />}<Drift />{theme === "noel" && <Snowfall count={26} />}</>}
+      </div>
       <div className="lp-wrap lp-footer-in">
         <div>
           <div className="lp-brand light"><span className="lp-logo"><img src="/favicon.svg" alt="" width="38" height="38" /></span><span>{site.name}</span></div>
@@ -190,6 +202,7 @@ export function Footer() {
       </div>
       <div className="lp-wrap lp-copy">
         <span>© {new Date().getFullYear()} {site.name}. {L.footer.rights}</span>
+        <button type="button" className="lp-totop" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label={L.footer.top}>↑ {L.footer.top}</button>
         <Link to="/app">{L.footer.staff}</Link>
       </div>
     </footer>

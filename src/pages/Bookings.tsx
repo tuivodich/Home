@@ -21,6 +21,7 @@ import { addDays, fmtDate, nightsBetween, overlaps, todayStr } from "../lib/form
 import { checkCoupon, discounted, type CouponCheck } from "../lib/coupons";
 import GuestFields, { conflictsFor, emptyGuestForm, type GuestForm } from "../components/GuestFields";
 import type { Booking, BookingStatus, Guest, Room } from "../lib/types";
+import NumInput from "../components/NumInput";
 
 interface PriceEdit { id: string; total: number; code: string; coupon: { code: string; percent: number } | null; msg: string; busy: boolean }
 
@@ -250,7 +251,7 @@ export default function Bookings() {
               <div className="pricebox">
                 <label>{t("rentPrice")} (VNĐ)
                   <div className="row">
-                    <input type="number" min={0} step={10000} value={editing.total} onChange={(e) => setPe({ ...editing, total: +e.target.value, coupon: null })} />
+                    <NumInput min={0} step={10000} value={editing.total} onChange={(e) => setPe({ ...editing, total: +e.target.value, coupon: null })} />
                     <button onClick={() => savePrice(b)} disabled={editing.busy}>{t("save")}</button>
                   </div>
                 </label>
@@ -290,12 +291,12 @@ export default function Bookings() {
           <label>{t("checkIn")}<DateInput required value={f.checkIn} onChange={(v) => setF({ ...f, checkIn: v })} /></label>
           <label>{t("checkOut")}<DateInput required value={f.checkOut} onChange={(v) => setF({ ...f, checkOut: v })} /></label>
         </div>
-        <label>{t("numGuests")}<input type="number" min={1} value={f.guests} onChange={(e) => setF({ ...f, guests: +e.target.value })} /></label>
+        <label>{t("numGuests")}<NumInput min={1} value={f.guests} onChange={(e) => setF({ ...f, guests: +e.target.value })} /></label>
         <h4 className="sub">{t("guestSection")}</h4>
         <GuestFields value={g} onChange={setG} guests={guests} file={file} onFile={setFile} docRequired={false} />
         <small>{t("guestSectionHint")}</small>
         <label>{t("total")} (VNĐ) — {nights > 0 && <>{nights} {t("nights")} = {money(suggested)}</>}
-          <input type="number" min={0} step={10000} placeholder={String(suggested)} value={f.total || ""} onChange={(e) => setF({ ...f, total: +e.target.value })} />
+          <NumInput allowEmpty min={0} step={10000} placeholder={String(suggested)} value={f.total || ""} onChange={(e) => setF({ ...f, total: +e.target.value })} />
         </label>
         {isAdmin && (
           <div>

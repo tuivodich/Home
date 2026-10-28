@@ -6,6 +6,7 @@ import { db } from "../lib/firebase";
 import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
 import type { Booking, Coupon, UserDoc } from "../lib/types";
+import NumInput from "../components/NumInput";
 
 // Bỏ các ký tự dễ nhầm (0/O, 1/I/L) để khách đọc và gõ mã không sai.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -67,8 +68,8 @@ export default function Coupons() {
       <p><small>{t("couponHint")}</small></p>
       <form className="card" onSubmit={create}>
         <div className="row">
-          <label>{t("couponPercent")}<input type="number" min={1} max={100} required value={percent} onChange={(e) => setPercent(Math.max(1, Math.min(100, +e.target.value || 1)))} /></label>
-          <label>{t("couponQty")}<input type="number" min={1} max={50} required value={qty} onChange={(e) => setQty(Math.max(1, Math.min(50, +e.target.value || 1)))} /></label>
+          <label>{t("couponPercent")}<NumInput min={1} max={100} required value={percent} onChange={(e) => setPercent(Math.max(1, Math.min(100, +e.target.value || 1)))} /></label>
+          <label>{t("couponQty")}<NumInput min={1} max={50} required value={qty} onChange={(e) => setQty(Math.max(1, Math.min(50, +e.target.value || 1)))} /></label>
         </div>
         <label>{t("couponNote")}<input maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} /></label>
         <label>{t("couponExpiry")}<DateInput value={expiry} onChange={(v) => setExpiry(v)} /></label>

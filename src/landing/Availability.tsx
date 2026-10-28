@@ -7,6 +7,7 @@ import type { Busy, Room } from "../lib/types";
 import { nightState, rangeState, type Cell, type Search } from "./availability";
 import { usePricingConfig } from "../lib/usePricing";
 import { quoteStay } from "../lib/pricing";
+import NumInput from "../components/NumInput";
 
 const DAYS = 14;
 const WEEKDAYS_VI = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -56,7 +57,7 @@ export default function Availability({ rooms, busy, search, setSearch, onBook }:
               </select>
             </label>
             <label>{L.search.guests}
-              <input type="number" min={1} max={30} value={search.guests} onChange={(e) => set({ guests: Math.max(1, +e.target.value || 1) })} />
+              <NumInput min={1} max={30} value={search.guests} onChange={(e) => set({ guests: Math.max(1, +e.target.value || 1) })} />
             </label>
           </div>
           {error && <p className="lp-error">{error}</p>}

@@ -24,7 +24,7 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
 
 ## Thành viên thân thiết, báo cáo, buồng phòng, chi phí, sao lưu
-- **Thành viên thân thiết** (*Đặt phòng → Thành viên thân thiết*): hạng (mặc định Đồng/Bạc/Vàng/Kim cương) tự thăng theo số lần ở (đặt phòng online đã trả phòng) do chủ/quản lý đặt; đặt tay cho từng khách được. Mỗi hạng có huy hiệu màu sau tên (header, đặt phòng của nhân viên) và **mã giảm giá riêng** (hạn 90 ngày, một lần, chỉ chủ mã dùng được) khách tự nhận ở *Đặt phòng của tôi* — hạng và mã do Cloud Functions (`loyaltyClaim`) kiểm tra ở máy chủ.
+- **Thành viên thân thiết** (*Đặt phòng → Thành viên thân thiết*): hạng (mặc định Đồng/Bạc/Vàng/Kim cương) tự thăng theo số lần ở (đặt phòng online đã trả phòng) do chủ/quản lý đặt; chỉ **chủ** đặt tay hạng cho từng khách được (quản lý chỉ xem); khách xem hạng của mình ở mục cuối trang *Tài khoản của tôi* (không tự đổi được). Mỗi hạng có huy hiệu màu sau tên (header, đặt phòng của nhân viên) và **mã giảm giá riêng** (hạn 90 ngày, một lần, chỉ chủ mã dùng được) khách tự nhận ở *Đặt phòng của tôi* — hạng và mã do Cloud Functions (`loyaltyClaim`) kiểm tra ở máy chủ.
 - **Báo cáo doanh thu** (*Tài chính*): theo tháng/năm — doanh thu (ghi nhận khi trả phòng), lợi nhuận, công suất, giá bình quân, theo phòng/nguồn, tiền thu trong kỳ, chi phí; xuất CSV.
 - **Chi phí & công nợ**: ghi chi phí theo loại; khoản phải trả chưa thanh toán; khoản khách còn nợ (nút Thu tiền).
 - **Buồng phòng**: trạng thái Cần dọn / Đang dọn / Sẵn sàng; khách trả phòng thì phòng tự "Cần dọn" (kèm tin Telegram).
@@ -67,3 +67,7 @@ Workflow `.github/workflows/deploy.yml` chạy khi push vào `main`. Cần tạo
 
 ## Bảo mật
 Không commit token bot Telegram hay service account. Token bot sẽ lưu bằng Firebase Secret ở Giai đoạn 2.
+
+## Điểm tham quan đẹp, bản đồ và SEO
+- Trang `/explore` (menu Khám phá → *Điểm tham quan đẹp*): bản đồ nhúng mặc định là **ảnh vệ tinh**. Vị trí lấy theo thứ tự: ô *Tọa độ bản đồ nhúng* ở Cài đặt → Thông tin liên hệ (vd `11.9404, 108.4583`: bấm chuột phải vào điểm trên Google Maps rồi chọn dòng số đầu tiên để sao chép), tọa độ có sẵn trong đường dẫn bản đồ dài, hoặc tìm theo địa chỉ. Link rút gọn `maps.app.goo.gl` không chứa tọa độ nên chỉ dùng cho nút chỉ đường.
+- `/sitemap` (Sơ đồ trang web, có ở menu Thông tin và chân trang), `public/sitemap.xml`, `public/robots.txt`, thẻ canonical/Open Graph và dữ liệu có cấu trúc (`LodgingBusiness`) trong `index.html`. Khi thêm trang công khai mới nhớ cập nhật `public/sitemap.xml`.

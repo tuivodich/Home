@@ -3,6 +3,7 @@ import { collection, doc, getDoc, getDocs, onSnapshot, setDoc } from "firebase/f
 import { db } from "../lib/firebase";
 import { useI18n } from "../i18n";
 import { backupGet, backupList, backupNow, type BackupStatus } from "../lib/telegram";
+import NumInput from "../components/NumInput";
 
 /** Các bộ sưu tập sao lưu: giữ giống functions/backup.js (không gồm ảnh giấy tờ trong Storage). */
 const COLLECTIONS = ["users", "profiles", "members", "rooms", "roomStatus", "bookings", "busy", "guests", "precheckins", "coupons", "reviews", "pages", "settings", "expenses", "shifts", "schedule", "attendance", "tgChats"];
@@ -88,7 +89,7 @@ export default function BackupPage() {
         <label className="check"><input type="checkbox" checked={cfg.enabled} onChange={(e) => setCfg({ ...cfg, enabled: e.target.checked })} /><span>{T("Bật sao lưu tự động (chạy lúc 02:00 giờ Việt Nam)", "Enable automatic backups (02:00 Vietnam time)")}</span></label>
         <div className="row shiftform">
           <label>{T("Tần suất", "Frequency")}<select value={cfg.frequency} onChange={(e) => setCfg({ ...cfg, frequency: e.target.value as "daily" | "weekly" })}><option value="daily">{T("Mỗi ngày", "Daily")}</option><option value="weekly">{T("Mỗi tuần (Chủ nhật)", "Weekly (Sunday)")}</option></select></label>
-          <label>{T("Giữ lại số bản gần nhất", "Backups to keep")}<input type="number" min={1} max={60} value={cfg.keep} onChange={(e) => setCfg({ ...cfg, keep: Math.min(60, Math.max(1, Math.floor(+e.target.value || 1))) })} /></label>
+          <label>{T("Giữ lại số bản gần nhất", "Backups to keep")}<NumInput min={1} max={60} value={cfg.keep} onChange={(e) => setCfg({ ...cfg, keep: Math.min(60, Math.max(1, Math.floor(+e.target.value || 1))) })} /></label>
         </div>
         <div className="rolebar">
           <button disabled={JSON.stringify(cfg) === JSON.stringify(saved) || !!busy} onClick={() => run("cfg", async () => { await setDoc(doc(db, "settings", "backup"), cfg); setMsg(T("Đã lưu cài đặt sao lưu.", "Backup settings saved.")); })}>{T("Lưu lại", "Save")}</button>

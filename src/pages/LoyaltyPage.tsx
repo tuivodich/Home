@@ -7,6 +7,7 @@ import { useI18n } from "../i18n";
 import TierBadge from "../components/TierBadge";
 import { DEFAULT_TIERS, completedStays, tierFor, useLoyaltyCfg, useTierLookup, type LoyaltyCfg, type Tier } from "../lib/loyalty";
 import type { Booking, UserDoc } from "../lib/types";
+import NumInput from "../components/NumInput";
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const newId = (name: string) => `${name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "").slice(0, 12) || "tier"}${Math.random().toString(36).slice(2, 5)}`;
@@ -15,7 +16,7 @@ const newId = (name: string) => `${name.toLowerCase().normalize("NFD").replace(/
 export default function LoyaltyPage() {
   const { lang } = useI18n();
   const T = (vi: string, en: string) => (lang === "vi" ? vi : en);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { cfg: saved, loading } = useLoyaltyCfg();
   const [draft, setDraft] = useState<LoyaltyCfg>(saved);
   const [msg, setMsg] = useState("");
@@ -62,8 +63,8 @@ export default function LoyaltyPage() {
           <div className="row shiftform" key={t.id}>
             <label>{T("Tên hạng", "Tier name")}<input value={t.name} maxLength={30} onChange={(e) => patch(i, { name: e.target.value })} /></label>
             <label>{T("Màu huy hiệu", "Badge colour")}<input type="color" value={t.color} onChange={(e) => patch(i, { color: e.target.value })} /></label>
-            <label>{T("Từ số lần ở", "From stays")}<input type="number" min={0} max={999} value={t.minBookings} onChange={(e) => patch(i, { minBookings: Math.max(0, Math.floor(+e.target.value || 0)) })} /></label>
-            <label>{T("Mã giảm giá riêng (%)", "Personal coupon (%)")}<input type="number" min={0} max={50} value={t.couponPercent} onChange={(e) => patch(i, { couponPercent: Math.min(50, Math.max(0, +e.target.value || 0)) })} /></label>
+            <label>{T("Từ số lần ở", "From stays")}<NumInput min={0} max={999} value={t.minBookings} onChange={(e) => patch(i, { minBookings: Math.max(0, Math.floor(+e.target.value || 0)) })} /></label>
+            <label>{T("Mã giảm giá riêng (%)", "Personal coupon (%)")}<NumInput min={0} max={50} value={t.couponPercent} onChange={(e) => patch(i, { couponPercent: Math.min(50, Math.max(0, +e.target.value || 0)) })} /></label>
             <span><TierBadge tier={t} /></span>
             <button type="button" className="ghost danger" disabled={draft.tiers.length <= 1} onClick={() => setDraft({ ...draft, tiers: draft.tiers.filter((_, k) => k !== i) })}>{T("Xóa", "Remove")}</button>
           </div>
@@ -81,6 +82,7 @@ export default function LoyaltyPage() {
 
       <div className="card" id="loyalty-members">
         <h3>{T("Hạng từng khách", "Member tiers")}</h3>
+        {profile?.role !== "owner" && <small>{T("Chỉ chủ homestay mới đổi được hạng của khách (bạn chỉ xem).", "Only the owner can change a guest's tier (view only).")}</small>}
         {customers.length === 0 && <small>{T("Chưa có khách hàng nào.", "No customers yet.")}</small>}
         {customers.map((c) => {
           const auto = tierFor(look.count(c.id), look.cfg);
@@ -88,7 +90,7 @@ export default function LoyaltyPage() {
           return (
             <div className="row between" key={c.id}>
               <span>{c.name ? `${c.name} · ` : ""}{c.email} · {look.count(c.id)} {T("lần ở", "stays")} <TierBadge tier={look.tierOf(c.id)} />{manual ? <small> ({T("đặt tay", "manual")})</small> : auto ? null : null}</span>
-              <select value={look.cfg.tiers.some((t) => t.id === manual) ? manual : ""} aria-label={`${c.email} tier`} onChange={(e) => setManual(c.id, e.target.value)}>
+              <select disabled={profile?.role !== "owner"} value={look.cfg.tiers.some((t) => t.id === manual) ? manual : ""} aria-label={`${c.email} tier`} onChange={(e) => setManual(c.id, e.target.value)}>
                 <option value="">{T("Tự động", "Automatic")}</option>
                 {look.cfg.tiers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>

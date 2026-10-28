@@ -6,12 +6,16 @@ import { useTitle } from "../lib/useTitle";
 import SiteLayout from "../layout/SiteLayout";
 import ProfileFields from "../components/ProfileFields";
 import { useG } from "../i18n/guest";
+import { fillP } from "../i18n/pricing";
+import { useMyTier } from "../lib/loyalty";
+import TierBadge from "../components/TierBadge";
 
 /** "Tài khoản của tôi": mỗi người sửa hồ sơ của chính mình (họ tên, giấy tờ, quốc tịch, ngày sinh, điện thoại, email). */
 export default function MyProfile() {
   const G = useG();
   const { user, loading } = useAuth();
   const { profile, loading: pl } = useProfileDoc(user?.uid);
+  const my = useMyTier(user?.uid);
   const [v, setV] = useState<Profile>(EMPTY_PROFILE);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -46,6 +50,14 @@ export default function MyProfile() {
             {err && <p className="lp-error">{err}</p>}
             <div><button className="lp-btn primary" type="submit" disabled={busy}>{G.save}</button></div>
           </form>
+          {my.cfg.enabled && my.tier && (
+            <section className="lp-panel lp-member" aria-labelledby="member-h">
+              <h2 id="member-h">{G.tierSection}</h2>
+              <p><TierBadge tier={my.tier} /> · {G.perksStays}: <b>{my.count}</b>{my.member?.tier ? <span className="lp-muted lp-small"> · {G.tierManual}</span> : null}</p>
+              <p className="lp-muted lp-small">{my.next ? fillP(G.perksNext, { n: my.next.minBookings - my.count, t: my.next.name }) : G.perksTop}</p>
+              <p className="lp-muted lp-small">{G.tierNote}</p>
+            </section>
+          )}
         </div>
       </main>
     </SiteLayout>

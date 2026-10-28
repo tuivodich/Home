@@ -54,9 +54,9 @@ service cloud.firestore {
       function okUrl(d, k) { return !(k in d) || (d[k] is string && d[k].size() <= 300 && (d[k] == '' || d[k].matches('^https?://[^ ]+$'))); }
       allow read: if true;
       allow write: if isAdmin()
-        && request.resource.data.keys().hasOnly(['phone', 'zalo', 'email', 'address', 'facebook', 'mapUrl'])
+        && request.resource.data.keys().hasOnly(['phone', 'zalo', 'email', 'address', 'facebook', 'mapUrl', 'coords'])
         && okText(request.resource.data, 'phone') && okText(request.resource.data, 'zalo')
-        && okText(request.resource.data, 'email') && okText(request.resource.data, 'address')
+        && okText(request.resource.data, 'email') && okText(request.resource.data, 'address') && okText(request.resource.data, 'coords')
         && okUrl(request.resource.data, 'facebook') && okUrl(request.resource.data, 'mapUrl');
     }
     // Bảng giá (cuối tuần, mùa, lễ, ở dài ngày): ai cũng đọc để tính giá; chủ/quản lý sửa.
@@ -354,7 +354,7 @@ service cloud.firestore {
     // Hạng thành viên đặt tay (members/{uid}.tier); các mã ưu đãi đã nhận do Cloud Functions ghi vào `claimed`.
     match /members/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isFront());
-      allow write: if isAdmin() && request.resource.data.keys().hasOnly(['tier', 'claimed', 'updatedAt', 'updatedBy'])
+      allow write: if isOwner() && request.resource.data.keys().hasOnly(['tier', 'claimed', 'updatedAt', 'updatedBy'])
         && request.resource.data.tier is string && request.resource.data.tier.size() <= 30;
     }
 

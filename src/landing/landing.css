@@ -578,3 +578,10 @@ html { scroll-behavior: smooth; }
 }
 .lp-perks { display: grid; gap: 6px; margin-bottom: 18px; }
 .lp-perks h3 { margin-bottom: 4px; }
+
+/* Sơ đồ trang web */
+.lp-sitemap { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.lp-sitemap h2 { margin: 0 0 8px; font-size: 1.05rem; }
+.lp-sitemap ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lp-sitemap a { color: var(--lp-accent, inherit); text-decoration: none; }
+.lp-sitemap a:hover { text-decoration: underline; }

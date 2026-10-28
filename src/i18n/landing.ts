@@ -94,7 +94,7 @@ const vi = {
   menu: {
     home: "Trang chủ", book: "Đặt phòng", info: "Thông tin", account: "Tài khoản", exploreMenu: "Khám phá", top: "Đầu trang",
     about: "Giới thiệu", rooms: "Phòng nghỉ", features: "Tiện nghi", availability: "Kiểm tra phòng trống",
-    reviews: "Cảm nhận của khách", faq: "Hỏi & Đáp", privacy: "Chính sách quyền riêng tư", contact: "Liên hệ", explore: "Khám phá khu vực",
+    reviews: "Cảm nhận của khách", faq: "Hỏi & Đáp", privacy: "Chính sách quyền riêng tư", contact: "Liên hệ", explore: "Điểm tham quan đẹp", sitemap: "Sơ đồ trang web",
   },
   doc: {
     updated: "Cập nhật lần cuối", edit: "Chỉnh sửa nội dung", save: "Lưu", saving: "Đang lưu...", cancel: "Hủy", saved: "Đã lưu.", failed: "Không lưu được. Vui lòng thử lại.",
@@ -222,7 +222,7 @@ const en: Dict = {
   menu: {
     home: "Home", book: "Book", info: "Info", account: "Account", exploreMenu: "Explore", top: "Top of page",
     about: "About", rooms: "Rooms", features: "Amenities", availability: "Check availability",
-    reviews: "Guest reviews", faq: "FAQ", privacy: "Privacy policy", contact: "Contact", explore: "Explore the area",
+    reviews: "Guest reviews", faq: "FAQ", privacy: "Privacy policy", contact: "Contact", explore: "Beautiful places to visit", sitemap: "Sitemap",
   },
   doc: {
     updated: "Last updated", edit: "Edit content", save: "Save", saving: "Saving...", cancel: "Cancel", saved: "Saved.", failed: "Could not save. Please try again.",

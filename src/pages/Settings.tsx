@@ -5,10 +5,11 @@ import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
 import { DEFAULT_USD_RATE } from "../lib/format";
-import { CONTACT_FIELDS, EMPTY_CONTACT, isUrlOk, useContact, type Contact } from "../lib/contact";
+import { CONTACT_FIELDS, EMPTY_CONTACT, isUrlOk, parseCoords, useContact, type Contact } from "../lib/contact";
 import { tgLinkCode, tgSetup } from "../lib/telegram";
 import { PALETTES, sceneSvg } from "../landing/forest";
 import { READY_THEMES, THEME_IDS, THEME_INFO, parseSettings, DEFAULT_MAX_PENDING, DEFAULT_SETTINGS, type SiteSettings, type ThemeId } from "../lib/theme";
+import NumInput from "../components/NumInput";
 
 export default function Settings() {
   const { t, lang } = useI18n();
@@ -43,7 +44,7 @@ export default function Settings() {
   const [ctErr, setCtErr] = useState("");
   useEffect(() => { setCt(savedContact); }, [savedContact]);
   const ctDirty = CONTACT_FIELDS.some((k) => ct[k].trim() !== savedContact[k]);
-  const ctBadUrl = !isUrlOk(ct.facebook) || !isUrlOk(ct.mapUrl);
+  const ctBadUrl = !isUrlOk(ct.facebook) || !isUrlOk(ct.mapUrl) || (!!ct.coords.trim() && !parseCoords(ct.coords));
   const saveContact = async () => {
     setCtMsg(""); setCtErr("");
     try {
@@ -55,6 +56,7 @@ export default function Settings() {
   const ctLabels: Record<keyof Contact, [string, string]> = {
     phone: ["Số điện thoại", "Phone"], zalo: ["Zalo (số điện thoại hoặc đường dẫn)", "Zalo (number or link)"], email: ["Email", "Email"],
     address: ["Địa chỉ", "Address"], facebook: ["Facebook (đường dẫn https://…)", "Facebook (https:// link)"], mapUrl: ["Đường dẫn bản đồ (Google Maps https://…)", "Map link (Google Maps https://…)"],
+    coords: ["Tọa độ bản đồ nhúng (vĩ độ, kinh độ — vd 11.9404, 108.4583)", "Embedded map coordinates (lat, lng — e.g. 11.9404, 108.4583)"],
   };
   // Bot Telegram: kết nối bot (chủ), liên kết chat của tôi, danh sách chat đang nhận thông báo.
   const { data: tgChats } = useCollection<{ id: string; email?: string; name?: string; type?: string; role?: string }>("tgChats", profile?.role === "owner" || profile?.role === "manager");
@@ -81,7 +83,7 @@ export default function Settings() {
       <h2 id="settings">{t("settings")}</h2>
       <div className="card">
         <label>{t("usdRate")}
-          <input type="number" min={1} value={rate} onChange={(e) => setRate(+e.target.value)} />
+          <NumInput min={1} value={rate} onChange={(e) => setRate(+e.target.value)} />
         </label>
         <small>{t("usdRateHint")}</small>
         <button onClick={() => setDoc(doc(db, "settings", "app"), { usdRate: rate }, { merge: true })}>{t("save")}</button>
@@ -95,7 +97,7 @@ export default function Settings() {
       </div>
       <div className="card">
         <label>{vi ? "Số yêu cầu đặt phòng đang chờ xác nhận tối đa mỗi tài khoản" : "Max pending booking requests per account"}
-          <input type="number" min={1} max={20} step={1} value={maxPending} onChange={(e) => setMaxPending(+e.target.value)} />
+          <NumInput min={1} max={20} step={1} value={maxPending} onChange={(e) => setMaxPending(+e.target.value)} />
         </label>
         <small>{vi ? "Chống đặt phòng bừa bãi: khách chưa được nhân viên xử lý hết yêu cầu thì không đặt thêm được. Yêu cầu đã xác nhận không tính." : "Stops spam bookings: a guest cannot send more until staff handle the pending ones. Confirmed bookings do not count."}</small>
         <button disabled={!Number.isInteger(maxPending) || maxPending < 1 || maxPending > 20} onClick={() => setDoc(doc(db, "settings", "app"), { maxPending }, { merge: true })}>{t("save")}</button>
@@ -140,7 +142,7 @@ export default function Settings() {
               onChange={(e) => { setCtMsg(""); setCt({ ...ct, [k]: e.target.value }); }} />
           </label>
         ))}
-        {ctBadUrl && <p className="error">{vi ? "Đường dẫn Facebook / bản đồ phải bắt đầu bằng http:// hoặc https://" : "Facebook / map links must start with http:// or https://"}</p>}
+        {ctBadUrl && <p className="error">{vi ? "Đường dẫn Facebook / bản đồ phải bắt đầu bằng http:// hoặc https://; tọa độ dạng 11.9404, 108.4583" : "Facebook / map links must start with http:// or https:// and coordinates look like 11.9404, 108.4583"}</p>}
         <div className="rolebar">
           <button type="button" disabled={!ctDirty || ctBadUrl} onClick={saveContact}>{t("save")}</button>
           <button type="button" className="ghost" disabled={!ctDirty} onClick={() => setCt(savedContact)}>{vi ? "Hủy bỏ" : "Discard"}</button>

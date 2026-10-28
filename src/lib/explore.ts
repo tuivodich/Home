@@ -7,7 +7,7 @@ export const PLACE_CATS: PlaceCat[] = ["sight", "food", "cafe", "shop", "other"]
 export interface Place { nameVi: string; nameEn: string; cat: PlaceCat; distance: string; descVi: string; descEn: string; mapUrl: string }
 export interface ExploreDoc { directionsVi: string; directionsEn: string; places: Place[]; updatedAt?: { seconds: number } }
 
-/** Nội dung mẫu: chủ/quản lý thay bằng địa điểm thật quanh homestay ở trang "Khám phá khu vực". */
+/** Nội dung mẫu: chủ/quản lý thay bằng địa điểm thật quanh homestay ở trang "Điểm tham quan đẹp". */
 export const DEFAULT_EXPLORE: ExploreDoc = {
   directionsVi: "## Cách đi\n- Từ trung tâm: đi theo đường chính, rẽ vào đường làng, homestay nằm bên tay phải (nội dung mẫu — chủ homestay sẽ cập nhật chỉ dẫn chính xác).\n- Bãi đậu xe rộng trong khuôn viên, ô tô vào tận cổng.\n- Cần đón tại bến xe/sân bay? Hãy chọn dịch vụ đón đưa khi đặt phòng hoặc liên hệ homestay.",
   directionsEn: "## Getting here\n- From the town centre: follow the main road, then turn onto the village lane; the homestay is on your right (sample text — the owner will add exact directions).\n- Plenty of parking inside the grounds; cars can drive to the gate.\n- Need a pickup from the bus station or airport? Choose the pickup service when booking or contact the homestay.",

@@ -12,7 +12,7 @@ const vi = {
   precheckins: "Check-in online chờ xử lý", precheckinsHint: "Khách đã điền trước thông tin. Bấm “Tạo hồ sơ” để điền sẵn vào biểu mẫu bên dưới, kiểm tra giấy tờ gốc rồi lưu.",
   createProfile: "Tạo hồ sơ", imported: "Đã chuyển hồ sơ", noPre: "Không có check-in online nào đang chờ.",
   checkinTag: "Check-in online", markImported: "Bỏ qua",
-  perks: "Ưu đãi thành viên", tierSection: "Hạng thành viên", tierNote: "Hạng tự động nâng theo số lần ở theo quy định của homestay. Bạn chỉ xem được, không tự đổi; chủ homestay có thể điều chỉnh hạng khi cần.", tierManual: "Hạng do chủ homestay đặt", perksTier: "Hạng của bạn", perksStays: "Số lần đã ở", perksNext: "Còn {n} lần ở nữa để lên hạng {t}", perksTop: "Bạn đang ở hạng cao nhất.", perksClaim: "Nhận mã giảm giá {p}% của hạng {t}", perksCode: "Mã giảm giá riêng của bạn", perksExpires: "dùng được đến", perksFail: "Chưa nhận được mã. Vui lòng thử lại sau.", perksNone: "Hạng này chưa có mã giảm giá.", perksUsed: "đã dùng",
+  perks: "Ưu đãi thành viên", tierSection: "Hạng thành viên", tierNote: "Hạng tự động nâng theo số lần ở theo quy định của homestay.", tierManual: "Hạng do chủ homestay đặt", perksTier: "Hạng của bạn", perksStays: "Số lần đã ở", perksNext: "Còn {n} lần ở nữa để lên hạng {t}", perksTop: "Bạn đang ở hạng cao nhất.", perksClaim: "Nhận mã giảm giá {p}% của hạng {t}", perksCode: "Mã giảm giá riêng của bạn", perksExpires: "dùng được đến", perksFail: "Chưa nhận được mã. Vui lòng thử lại sau.", perksNone: "Hạng này chưa có mã giảm giá.", perksUsed: "đã dùng",
 };
 const en: typeof vi = {
   myAccount: "My account", myAccountSub: "These details are pre-filled when you book; you can still edit them at booking time.",
@@ -26,7 +26,7 @@ const en: typeof vi = {
   precheckins: "Online check-ins waiting", precheckinsHint: "Guests filled these in ahead. Press “Create profile” to pre-fill the form below, check the original ID, then save.",
   createProfile: "Create profile", imported: "Profile created", noPre: "No online check-ins waiting.",
   checkinTag: "Online check-in", markImported: "Dismiss",
-  perks: "Member perks", tierSection: "Membership tier", tierNote: "Your tier rises automatically with completed stays under the homestay's rules. You can view it but not change it; the homestay owner can adjust it when needed.", tierManual: "Set by the homestay owner", perksTier: "Your tier", perksStays: "Completed stays", perksNext: "{n} more stay(s) to reach {t}", perksTop: "You are at the top tier.", perksClaim: "Get your {p}% coupon for {t}", perksCode: "Your personal coupon", perksExpires: "valid until", perksFail: "Could not get the coupon. Please try again later.", perksNone: "This tier has no coupon.", perksUsed: "used",
+  perks: "Member perks", tierSection: "Membership tier", tierNote: "Your tier rises automatically with completed stays under the homestay's rules.", tierManual: "Set by the homestay owner", perksTier: "Your tier", perksStays: "Completed stays", perksNext: "{n} more stay(s) to reach {t}", perksTop: "You are at the top tier.", perksClaim: "Get your {p}% coupon for {t}", perksCode: "Your personal coupon", perksExpires: "valid until", perksFail: "Could not get the coupon. Please try again later.", perksNone: "This tier has no coupon.", perksUsed: "used",
 };
 export type GuestText = typeof vi;
 export function useG() { const { lang } = useI18n(); return lang === "vi" ? vi : en; }

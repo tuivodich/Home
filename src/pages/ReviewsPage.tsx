@@ -18,6 +18,7 @@ function WriteReview() {
   const { open: openAuth } = useAuthUi();
   const uid = user?.uid;
   const [mine, setMine] = useState<Review | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [rating, setRating] = useState(5);
@@ -27,9 +28,10 @@ function WriteReview() {
   const [err, setErr] = useState("");
 
   useEffect(() => {
+    setLoaded(false);
     if (!uid) { setMine(null); return; }
-    // Mỗi tài khoản một cảm nhận: tài liệu có id = uid.
-    return onSnapshot(doc(db, "reviews", uid), (s) => setMine(s.exists() ? ({ ...(s.data() as object), id: s.id } as Review) : null), () => setMine(null));
+    // Mỗi tài khoản một cảm nhận: tài liệu có id = uid (luật Firestore chỉ cho tạo đúng tài liệu này). Chờ đọc xong rồi mới hiện biểu mẫu.
+    return onSnapshot(doc(db, "reviews", uid), (s) => { setMine(s.exists() ? ({ ...(s.data() as object), id: s.id } as Review) : null); setLoaded(true); }, () => { setMine(null); setLoaded(true); });
   }, [uid]);
 
   // Điền sẵn tên tài khoản MỘT lần khi đăng nhập; không điền lại khi người dùng xóa ô để nhập tên khác.
@@ -69,6 +71,8 @@ function WriteReview() {
         <div className="lp-center">
           <button className="lp-btn primary" onClick={openAuth}>{L.reviews.signInPrompt}</button>
         </div>
+      ) : !loaded ? (
+        <p className="lp-muted">…</p>
       ) : mine && !editing ? (
         <div className="lp-mine">
           <div className="lp-mine-head"><strong>{L.reviews.yourReview}</strong><span className={`lp-status ${mine.status === "approved" ? "checked_in" : mine.status === "rejected" ? "cancelled" : "pending"}`}>{statusText}</span></div>

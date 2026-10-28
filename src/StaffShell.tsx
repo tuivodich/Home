@@ -5,7 +5,6 @@ import { useBusySync, useLegacyRoomNames } from "./lib/useBusySync";
 import { isFrontRole, isStaffRole } from "./lib/types";
 import Dropdown, { type DdItem } from "./components/Dropdown";
 import Dashboard from "./pages/Dashboard";
-import CalendarPage from "./pages/Calendar";
 import Bookings from "./pages/Bookings";
 import Guests from "./pages/Guests";
 import Rooms from "./pages/Rooms";
@@ -13,6 +12,7 @@ import Coupons from "./pages/Coupons";
 import History from "./pages/History";
 import ReviewsAdmin from "./pages/ReviewsAdmin";
 import Attendance from "./pages/Attendance";
+import Accounts from "./pages/Accounts";
 import Roster from "./pages/Roster";
 import Timesheet from "./pages/Timesheet";
 import { useHr } from "./i18n/hr";
@@ -45,6 +45,7 @@ export default function StaffShell() {
     { label: t("privacyPage"), to: "/privacy" },
   ];
   const hrItems: DdItem[] = [
+    ...(admin ? [{ label: t("staffAccounts"), to: "/app/accounts" }] : []),
     { label: H.attendance, to: "/app/attendance" },
     ...(admin ? [{ label: H.roster, to: "/app/roster" }, { label: H.timesheet, to: "/app/timesheet" }] : []),
   ];
@@ -60,11 +61,10 @@ export default function StaffShell() {
       </header>
       <nav>
         <NavLink to="/app" end>{t("dashboard")}</NavLink>
-        <NavLink to="/app/calendar">{t("calendar")}</NavLink>
         {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/history", "/app/coupons")} />}
         {front && <NavLink to="/app/guests">{t("guests")}</NavLink>}
         {admin
-          ? <Dropdown className="st-dd" label={H.menu} items={hrItems} active={isIn("/app/attendance", "/app/roster", "/app/timesheet")} />
+          ? <Dropdown className="st-dd" label={H.menu} items={hrItems} active={isIn("/app/accounts", "/app/attendance", "/app/roster", "/app/timesheet")} />
           : <NavLink to="/app/attendance">{H.attendance}</NavLink>}
         {admin && <Dropdown className="st-dd" label={t("menuContent")} items={contentItems} active={isIn("/app/reviews")} />}
         {admin && <NavLink to="/app/rooms">{t("menuRooms")}</NavLink>}
@@ -72,10 +72,10 @@ export default function StaffShell() {
       <main>
         <Routes>
           <Route index element={<Dashboard />} />
-          <Route path="calendar" element={<CalendarPage />} />
           {front && <Route path="bookings" element={<Bookings />} />}
           {front && <Route path="history" element={<History />} />}
           {front && <Route path="guests" element={<Guests />} />}
+          {admin && <Route path="accounts" element={<Accounts />} />}
           <Route path="attendance" element={<Attendance />} />
           {admin && <Route path="roster" element={<Roster />} />}
           {admin && <Route path="timesheet" element={<Timesheet />} />}

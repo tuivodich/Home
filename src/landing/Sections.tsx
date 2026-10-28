@@ -6,7 +6,7 @@ import { safeUrl, useContact, zaloHref } from "../lib/contact";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
 import Icon from "./Icon";
-import ForestScene, { Drift, Fireflies, Snowfall, TreeLine } from "./ForestScene";
+import ForestScene, { Drift, Fireflies, MiniPines, Snowfall, TreeLine } from "./ForestScene";
 import { useTheme } from "../lib/theme";
 import HashLink from "../components/HashLink";
 import Stars from "../components/Stars";
@@ -31,7 +31,7 @@ export function Stats() {
 export function About() {
   const L = useL();
   return (
-    <section id="about" className="lp-section">
+    <section id="about" className="lp-section lp-pines">
       <div className="lp-wrap lp-about">
         <div className="lp-about-art reveal" aria-hidden="true">
           <div className="lp-tile t1"><Icon name="home" /></div><div className="lp-tile t2"><Icon name="tree" /></div>
@@ -99,7 +99,7 @@ export function Features() {
         <div className="lp-grid">
           {L.features.items.map((f, i) => (
             <div key={f.t} className="lp-feature reveal" style={{ ["--i" as string]: i }}>
-              <span className="lp-feat-no" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+              <span className="lp-feat-no" aria-hidden="true"><MiniPines n={(i % 3) + 1} /></span>
               <div className="lp-ico"><Icon name={f.i} /></div>
               <h3>{f.t}</h3>
               <p>{f.d}</p>
@@ -137,7 +137,7 @@ export function Testimonials() {
   const { reviews, avg, loading } = useApprovedReviews();
   const shown = reviews.slice(0, 3);
   return (
-    <section id="reviews" className="lp-section alt">
+    <section id="reviews" className="lp-section alt lp-pines">
       <div className="lp-wrap">
         <div className="lp-head reveal">
           <span className="lp-eyebrow">{L.reviews.homeEyebrow}</span>

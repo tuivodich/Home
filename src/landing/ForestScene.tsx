@@ -70,6 +70,15 @@ export const Garland = memo(function Garland() {
   );
 });
 
+/** Cụm 1–3 cây thông nhỏ (trang trí thay cho số thứ tự ở thẻ Tiện nghi); tô theo màu chữ hiện tại. */
+export const MiniPines = memo(function MiniPines({ n = 2 }: { n?: number }) {
+  const P = "M0,-20 L8,-6 L4,-6 L11,6 L5,6 L5,13 L-5,13 L-5,6 L-11,6 L-4,-6 L-8,-6 Z";
+  const trees: [number, number, number][] = [[45, 38, 1.7], [18, 48, 1.1], [72, 50, 1.25]].slice(0, Math.max(1, Math.min(3, n))) as [number, number, number][];
+  return (
+    <svg viewBox="0 0 90 70" aria-hidden="true">{[...trees].reverse().map(([x, y, s], i) => <path key={i} transform={`translate(${x} ${y}) scale(${s})`} d={P} />)}</svg>
+  );
+});
+
 /** Dải cây thông làm đường chân trời giữa các mục (tô bằng màu hiện tại của CSS `fill`). */
 export const TreeLine = memo(function TreeLine({ seed = 5, flip = false }: { seed?: number; flip?: boolean }) {
   const d = useMemo(() => {

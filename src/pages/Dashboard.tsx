@@ -5,6 +5,7 @@ import { useI18n } from "../i18n";
 import { fmtDate, todayStr } from "../lib/format";
 import type { Booking, Room } from "../lib/types";
 import type { Review } from "../lib/reviews";
+import CalendarPage from "./Calendar";
 import Settings from "./Settings";
 
 export default function Dashboard() {
@@ -47,6 +48,8 @@ export default function Dashboard() {
           {(list as Booking[]).length === 0 ? <small>{t("none")}</small> : (list as Booking[]).map((b) => <div key={b.id}>{b.guestName} — {name(b.roomId)}</div>)}
         </div>
       ))}
+      {/* Lịch phòng nằm ngay dưới Tổng quan, trên Cài đặt. */}
+      <CalendarPage />
       {/* Cài đặt (tỷ giá, giao diện, liên hệ, bot Telegram, tài khoản nhân viên) nằm ngay dưới Tổng quan; chỉ chủ/quản lý thấy. */}
       {isAdmin && <Settings />}
     </section>

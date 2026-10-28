@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { deleteDoc, doc, onSnapshot, setDoc, writeBatch } from "firebase/firestore";
+import { deleteDoc, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
@@ -9,7 +9,6 @@ import { CONTACT_FIELDS, EMPTY_CONTACT, isUrlOk, useContact, type Contact } from
 import { tgLinkCode, tgSetup } from "../lib/telegram";
 import { PALETTES, sceneSvg } from "../landing/forest";
 import { READY_THEMES, THEME_IDS, THEME_INFO, parseSettings, DEFAULT_MAX_PENDING, DEFAULT_SETTINGS, type SiteSettings, type ThemeId } from "../lib/theme";
-import { ROLES, isStaffRole, type Role, type UserDoc } from "../lib/types";
 
 export default function Settings() {
   const { t, lang } = useI18n();
@@ -35,7 +34,6 @@ export default function Settings() {
   const [rate, setRate] = useState(DEFAULT_USD_RATE);
   const [autoReject, setAutoReject] = useState(true);
   const [maxPending, setMaxPending] = useState(DEFAULT_MAX_PENDING);
-  const { data: users } = useCollection<UserDoc & { id: string }>("users", profile?.role === "owner" || profile?.role === "manager");
 
   const isOwner = profile?.role === "owner";
   // Thông tin liên hệ công khai (website + bot Telegram cùng đọc từ settings/contact).
@@ -71,28 +69,6 @@ export default function Settings() {
       setTgErr((ex as { message?: string }).message?.replace(/^.*?: /, "") || (vi ? "Có lỗi, vui lòng thử lại." : "Something went wrong, please try again."));
     } finally { setTgBusy(false); }
   };
-  // Vai trò chọn nhưng chưa lưu: chỉ áp dụng khi bấm "Lưu lại".
-  const [draft, setDraft] = useState<Record<string, Role>>({});
-  const [savingRoles, setSavingRoles] = useState(false);
-  const [roleMsg, setRoleMsg] = useState("");
-  const [roleErr, setRoleErr] = useState("");
-  const dirty = Object.keys(draft).length;
-  const pickRole = (u: UserDoc & { id: string }, r: Role) => {
-    const cur: Role = u.role === "pending" ? "customer" : u.role;
-    setRoleMsg(""); setRoleErr("");
-    setDraft((d) => { const n = { ...d }; if (r === cur) delete n[u.id]; else n[u.id] = r; return n; });
-  };
-  const saveRoles = async () => {
-    setSavingRoles(true); setRoleMsg(""); setRoleErr("");
-    try {
-      const w = writeBatch(db);
-      Object.entries(draft).forEach(([id, role]) => w.update(doc(db, "users", id), { role }));
-      await w.commit();
-      setDraft({}); setRoleMsg(t("rolesSaved"));
-    } catch (ex) { console.error("save roles failed", ex); setRoleErr(t("rolesFailed")); }
-    finally { setSavingRoles(false); }
-  };
-
   useEffect(() => onSnapshot(doc(db, "settings", "app"), (s) => {
     if (typeof s.data()?.usdRate === "number") setRate(s.data()!.usdRate);
     setAutoReject(s.data()?.autoRejectPending !== false);
@@ -196,28 +172,6 @@ export default function Settings() {
             <button type="button" className="ghost danger" onClick={() => confirm(t("sure")) && deleteDoc(doc(db, "tgChats", c.id))}>{vi ? "Gỡ" : "Remove"}</button>
           </div>
         ))}
-      </div>
-      <div className="card">
-        <h3>{t("staffAccounts")}</h3>
-        {[...users].sort((a, b) => Number(isStaffRole(b.role)) - Number(isStaffRole(a.role)) || a.email.localeCompare(b.email)).map((u) => {
-          const cur: Role = u.role === "pending" ? "customer" : u.role;
-          // Chủ đổi được mọi tài khoản khác; quản lý chỉ chỉnh các vai trò dưới quản lý và không cấp "Chủ"/"Quản lý".
-          const locked = u.id === user?.uid || (!isOwner && (u.role === "owner" || u.role === "manager"));
-          return (
-            <div className={`row between ${draft[u.id] ? "changed" : ""}`} key={u.id}>
-              <span>{u.email}</span>
-              <select value={draft[u.id] ?? cur} disabled={locked || savingRoles} onChange={(e) => pickRole(u, e.target.value as Role)}>
-                {ROLES.map((r) => <option key={r} value={r} disabled={!isOwner && (r === "owner" || r === "manager")}>{t(r)}</option>)}
-              </select>
-            </div>
-          );
-        })}
-        <div className="rolebar">
-          <button type="button" disabled={dirty === 0 || savingRoles} onClick={saveRoles}>{t("rolesSave")}{dirty > 0 && ` (${dirty})`}</button>
-          <button type="button" className="ghost" disabled={dirty === 0 || savingRoles} onClick={() => { setDraft({}); setRoleErr(""); }}>{t("rolesCancel")}</button>
-        </div>
-        {roleMsg && <p className="ok-msg" role="status">{roleMsg}</p>}
-        {roleErr && <p className="error">{roleErr}</p>}
       </div>
     </section>
   );

@@ -9,6 +9,21 @@ const LIVE = ["confirmed", "checked_in"]; // chặn trùng khi xác nhận (gi�
 const HELD = ["pending", "confirmed", "checked_in"]; // đang giữ phòng
 const MANAGER = ["owner", "manager"];
 const STAFF_ALL = ["owner", "manager", "reception", "housekeeping", "security"]; // giống isStaff() trong luật Firestore
+const STATUS_EN = { pending: "⏳ awaiting confirmation", confirmed: "✅ confirmed", checked_in: "🏠 checked in", checked_out: "👋 checked out", cancelled: "🚫 cancelled" };
+const GUEST_COMMANDS_EN = [
+  { command: "trong", description: "Available rooms (e.g. /trong 25/12 27/12)" },
+  { command: "gia", description: "Quick quote (e.g. /gia 2 4 = 2 nights, 4 guests)" },
+  { command: "phong", description: "Rooms and prices" },
+  { command: "tiennghi", description: "Amenities" },
+  { command: "chinhsach", description: "Check-in/out times, deposit, cancellation" },
+  { command: "diachi", description: "Address and map" },
+  { command: "tra", description: "Look up a booking (e.g. /tra AB12CD34)" },
+  { command: "cuatoi", description: "My bookings (needs a linked account)" },
+  { command: "lienhe", description: "Contact details" },
+  { command: "dat", description: "Open the booking page" },
+  { command: "lang", description: "Language: /lang vi or /lang en" },
+];
+const CMD_ALIAS = { "/availability": "/trong", "/avail": "/trong", "/rooms": "/phong", "/contact": "/lienhe", "/price": "/gia", "/quote": "/gia", "/address": "/diachi", "/amenities": "/tiennghi", "/policy": "/chinhsach", "/lookup": "/tra", "/book": "/dat", "/mybookings": "/cuatoi", "/unlink": "/huylienket", "/language": "/lang", "/en": "/lang en", "/vi": "/lang vi" };
 const STATUS_VI = { pending: "⏳ đang chờ xác nhận", confirmed: "✅ đã xác nhận", checked_in: "🏠 đang lưu trú", checked_out: "👋 đã trả phòng", cancelled: "🚫 đã hủy" };
 /** Đi muộn: quá giờ bắt đầu ca bấy nhiêu phút mà chưa vào ca thì báo quản lý. Quên ra ca: quá giờ kết thúc ca bấy nhiêu phút. */
 const LATE_MIN = 15, FORGOT_MIN = 60, NO_SHIFT_FORGOT_H = 12;
@@ -16,6 +31,7 @@ const LATE_MIN = 15, FORGOT_MIN = 60, NO_SHIFT_FORGOT_H = 12;
 const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const fmtDate = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s ?? ""); return m ? `${m[3]}/${m[2]}/${m[1]}` : s ?? ""; };
 const money = (n) => `${new Intl.NumberFormat("vi-VN").format(Math.round(n || 0))} VNĐ`;
+const moneyEn = (n) => `${new Intl.NumberFormat("en-US").format(Math.round(n || 0))} VND`;
 const nights = (a, b) => Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400000);
 const addDays = (s, n) => new Date(Date.parse(s + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10);
 const overlaps = (aIn, aOut, bIn, bOut) => aIn < bOut && bIn < aOut;
@@ -52,6 +68,7 @@ const GUEST_COMMANDS = [
   { command: "cuatoi", description: "Đặt phòng của tôi (cần liên kết tài khoản)" },
   { command: "lienhe", description: "Thông tin liên hệ" },
   { command: "dat", description: "Mở trang đặt phòng" },
+  { command: "lang", description: "Ngôn ngữ: /lang vi hoặc /lang en" },
 ];
 const STAFF_COMMANDS = [
   { command: "homnay", description: "Nhận/trả phòng hôm nay và yêu cầu chờ" },
@@ -253,6 +270,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   // ===== Lệnh trong chat =====
   const STAFF_HELP = "Lệnh nhân viên:\n/homnay — khách nhận/trả phòng hôm nay và số yêu cầu chờ\n/cho — yêu cầu đang chờ xác nhận\n/doanhthu — doanh thu tuần hoặc tháng (<code>/doanhthu thang</code>; chủ, quản lý)\n/baocao — báo cáo trong ngày (nhận/trả phòng, doanh thu, ngày mai)\n/phongban — phòng đang bẩn, bấm nút khi đã dọn xong\n/taodat — tạo đặt phòng nhanh (<code>/taodat P1 25/12 2 3 Nguyễn Văn A 0909123456</code>)\n/tra MÃ — tra đặt phòng theo mã\n/huylienket — ngừng nhận thông báo ở chat này\n\nLệnh chung: /trong, /gia, /phong, /tiennghi, /chinhsach, /diachi, /lienhe";
   const GUEST_HELP = "Tôi có thể giúp bạn:\n/trong — xem phòng còn trống (vd <code>/trong 25/12 27/12</code> hoặc <code>/trong 25/12</code> cho 1 đêm)\n/gia — báo giá nhanh (vd <code>/gia 2 4</code> = 2 đêm, 4 khách; thêm ngày nhận: <code>/gia 2 4 25/12</code>)\n/phong — các phòng và giá\n/tiennghi — tiện nghi\n/chinhsach — giờ nhận/trả phòng, đặt cọc, hủy phòng\n/diachi — địa chỉ và bản đồ\n/tra MÃ — tra trạng thái đặt phòng bằng mã\n/cuatoi — đặt phòng của tôi (sau khi liên kết tài khoản trên website)\n/lienhe — thông tin liên hệ\n/dat — mở trang đặt phòng";
+  const GUEST_HELP_EN = "I can help you with:\n/trong — available rooms (e.g. <code>/trong 25/12 27/12</code>, or <code>/trong 25/12</code> for 1 night)\n/gia — quick quote (e.g. <code>/gia 2 4</code> = 2 nights, 4 guests; add a check-in date: <code>/gia 2 4 25/12</code>)\n/phong — rooms and prices\n/tiennghi — amenities\n/chinhsach — check-in/out times, deposit, cancellation\n/diachi — address and map\n/tra CODE — look up a booking by its code\n/cuatoi — my bookings (after linking your account on the website)\n/lienhe — contact details\n/dat — open the booking page\n/lang vi — chuyển sang tiếng Việt\n\nEnglish aliases also work: /availability /price /rooms /amenities /policy /address /contact /lookup /book /mybookings.";
   const webBtn = (label, path = "") => ({ reply_markup: { inline_keyboard: [[{ text: label, url: `${site.url}${path}` }]] } });
   const bookPath = (inD, outD) => `/?checkIn=${inD}&checkOut=${outD}#booking`;
 
@@ -281,10 +299,10 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   }
 
   /** Đọc tham số /trong: không có = đêm nay; một ngày = 1 đêm; hai ngày = nhận → trả. */
-  function parseRange(arg) {
+  function parseRange(arg, en = false) {
     const today = todayVN(now());
     const parts = String(arg ?? "").trim().split(/\s+/).filter(Boolean);
-    if (parts.length > 2) return { error: "Chỉ nhập tối đa 2 ngày: nhận phòng và trả phòng. Ví dụ: /trong 25/12 27/12" };
+    if (parts.length > 2) return { error: en ? "Enter at most 2 dates: check-in and check-out. Example: /trong 25/12 27/12" : "Chỉ nhập tối đa 2 ngày: nhận phòng và trả phòng. Ví dụ: /trong 25/12 27/12" };
     // Không ghi năm: lấy lần tới của ngày đó (vd tháng 12 gõ 05/01 → 05/01 năm sau).
     const hasYear = (x) => /\d{4}/.test(x);
     const bump = (iso) => `${Number(iso.slice(0, 4)) + 1}${iso.slice(4)}`;
@@ -292,35 +310,37 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     if (d1 && parts[0] && !hasYear(parts[0]) && d1 < today) d1 = bump(d1);
     let d2 = parts[1] ? parseDate(parts[1], today) : d1 && addDays(d1, 1);
     if (d1 && d2 && parts[1] && !hasYear(parts[1]) && d2 <= d1) d2 = bump(d2);
-    if (!d1 || !d2) return { error: "Ngày không hợp lệ. Ví dụ: /trong 25/12 hoặc /trong 25/12 27/12 hoặc /trong 25/12/2026" };
-    if (d1 < today) return { error: "Ngày nhận phòng đã qua. Hãy nhập ngày từ hôm nay trở đi." };
-    if (d2 <= d1) return { error: "Ngày trả phòng phải sau ngày nhận phòng." };
-    if (nights(d1, d2) > 30) return { error: "Tối đa 30 đêm mỗi lần tra." };
+    if (!d1 || !d2) return { error: en ? "Invalid date. Examples: /trong 25/12 or /trong 25/12 27/12 or /trong 25/12/2026" : "Ngày không hợp lệ. Ví dụ: /trong 25/12 hoặc /trong 25/12 27/12 hoặc /trong 25/12/2026" };
+    if (d1 < today) return { error: en ? "The check-in date has passed. Please enter today or a later date." : "Ngày nhận phòng đã qua. Hãy nhập ngày từ hôm nay trở đi." };
+    if (d2 <= d1) return { error: en ? "Check-out must be after check-in." : "Ngày trả phòng phải sau ngày nhận phòng." };
+    if (nights(d1, d2) > 30) return { error: en ? "Up to 30 nights per search." : "Tối đa 30 đêm mỗi lần tra." };
     return { d1, d2 };
   }
 
-  async function availability(chatId, arg) {
-    const r = parseRange(arg);
+  async function availability(chatId, arg, en = false) {
+    const $ = en ? moneyEn : money;
+    const r = parseRange(arg, en);
     if (r.error) return tg.sendMessage(chatId, r.error);
     const [rooms, busy] = await Promise.all([db.collection("rooms").get(), db.collection("busy").get()]);
     const held = busy.docs.map((x) => x.data()).filter((x) => HELD.includes(x.status) && overlaps(x.checkIn, x.checkOut, r.d1, r.d2));
     const all = rooms.docs.map((x) => ({ id: x.id, ...x.data() }));
     const free = all.filter((x) => x.status !== "maintenance" && !held.some((h) => h.roomId === x.id));
     const n = nights(r.d1, r.d2);
-    const head = `🛏 <b>${fmtDate(r.d1)} → ${fmtDate(r.d2)}</b> (${n} đêm): còn ${free.length}/${all.length} phòng trống`;
-    if (!free.length) return tg.sendMessage(chatId, `${head}\nRất tiếc, hết phòng trong thời gian này. Bạn thử ngày khác nhé.`);
+    const head = en ? `🛏 <b>${fmtDate(r.d1)} → ${fmtDate(r.d2)}</b> (${n} night${n > 1 ? "s" : ""}): ${free.length}/${all.length} rooms available` : `🛏 <b>${fmtDate(r.d1)} → ${fmtDate(r.d2)}</b> (${n} đêm): còn ${free.length}/${all.length} phòng trống`;
+    if (!free.length) return tg.sendMessage(chatId, `${head}\n${en ? "Sorry, we are fully booked for these dates. Please try other dates." : "Rất tiếc, hết phòng trong thời gian này. Bạn thử ngày khác nhé."}`);
     const lines = free.sort((a, b) => String(a.name).localeCompare(String(b.name), "vi", { numeric: true }))
-      .map((x) => `• ${esc(x.name)} — ${money(x.price)}/đêm${n > 1 ? ` (≈ ${money(x.price * n)})` : ""}`);
-    return tg.sendMessage(chatId, `${head}\n${lines.join("\n")}`, webBtn("🌐 Đặt phòng trên website", bookPath(r.d1, r.d2)));
+      .map((x) => `• ${esc(x.name)} — ${$(x.price)}/${en ? "night" : "đêm"}${n > 1 ? ` (≈ ${$(x.price * n)})` : ""}`);
+    return tg.sendMessage(chatId, `${head}\n${lines.join("\n")}`, webBtn(en ? "🌐 Book on the website" : "🌐 Đặt phòng trên website", bookPath(r.d1, r.d2)));
   }
 
-  async function roomList(chatId) {
+  async function roomList(chatId, en = false) {
+    const $ = en ? moneyEn : money;
     const rooms = (await db.collection("rooms").get()).docs.map((x) => ({ id: x.id, ...x.data() }))
       .sort((a, b) => String(a.name).localeCompare(String(b.name), "vi", { numeric: true }));
-    if (!rooms.length) return tg.sendMessage(chatId, "Danh sách phòng đang được cập nhật.", webBtn("🌐 Xem trên website"));
-    const type = (x) => (x.type === "wood" ? "nhà gỗ, trên lầu" : "nhà xây dựng, riêng biệt");
-    const lines = rooms.map((x) => `• <b>${esc(x.name)}</b> — ${type(x)}${x.capacity ? `, ${x.capacity} người` : ""} — ${money(x.price)}/đêm${x.status === "maintenance" ? " (tạm ngưng)" : ""}`);
-    return tg.sendMessage(chatId, `🏡 <b>${esc(site.name)}</b>\n${lines.join("\n")}`, webBtn("🌐 Xem ảnh và đặt phòng", "/#rooms"));
+    if (!rooms.length) return tg.sendMessage(chatId, en ? "The room list is being updated." : "Danh sách phòng đang được cập nhật.", webBtn(en ? "🌐 View on the website" : "🌐 Xem trên website"));
+    const type = (x) => (x.type === "wood" ? (en ? "wooden house, upstairs" : "nhà gỗ, trên lầu") : (en ? "private brick room" : "nhà xây dựng, riêng biệt"));
+    const lines = rooms.map((x) => `• <b>${esc(x.name)}</b> — ${type(x)}${x.capacity ? (en ? `, ${x.capacity} guests` : `, ${x.capacity} người`) : ""} — ${$(x.price)}/${en ? "night" : "đêm"}${x.status === "maintenance" ? (en ? " (unavailable)" : " (tạm ngưng)") : ""}`);
+    return tg.sendMessage(chatId, `🏡 <b>${esc(site.name)}</b>\n${lines.join("\n")}`, webBtn(en ? "🌐 See photos and book" : "🌐 Xem ảnh và đặt phòng", "/#rooms"));
   }
 
   const roomsSorted = async () => (await db.collection("rooms").get()).docs.map((x) => ({ id: x.id, ...x.data() })).sort((a, b) => String(a.name).localeCompare(String(b.name), "vi", { numeric: true }));
@@ -394,70 +414,81 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   };
 
   /** /gia <số đêm> <số khách> [ngày nhận]: báo giá nhanh cho các phòng còn trống (chưa gồm mã giảm giá, dịch vụ, nhận sớm/trả muộn). */
-  async function quickQuote(chatId, arg) {
-    const usage = "Cú pháp: <code>/gia &lt;số đêm&gt; &lt;số khách&gt; [ngày nhận]</code>\nVí dụ: <code>/gia 2 4</code> (2 đêm, 4 khách, nhận hôm nay) hoặc <code>/gia 2 4 25/12</code>.";
+  async function quickQuote(chatId, arg, en = false) {
+    const $ = en ? moneyEn : money;
+    const usage = en ? "Usage: <code>/gia &lt;nights&gt; &lt;guests&gt; [check-in date]</code>\nExample: <code>/gia 2 4</code> (2 nights, 4 guests, from today) or <code>/gia 2 4 25/12</code>." : "Cú pháp: <code>/gia &lt;số đêm&gt; &lt;số khách&gt; [ngày nhận]</code>\nVí dụ: <code>/gia 2 4</code> (2 đêm, 4 khách, nhận hôm nay) hoặc <code>/gia 2 4 25/12</code>.";
     const parts = String(arg ?? "").trim().split(/\s+/).filter(Boolean);
     const today = todayVN(now());
     const dateTok = parts.find((x) => /[/.-]/.test(x));
     const nums = parts.filter((x) => /^\d{1,2}$/.test(x)).map(Number);
     if (nums.length < 2 || parts.length > 3 || parts.length - nums.length > (dateTok ? 1 : 0) || (!dateTok && parts.length !== nums.length)) return tg.sendMessage(chatId, usage);
     const [n, guests] = nums;
-    if (n < 1 || n > 30 || guests < 1 || guests > 30) return tg.sendMessage(chatId, "Số đêm và số khách phải từ 1 đến 30.\n\n" + usage);
+    if (n < 1 || n > 30 || guests < 1 || guests > 30) return tg.sendMessage(chatId, (en ? "Nights and guests must be between 1 and 30." : "Số đêm và số khách phải từ 1 đến 30.") + "\n\n" + usage);
     let d1 = dateTok ? parseDate(dateTok, today) : today;
     if (d1 && dateTok && !/\d{4}/.test(dateTok) && d1 < today) d1 = `${Number(d1.slice(0, 4)) + 1}${d1.slice(4)}`;
-    if (!d1 || d1 < today) return tg.sendMessage(chatId, "Ngày nhận phòng không hợp lệ hoặc đã qua.\n\n" + usage);
+    if (!d1 || d1 < today) return tg.sendMessage(chatId, (en ? "The check-in date is invalid or has passed." : "Ngày nhận phòng không hợp lệ hoặc đã qua.") + "\n\n" + usage);
     const d2 = addDays(d1, n);
     const [{ pricing: pc, cfg }, rooms, busy] = await Promise.all([cfgs(), db.collection("rooms").get(), db.collection("busy").get()]);
     const held = busy.docs.map((x) => x.data()).filter((x) => HELD.includes(x.status) && overlaps(x.checkIn, x.checkOut, d1, d2));
     const all = rooms.docs.map((x) => ({ id: x.id, ...x.data() })).filter((x) => x.status !== "maintenance");
     const fits = all.filter((x) => !(Number.isFinite(x.capacity) && x.capacity > 0) || guests <= x.capacity);
     const free = fits.filter((x) => !held.some((h) => h.roomId === x.id)).sort((a, b) => String(a.name).localeCompare(String(b.name), "vi", { numeric: true }));
-    const head = `💵 <b>Báo giá ${n} đêm, ${guests} khách</b>\n${fmtDate(d1)} → ${fmtDate(d2)}`;
-    if (!fits.length) return tg.sendMessage(chatId, `${head}\nSố khách vượt sức chứa từng phòng. Bạn có thể đặt nhiều phòng hoặc liên hệ /lienhe để được tư vấn.`);
-    if (!free.length) return tg.sendMessage(chatId, `${head}\nRất tiếc, các phòng phù hợp đã kín trong thời gian này. Bạn thử ngày khác nhé.`);
+    const head = en ? `💵 <b>Quote: ${n} night${n > 1 ? "s" : ""}, ${guests} guest${guests > 1 ? "s" : ""}</b>\n${fmtDate(d1)} → ${fmtDate(d2)}` : `💵 <b>Báo giá ${n} đêm, ${guests} khách</b>\n${fmtDate(d1)} → ${fmtDate(d2)}`;
+    if (!fits.length) return tg.sendMessage(chatId, `${head}\n${en ? "Your party is larger than any single room. You can book several rooms or use /lienhe to contact us." : "Số khách vượt sức chứa từng phòng. Bạn có thể đặt nhiều phòng hoặc liên hệ /lienhe để được tư vấn."}`);
+    if (!free.length) return tg.sendMessage(chatId, `${head}\n${en ? "Sorry, the suitable rooms are fully booked for these dates. Please try other dates." : "Rất tiếc, các phòng phù hợp đã kín trong thời gian này. Bạn thử ngày khác nhé."}`);
     const lines = free.map((x) => {
       const q = pricing.quote({ price: Number(x.price) || 0, capacity: x.capacity, baseGuests: x.baseGuests }, d1, n, guests, pc, cfg);
-      return `• <b>${esc(x.name)}</b> — <b>${money(q.total)}</b>${n > 1 ? ` (≈ ${money(q.perNight)}/đêm)` : ""}${q.extra ? `, gồm phụ thu ${q.extra} khách thêm` : ""}${q.discount ? `, đã giảm ${money(q.discount)} ở dài ngày` : ""}${q.deposit ? `\n   Cọc ${cfg.depositPercent}%: ${money(q.deposit)}` : ""}`;
+      return `• <b>${esc(x.name)}</b> — <b>${$(q.total)}</b>${n > 1 ? ` (≈ ${$(q.perNight)}/${en ? "night" : "đêm"})` : ""}${q.extra ? (en ? `, incl. surcharge for ${q.extra} extra guest(s)` : `, gồm phụ thu ${q.extra} khách thêm`) : ""}${q.discount ? (en ? `, long-stay discount ${$(q.discount)} applied` : `, đã giảm ${$(q.discount)} ở dài ngày`) : ""}${q.deposit ? `\n   ${en ? `Deposit ${cfg.depositPercent}%` : `Cọc ${cfg.depositPercent}%`}: ${$(q.deposit)}` : ""}`;
     });
-    return tg.sendMessage(chatId, `${head}\n${lines.join("\n")}\n\n<i>Giá tham khảo, chưa gồm mã giảm giá và dịch vụ thêm; giá chính thức hiển thị khi đặt phòng.</i>`, webBtn("🌐 Đặt phòng trên website", bookPath(d1, d2)));
+    return tg.sendMessage(chatId, `${head}\n${lines.join("\n")}\n\n${en ? "Indicative prices, excluding coupons and extra services; the final price is shown when you book." : "Giá tham khảo, chưa gồm mã giảm giá và dịch vụ thêm; giá chính thức hiển thị khi đặt phòng."}</i>`, webBtn(en ? "🌐 Book on the website" : "🌐 Đặt phòng trên website", bookPath(d1, d2)));
   }
 
-  async function address(chatId) {
+  async function address(chatId, en = false) {
     const c = (await get("settings/contact")) ?? {};
     const addr = typeof c.address === "string" ? c.address.trim() : "";
     const map = typeof c.mapUrl === "string" && /^https?:\/\/\S+$/i.test(c.mapUrl.trim()) ? c.mapUrl.trim() : addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}` : "";
-    if (!addr && !map) return tg.sendMessage(chatId, "Homestay chưa cập nhật địa chỉ. Bạn nhắn /lienhe để xem cách liên hệ nhé.");
-    return tg.sendMessage(chatId, `📍 <b>${esc(site.name)}</b>${addr ? `\n${esc(addr)}` : ""}`, { reply_markup: { inline_keyboard: [...(map ? [[{ text: "🗺 Mở bản đồ", url: map }]] : []), [{ text: "🌐 Website", url: site.url }]] } });
+    if (!addr && !map) return tg.sendMessage(chatId, en ? "The address has not been added yet. Send /lienhe to see how to reach us." : "Homestay chưa cập nhật địa chỉ. Bạn nhắn /lienhe để xem cách liên hệ nhé.");
+    return tg.sendMessage(chatId, `📍 <b>${esc(site.name)}</b>${addr ? `\n${esc(addr)}` : ""}`, { reply_markup: { inline_keyboard: [...(map ? [[{ text: en ? "🗺 Open map" : "🗺 Mở bản đồ", url: map }]] : []), [{ text: "🌐 Website", url: site.url }]] } });
   }
 
-  const amenities = (chatId) => tg.sendMessage(chatId, `🌲 <b>Tiện nghi tại ${esc(site.name)}</b>\n${site.amenities.map(esc).join("\n")}`, webBtn("🌐 Xem ảnh và chi tiết", "/#features"));
+  const amenities = (chatId, en = false) => tg.sendMessage(chatId, `🌲 <b>${en ? "Amenities at" : "Tiện nghi tại"} ${esc(site.name)}</b>\n${(en && site.amenitiesEn ? site.amenitiesEn : site.amenities).map(esc).join("\n")}`, webBtn(en ? "🌐 See photos and details" : "🌐 Xem ảnh và chi tiết", "/#features"));
 
-  async function policy(chatId) {
+  async function policy(chatId, en = false) {
+    const $ = en ? moneyEn : money;
     const { cfg } = await cfgs();
-    const rows = [
+    const rows = en ? [
+      `🕑 Check-in from <b>${esc(cfg.checkInTime)}</b>, check-out before <b>${esc(cfg.checkOutTime)}</b>.`,
+      cfg.earlyCheckInFee || cfg.lateCheckOutFee ? `⏱ Surcharges: ${[cfg.earlyCheckInFee && `early check-in ${$(cfg.earlyCheckInFee)}`, cfg.lateCheckOutFee && `late check-out ${$(cfg.lateCheckOutFee)}`].filter(Boolean).join(", ")}.` : "",
+      cfg.extraGuestFee ? `👥 Extra guest fee: ${$(cfg.extraGuestFee)}/guest/night (above the room's standard occupancy).` : "",
+      cfg.depositPercent ? `🏦 A ${cfg.depositPercent}% deposit of the total secures your booking.` : "🏦 No deposit is required at the moment.",
+      "❌ <b>Cancellation</b> (deposit refunded by days left before check-in):",
+      ...cfg.cancelTiers.map((t) => `   • ${t.daysBefore} days or more: ${t.refundPercent}% refund`),
+      cfg.cancelNote ? `📝 ${esc(cfg.cancelNote)}` : "",
+    ].filter(Boolean) : [
       `🕑 Nhận phòng từ <b>${esc(cfg.checkInTime)}</b>, trả phòng trước <b>${esc(cfg.checkOutTime)}</b>.`,
-      cfg.earlyCheckInFee || cfg.lateCheckOutFee ? `⏱ Phụ thu: ${[cfg.earlyCheckInFee && `nhận sớm ${money(cfg.earlyCheckInFee)}`, cfg.lateCheckOutFee && `trả muộn ${money(cfg.lateCheckOutFee)}`].filter(Boolean).join(", ")}.` : "",
-      cfg.extraGuestFee ? `👥 Phụ thu thêm khách: ${money(cfg.extraGuestFee)}/người/đêm (vượt số khách tiêu chuẩn của phòng).` : "",
+      cfg.earlyCheckInFee || cfg.lateCheckOutFee ? `⏱ Phụ thu: ${[cfg.earlyCheckInFee && `nhận sớm ${$(cfg.earlyCheckInFee)}`, cfg.lateCheckOutFee && `trả muộn ${$(cfg.lateCheckOutFee)}`].filter(Boolean).join(", ")}.` : "",
+      cfg.extraGuestFee ? `👥 Phụ thu thêm khách: ${$(cfg.extraGuestFee)}/người/đêm (vượt số khách tiêu chuẩn của phòng).` : "",
       cfg.depositPercent ? `🏦 Đặt cọc ${cfg.depositPercent}% tổng tiền để giữ phòng.` : "🏦 Hiện không yêu cầu đặt cọc.",
       "❌ <b>Hủy phòng</b> (hoàn cọc theo số ngày còn lại trước ngày nhận phòng):",
       ...cfg.cancelTiers.map((t) => `   • Từ ${t.daysBefore} ngày trở lên: hoàn ${t.refundPercent}%`),
       cfg.cancelNote ? `📝 ${esc(cfg.cancelNote)}` : "",
     ].filter(Boolean);
-    return tg.sendMessage(chatId, `📜 <b>Chính sách của ${esc(site.name)}</b>\n${rows.join("\n")}`, webBtn("🌐 Đặt phòng", "/#booking"));
+    return tg.sendMessage(chatId, `📜 <b>${en ? "Policies of" : "Chính sách của"} ${esc(site.name)}</b>\n${rows.join("\n")}`, webBtn(en ? "🌐 Book now" : "🌐 Đặt phòng", "/#booking"));
   }
 
   /** /tra MÃ: trạng thái đặt phòng theo mã; không hiển thị họ tên, điện thoại, email hay ghi chú. */
-  async function lookup(chatId, arg) {
+  async function lookup(chatId, arg, en = false) {
+    const $ = en ? moneyEn : money;
     const tok = String(arg ?? "").trim().split(/\s+/).filter(Boolean).pop() ?? "";
     const code = tok.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    if (!/^[A-Z0-9]{4,12}$/.test(code)) return tg.sendMessage(chatId, "Cú pháp: <code>/tra MÃ</code>, ví dụ <code>/tra AB12CD34</code>. Mã đặt phòng nằm trong email/trang Tài khoản và là nội dung chuyển khoản (sau chữ NHAGO).");
+    if (!/^[A-Z0-9]{4,12}$/.test(code)) return tg.sendMessage(chatId, en ? "Usage: <code>/tra CODE</code>, e.g. <code>/tra AB12CD34</code>. The booking code is in your email / Account page and in the bank transfer note (after NHAGO)." : "Cú pháp: <code>/tra MÃ</code>, ví dụ <code>/tra AB12CD34</code>. Mã đặt phòng nằm trong email/trang Tài khoản và là nội dung chuyển khoản (sau chữ NHAGO).");
     let hit = (await db.collection("bookings").where("code", "==", code).limit(1).get()).docs[0];
     if (!hit) hit = (await db.collection("bookings").get()).docs.find((d) => !d.data().code && String(d.id).replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase() === code); // đặt phòng cũ chưa có trường mã
-    if (!hit) return tg.sendMessage(chatId, "Không tìm thấy đặt phòng với mã này. Bạn kiểm tra lại mã hoặc nhắn /lienhe để được hỗ trợ.");
+    if (!hit) return tg.sendMessage(chatId, en ? "No booking found with this code. Please check it or send /lienhe for help." : "Không tìm thấy đặt phòng với mã này. Bạn kiểm tra lại mã hoặc nhắn /lienhe để được hỗ trợ.");
     const b = hit.data();
     const n = nights(b.checkIn, b.checkOut);
-    const dep = !(b.deposit > 0) ? "không yêu cầu cọc" : (b.paid ?? 0) >= b.deposit ? "đã nhận đủ cọc ✅" : `chưa nhận đủ cọc (cần ${money(b.deposit)}) ⚠️`;
-    return tg.sendMessage(chatId, [`🔎 <b>Đặt phòng ${esc(code)}</b>`, `Trạng thái: ${STATUS_VI[b.status] ?? esc(b.status)}`, `🛏 ${esc(await roomName(b.roomId))} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)} (${n} đêm)`, `👥 ${b.guests} khách`, `🏦 Cọc: ${dep}`].join("\n"));
+    const dep = en ? (!(b.deposit > 0) ? "no deposit required" : (b.paid ?? 0) >= b.deposit ? "deposit received ✅" : `deposit not fully received (${$(b.deposit)} needed) ⚠️`) : (!(b.deposit > 0) ? "không yêu cầu cọc" : (b.paid ?? 0) >= b.deposit ? "đã nhận đủ cọc ✅" : `chưa nhận đủ cọc (cần ${$(b.deposit)}) ⚠️`);
+    return tg.sendMessage(chatId, en ? [`🔎 <b>Booking ${esc(code)}</b>`, `Status: ${STATUS_EN[b.status] ?? esc(b.status)}`, `🛏 ${esc(await roomName(b.roomId))} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)} (${n} night${n > 1 ? "s" : ""})`, `👥 ${b.guests} guest${b.guests > 1 ? "s" : ""}`, `🏦 Deposit: ${dep}`].join("\n") : [`🔎 <b>Đặt phòng ${esc(code)}</b>`, `Trạng thái: ${STATUS_VI[b.status] ?? esc(b.status)}`, `🛏 ${esc(await roomName(b.roomId))} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)} (${n} đêm)`, `👥 ${b.guests} khách`, `🏦 Cọc: ${dep}`].join("\n"));
   }
 
   /** /doanhthu [tuan|thang]: tổng hợp doanh thu theo ngày trả phòng, giống trang Báo cáo doanh thu (chỉ chủ/quản lý). */
@@ -489,7 +520,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   }
 
   /** Thông tin liên hệ do chủ/quản lý nhập ở Cài đặt (settings/contact), cùng nguồn với chân trang website. */
-  async function contact(chatId) {
+  async function contact(chatId, en = false) {
     const c = (await get("settings/contact")) ?? {};
     const str = (k) => (typeof c[k] === "string" ? c[k].trim() : "");
     const http = (k) => (/^https?:\/\/\S+$/i.test(str(k)) ? str(k) : "");
@@ -497,8 +528,8 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       str("phone") && `📞 ${esc(str("phone"))}`, str("zalo") && `💬 Zalo: ${esc(str("zalo"))}`, str("email") && `✉️ ${esc(str("email"))}`,
       str("address") && `📍 ${esc(str("address"))}`, http("facebook") && `👍 ${esc(http("facebook"))}`, http("mapUrl") && `🗺 ${esc(http("mapUrl"))}`,
     ].filter(Boolean);
-    const body = rows.length ? rows.join("\n") : "Homestay chưa cập nhật thông tin liên hệ. Bạn gửi yêu cầu đặt phòng trên website, chúng tôi sẽ phản hồi sớm.";
-    return tg.sendMessage(chatId, `📇 <b>${esc(site.name)}</b>\n${body}`, webBtn("🌐 Mở website", "/#contact"));
+    const body = rows.length ? rows.join("\n") : en ? "Contact details have not been added yet. Send a booking request on the website and we will reply soon." : "Homestay chưa cập nhật thông tin liên hệ. Bạn gửi yêu cầu đặt phòng trên website, chúng tôi sẽ phản hồi sớm.";
+    return tg.sendMessage(chatId, `📇 <b>${esc(site.name)}</b>\n${body}`, webBtn(en ? "🌐 Open website" : "🌐 Mở website", "/#contact"));
   }
 
   /** Giới hạn theo ngày/phút lưu ở Firestore (chỉ cho chat chưa liên kết). Trả {ok, first} — first: lần đầu bị chặn trong phút này (để báo một lần). */
@@ -521,22 +552,36 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     const chatId = String(msg.chat.id);
     const text = String(msg.text ?? "").trim();
     if (!text.startsWith("/")) return;
-    const [cmdRaw, ...rest] = text.split(/\s+/);
-    const cmd = cmdRaw.split("@")[0].toLowerCase();
+    const [cmdRaw0, ...rest0] = text.split(/\s+/);
+    const aliased = (CMD_ALIAS[cmdRaw0.split("@")[0].toLowerCase()] ?? cmdRaw0.split("@")[0].toLowerCase()).split(" ");
+    const cmd = aliased[0];
+    const rest = [...aliased.slice(1), ...rest0];
     if (!memAllow(mem, chatId, now().getTime())) return; // lũ tin nhắn: bỏ qua im lặng
     const linked = await get(`tgChats/${chatId}`);
+    // Ngôn ngữ của khách: lựa chọn /lang đã lưu, nếu chưa có thì theo ngôn ngữ Telegram của họ. Nhân viên luôn dùng tiếng Việt.
+    const pref = linked ? null : await get(`tgPrefs/${chatId}`);
+    const en = !linked && (pref?.lang ? pref.lang === "en" : /^en/i.test(msg.from?.language_code ?? ""));
 
     // Khách (chat chưa liên kết) bị giới hạn tần suất; nhân viên đã liên kết thì không.
     if (!linked) {
       const rl = await rateCheck(chatId);
-      if (!rl.ok) return rl.first ? tg.sendMessage(chatId, rl.daily ? "⏳ Bạn đã nhắn quá nhiều hôm nay. Vui lòng quay lại vào ngày mai hoặc đặt phòng trực tiếp trên website." : "⏳ Bạn nhắn quá nhanh, vui lòng thử lại sau 1 phút.") : undefined;
+      if (!rl.ok) return rl.first ? tg.sendMessage(chatId, en ? (rl.daily ? "⏳ You have sent too many messages today. Please come back tomorrow or book directly on the website." : "⏳ You are sending messages too fast. Please try again in a minute.") : (rl.daily ? "⏳ Bạn đã nhắn quá nhiều hôm nay. Vui lòng quay lại vào ngày mai hoặc đặt phòng trực tiếp trên website." : "⏳ Bạn nhắn quá nhanh, vui lòng thử lại sau 1 phút.")) : undefined;
+    }
+
+    // /lang vi|en: khách chọn ngôn ngữ của bot (chỉ ảnh hưởng chat này).
+    if (cmd === "/lang" && !linked) {
+      const want = String(rest[0] ?? "").toLowerCase();
+      if (want !== "vi" && want !== "en") return tg.sendMessage(chatId, en ? "Choose a language: /lang en or /lang vi" : "Chọn ngôn ngữ: /lang vi hoặc /lang en");
+      await db.doc(`tgPrefs/${chatId}`).set({ lang: want, at: FieldValue.serverTimestamp() });
+      await tg.setMyCommands?.(want === "en" ? GUEST_COMMANDS_EN : GUEST_COMMANDS, { type: "chat", chat_id: Number(chatId) }).catch(() => {});
+      return tg.sendMessage(chatId, want === "en" ? "✅ Language set to English." : "✅ Đã chuyển sang tiếng Việt.");
     }
 
     if (cmd === "/start") {
       const code = (rest[0] ?? "").toUpperCase();
       if (!/^[A-Z0-9]{8}$/.test(code)) {
-        const hello = `Xin chào! Đây là bot của <b>${esc(site.name)}</b> 🌲\n\n${GUEST_HELP}`;
-        return tg.sendMessage(chatId, linked ? `Chat này đã liên kết nhân viên.\n\n${STAFF_HELP}` : hello, webBtn("🌐 Đặt phòng trên website", "/#booking"));
+        const hello = en ? `Hello! This is the bot of <b>${esc(site.name)}</b> 🌲\n\n${GUEST_HELP_EN}` : `Xin chào! Đây là bot của <b>${esc(site.name)}</b> 🌲\n\n${GUEST_HELP}`;
+        return tg.sendMessage(chatId, linked ? `Chat này đã liên kết nhân viên.\n\n${STAFF_HELP}` : hello, webBtn(en ? "🌐 Book on the website" : "🌐 Đặt phòng trên website", "/#booking"));
       }
       const link = await get(`tgLinks/${code}`);
       if (!link || link.exp < now().getTime()) return tg.sendMessage(chatId, "Mã liên kết không đúng hoặc đã hết hạn (30 phút). Nhân viên hãy tạo mã mới ở trang quản trị.");
@@ -555,35 +600,35 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     }
 
     // Lệnh dành cho mọi người (dữ liệu công khai, giống trang web).
-    if (cmd === "/trong") return availability(chatId, rest.join(" "));
-    if (cmd === "/phong") return roomList(chatId);
-    if (cmd === "/lienhe") return contact(chatId);
-    if (cmd === "/gia") return quickQuote(chatId, rest.join(" "));
-    if (cmd === "/diachi") return address(chatId);
-    if (cmd === "/tiennghi") return amenities(chatId);
-    if (cmd === "/chinhsach") return policy(chatId);
-    if (cmd === "/tra") return lookup(chatId, rest.join(" "));
-    if (cmd === "/dat") { const r = parseRange(rest.join(" ")); return tg.sendMessage(chatId, "Bấm nút bên dưới để chọn phòng và gửi yêu cầu đặt phòng (cần đăng nhập Google hoặc email).", webBtn("🌐 Đặt phòng trên website", r.error ? "/#booking" : bookPath(r.d1, r.d2))); }
+    if (cmd === "/trong") return availability(chatId, rest.join(" "), en);
+    if (cmd === "/phong") return roomList(chatId, en);
+    if (cmd === "/lienhe") return contact(chatId, en);
+    if (cmd === "/gia") return quickQuote(chatId, rest.join(" "), en);
+    if (cmd === "/diachi") return address(chatId, en);
+    if (cmd === "/tiennghi") return amenities(chatId, en);
+    if (cmd === "/chinhsach") return policy(chatId, en);
+    if (cmd === "/tra") return lookup(chatId, rest.join(" "), en);
+    if (cmd === "/dat") { const r = parseRange(rest.join(" "), en); return tg.sendMessage(chatId, en ? "Tap the button below to choose a room and send your booking request (Google or email sign-in required)." : "Bấm nút bên dưới để chọn phòng và gửi yêu cầu đặt phòng (cần đăng nhập Google hoặc email).", webBtn(en ? "🌐 Book on the website" : "🌐 Đặt phòng trên website", r.error ? "/#booking" : bookPath(r.d1, r.d2))); }
 
     // Khách đã liên kết tài khoản: xem đặt phòng của mình và ngừng nhận thông báo.
     if (!linked && (cmd === "/cuatoi" || cmd === "/huylienket")) {
       const g = await get(`tgGuests/${chatId}`);
       if (cmd === "/huylienket") {
-        if (!g) return tg.sendMessage(chatId, "Lệnh này dành cho nhân viên homestay.");
+        if (!g) return tg.sendMessage(chatId, en ? "This command is for homestay staff." : "Lệnh này dành cho nhân viên homestay.");
         await db.doc(`tgGuests/${chatId}`).delete();
-        return tg.sendMessage(chatId, "Đã ngừng nhận thông báo đặt phòng ở chat này.");
+        return tg.sendMessage(chatId, en ? "You will no longer receive booking notifications in this chat." : "Đã ngừng nhận thông báo đặt phòng ở chat này.");
       }
-      if (!g) return tg.sendMessage(chatId, "Chat này chưa liên kết tài khoản. Vào website → Tài khoản → Đặt phòng của tôi, bấm “Nhận thông báo qua Telegram”.", webBtn("🌐 Đặt phòng của tôi", "/account"));
+      if (!g) return tg.sendMessage(chatId, en ? "This chat is not linked to an account. On the website go to Account → My bookings and tap “Get notifications on Telegram”." : "Chat này chưa liên kết tài khoản. Vào website → Tài khoản → Đặt phòng của tôi, bấm “Nhận thông báo qua Telegram”.", webBtn(en ? "🌐 My bookings" : "🌐 Đặt phòng của tôi", "/account"));
       const mine = (await db.collection("bookings").where("createdBy", "==", g.uid).get()).docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => b.checkIn.localeCompare(a.checkIn)).slice(0, 5);
-      if (!mine.length) return tg.sendMessage(chatId, "Bạn chưa có đặt phòng nào.", webBtn("🌐 Đặt phòng", "/#booking"));
+      if (!mine.length) return tg.sendMessage(chatId, en ? "You have no bookings yet." : "Bạn chưa có đặt phòng nào.", webBtn(en ? "🌐 Book now" : "🌐 Đặt phòng", "/#booking"));
       const rows = [];
-      for (const b of mine) rows.push(`• <b>${esc(b.code || String(b.id).replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase())}</b> — ${STATUS_VI[b.status] ?? esc(b.status)}\n   ${esc(await roomName(b.roomId))} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)} · ${money(b.total)}`);
-      return tg.sendMessage(chatId, `📒 <b>Đặt phòng của bạn</b>\n${rows.join("\n")}`, webBtn("🌐 Xem chi tiết", "/account"));
+      for (const b of mine) rows.push(`• <b>${esc(b.code || String(b.id).replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase())}</b> — ${(en ? STATUS_EN : STATUS_VI)[b.status] ?? esc(b.status)}\n   ${esc(await roomName(b.roomId))} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)} · ${en ? moneyEn(b.total) : money(b.total)}`);
+      return tg.sendMessage(chatId, `📒 <b>${en ? "Your bookings" : "Đặt phòng của bạn"}</b>\n${rows.join("\n")}`, webBtn(en ? "🌐 View details" : "🌐 Xem chi tiết", "/account"));
     }
 
     // Lệnh nhân viên: chỉ chat đã liên kết.
     if (["/homnay", "/cho", "/doanhthu", "/baocao", "/phongban", "/taodat", "/huylienket"].includes(cmd)) {
-      if (!linked) return tg.sendMessage(chatId, "Lệnh này dành cho nhân viên homestay.");
+      if (!linked) return tg.sendMessage(chatId, en ? "This command is for homestay staff." : "Lệnh này dành cho nhân viên homestay.");
       // Kiểm tra lại vai trò hiện tại của người đã liên kết (bị hạ quyền thì mất quyền dùng bot).
       const u = await get(`users/${linked.uid}`);
       if (!u || !FRONT.includes(u.role)) { await db.doc(`tgChats/${chatId}`).delete(); return tg.sendMessage(chatId, "Tài khoản liên kết không còn quyền nhân viên; đã ngắt liên kết."); }
@@ -596,7 +641,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       await db.doc(`tgChats/${chatId}`).delete();
       return tg.sendMessage(chatId, "Đã ngừng nhận thông báo ở chat này.");
     }
-    return tg.sendMessage(chatId, linked ? STAFF_HELP : GUEST_HELP);
+    return tg.sendMessage(chatId, linked ? STAFF_HELP : en ? GUEST_HELP_EN : GUEST_HELP);
   }
 
   async function handleCallback(cb) {
@@ -718,4 +763,4 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   return { notify, linkCode, guestLinkCode, handleUpdate, decide, staffAlerts, dailyReminders, dailyReport };
 }
 
-module.exports = { createBot, webhookSecret, safeEq, parseDate, todayVN, FRONT, LIMITS, STAFF_COMMANDS, GUEST_COMMANDS };
+module.exports = { createBot, webhookSecret, safeEq, parseDate, todayVN, FRONT, LIMITS, STAFF_COMMANDS, GUEST_COMMANDS, GUEST_COMMANDS_EN };

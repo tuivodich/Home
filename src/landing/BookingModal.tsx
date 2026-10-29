@@ -118,7 +118,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
         checkIn, checkOut, guests, total,
         code: bookingCode(id), lines: quoteLines(quote, room.name),
         ...(early || late || Object.values(svc).some((n) => n > 0) ? { opts: { ...(early ? { early: true } : {}), ...(late ? { late: true } : {}), services: Object.fromEntries(Object.entries(svc).filter(([, n]) => n > 0)) } } : {}), ...(quote.deposit > 0 ? { deposit: quote.deposit } : {}),
-        status: "pending", note: note.trim(), source: "online", createdBy: user.uid, slotId,
+        status: "pending", note: note.trim(), source: "online", createdBy: user.uid, slotId, lang,
         ...(coupon ? { couponCode: coupon.code, discountPercent: coupon.percent, originalTotal: original } : {}),
       });
       // Bản sao công khai (không có dữ liệu cá nhân) để mọi người thấy phòng đang được giữ chỗ.

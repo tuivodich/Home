@@ -8,6 +8,7 @@ import { GRACE_MIN, dateOf, downloadCsv, fmtClock, fmtHours, lastMonths, lateMin
 import { isStaffRole, type UserDoc } from "../lib/types";
 import { fill, useHr } from "../i18n/hr";
 import { useI18n } from "../i18n";
+import { DateTimeInput } from "../components/DateInput";
 
 type Staff = UserDoc & { id: string };
 interface Draft { id?: string; uid: string; inV: string; outV: string }
@@ -118,8 +119,8 @@ export default function Timesheet() {
           {sel.absent.length > 0 && <p className="overdue">{H.absentOn}: {sel.absent.map(fmtDate).join(", ")}</p>}
           {draft && (
             <div className="card shiftform">
-              <label>{H.in}<input type="datetime-local" value={draft.inV} onChange={(e) => setDraft({ ...draft, inV: e.target.value })} /></label>
-              <label>{H.out}<input type="datetime-local" value={draft.outV} onChange={(e) => setDraft({ ...draft, outV: e.target.value })} /></label>
+              <label>{H.in}<DateTimeInput required value={draft.inV} onChange={(v) => setDraft({ ...draft, inV: v })} /></label>
+              <label>{H.out}<DateTimeInput value={draft.outV} onChange={(v) => setDraft({ ...draft, outV: v })} /></label>
               {badOrder && <p className="error">{H.outBeforeIn}</p>}
               <div className="row"><button type="button" disabled={!canSave} onClick={save}>{H.save}</button><button type="button" className="ghost" onClick={() => setDraft(null)}>{H.cancel}</button></div>
             </div>

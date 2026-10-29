@@ -25,12 +25,12 @@ export default function ReportsPage() {
   const [from, to] = mode === "month" ? monthRange(month) : [`${year}-01-01`, `${year + 1}-01-01`];
   const rep = useMemo(() => buildReport(bookings, expenses, rooms, from, to), [bookings, expenses, rooms, from, to]);
   const series = useMemo(() => monthlySeries(bookings, expenses, year), [bookings, expenses, year]);
-  const maxBar = Math.max(1, ...series.map((m) => Math.max(m.revenue, m.expenses)));
+  const maxBar = Math.max(1, ...series.map((m) => Math.max(m.revenue + m.forfeited, m.expenses)));
   const maxRoom = Math.max(1, ...rep.rooms.map((r) => r.revenue));
 
   const exportCsv = () => {
     const rows: (string | number)[][] = [
-      [T("Kỳ", "Period"), `${from} → ${to}`], [T("Doanh thu (đã trả phòng)", "Revenue (checked out)"), rep.revenue], [T("Số lượt ở", "Stays"), rep.stays], [T("Đêm đã bán", "Nights sold"), rep.soldNights],
+      [T("Kỳ", "Period"), `${from} → ${to}`], [T("Doanh thu (đã trả phòng)", "Revenue (checked out)"), rep.revenue], [T("Cọc giữ lại (hủy / không đến)", "Forfeited deposits"), rep.forfeited], [T("Số lượt ở", "Stays"), rep.stays], [T("Đêm đã bán", "Nights sold"), rep.soldNights],
       [T("Giá bình quân / đêm", "ADR"), rep.adr], [T("Công suất", "Occupancy"), pct(rep.occupancy)], [T("Doanh thu dự kiến (chưa trả phòng)", "Expected revenue"), rep.expected],
       [T("Đã thu trong kỳ", "Cash collected"), rep.collected], [T("Chi phí", "Expenses"), rep.expenses], [T("Lợi nhuận", "Profit"), rep.profit], [],
       [T("Phòng", "Room"), T("Doanh thu", "Revenue"), T("Đêm", "Nights"), T("Lượt ở", "Stays")], ...rep.rooms.map((r) => [r.name, r.revenue, r.nights, r.stays]),
@@ -41,7 +41,7 @@ export default function ReportsPage() {
   return (
     <section>
       <h2>{T("Báo cáo doanh thu", "Revenue report")}</h2>
-      <p><small>{T("Doanh thu ghi nhận khi khách trả phòng, theo ngày trả phòng. Công suất = số đêm có khách / (số phòng đang hoạt động × số ngày). Chi phí lấy từ trang Chi phí & công nợ.", "Revenue is recognised at check-out, by check-out date. Occupancy = occupied nights / (active rooms × days). Expenses come from the Expenses page.")}</small></p>
+      <p><small>{T("Doanh thu ghi nhận khi khách trả phòng, theo ngày trả phòng. Cọc giữ lại = tiền còn lại của đặt phòng đã hủy / khách không đến sau khi hoàn tiền (ghi nhận theo ngày hủy), được cộng vào lợi nhuận. Công suất = số đêm có khách / (số phòng đang hoạt động × số ngày). Chi phí lấy từ trang Chi phí & công nợ.", "Forfeited deposits (cash kept from cancelled / no-show bookings after refunds, dated by cancellation) are added to profit. Revenue is recognised at check-out, by check-out date. Occupancy = occupied nights / (active rooms × days). Expenses come from the Expenses page.")}</small></p>
       <div className="card">
         <div className="row between">
           <div className="row">
@@ -57,6 +57,7 @@ export default function ReportsPage() {
 
       <div className="grid stats" id="report-kpis">
         <div className="card"><big className="sm">{money(rep.revenue)}</big><div>{T("Doanh thu", "Revenue")}</div></div>
+        <div className="card"><big className="sm">{money(rep.forfeited)}</big><div>{T("Cọc giữ lại", "Forfeited deposits")} ({rep.forfeitedCount})</div></div>
         <div className="card"><big className="sm">{money(rep.profit)}</big><div>{T("Lợi nhuận (sau chi phí)", "Profit")}</div></div>
         <div className="card"><big>{pct(rep.occupancy)}</big><div>{T("Công suất", "Occupancy")}</div></div>
         <div className="card"><big className="sm">{money(rep.adr)}</big><div>{T("Giá bình quân / đêm", "Avg. nightly rate")}</div></div>
@@ -76,7 +77,7 @@ export default function ReportsPage() {
               const x = 14 + i * 58, h = (v: number) => (v / maxBar) * 150;
               return (
                 <g key={m.ym}>
-                  <rect x={x} y={170 - h(m.revenue)} width="22" height={h(m.revenue)} rx="3" className="bar-rev"><title>{`${m.ym}: ${moneyText(m.revenue)}`}</title></rect>
+                  <rect x={x} y={170 - h(m.revenue + m.forfeited)} width="22" height={h(m.revenue + m.forfeited)} rx="3" className="bar-rev"><title>{`${m.ym}: ${moneyText(m.revenue + m.forfeited)}${m.forfeited ? ` (${T("gồm cọc giữ lại", "incl. forfeited deposits")} ${moneyText(m.forfeited)})` : ""}`}</title></rect>
                   <rect x={x + 24} y={170 - h(m.expenses)} width="22" height={h(m.expenses)} rx="3" className="bar-exp"><title>{`${m.ym}: ${T("chi phí", "expenses")} ${moneyText(m.expenses)}`}</title></rect>
                   <text x={x + 23} y="188" textAnchor="middle" className="bar-lbl">{m.ym.slice(5)}</text>
                 </g>

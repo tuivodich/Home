@@ -50,3 +50,20 @@ test("chuỗi 12 tháng", () => {
   assert.equal(m[9].expenses, 999);
   assert.equal(m.length, 12);
 });
+
+test("cọc giữ lại của đặt phòng đã hủy / không đến được cộng vào lợi nhuận", () => {
+  const more = [
+    ...B,
+    { id: "g", roomId: "r2", checkIn: "2026-11-25", checkOut: "2026-11-27", status: "cancelled", total: 900000, paid: 270000, cancelledAt: ts("2026-11-24T10:00:00") },
+    { id: "h", roomId: "r1", checkIn: "2026-11-28", checkOut: "2026-11-29", status: "cancelled", total: 500000, paid: 150000 }, // không có ngày hủy → theo ngày nhận phòng
+    { id: "i", roomId: "r1", checkIn: "2026-11-08", checkOut: "2026-11-09", status: "cancelled", total: 500000, paid: 0 },     // đã hoàn hết
+    { id: "j", roomId: "r1", checkIn: "2026-12-10", checkOut: "2026-12-11", status: "cancelled", total: 500000, paid: 100000 }, // tháng khác
+  ];
+  const r = buildReport(more, E, rooms, "2026-11-01", "2026-12-01");
+  assert.equal(r.forfeited, 420000);
+  assert.equal(r.forfeitedCount, 2);
+  assert.equal(r.revenue, 4000000);                // doanh thu lưu trú không đổi
+  assert.equal(r.profit, 4000000 + 420000 - 700000);
+  assert.equal(monthlySeries(more, E, 2026)[10].forfeited, 420000);
+  assert.equal(monthlySeries(more, E, 2026)[11].forfeited, 100000);
+});

@@ -15,7 +15,7 @@ export interface PendSlot { id: string; uid: string; n: number; bookingId: strin
  * 2. Nhả khe giữ chỗ (giới hạn số yêu cầu đang chờ mỗi tài khoản) của yêu cầu không còn "chờ xác nhận" hoặc đã bị xóa.
  * 3. Tự từ chối yêu cầu online còn "chờ xác nhận" mà ngày nhận phòng đã qua (nếu bật trong Cài đặt).
  * 4. Đặt phòng "đã xác nhận" mà đã qua ngày trả phòng và khách chưa nhận phòng → "khách không đến" (nếu bật trong Cài đặt).
- * Cloud Functions (bookingSweep) làm cùng việc này mỗi 15 phút, kể cả khi không ai mở trang quản lý.
+ * Cloud Functions (bookingSweep) làm cùng việc này mỗi 2 giờ (06:00–22:00), kể cả khi không ai mở trang quản lý.
  */
 export function useBusySync(enabled: boolean) {
   const { data: bookings, loading: l1 } = useCollection<Booking>("bookings", enabled);

@@ -209,3 +209,6 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
 
 /* Danh sách chọn người nhận email */
 .mail-list { max-height: 320px; overflow-y: auto; display: grid; gap: 4px; border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+
+/* Danh sách thả xuống của ô chọn: ép màu chữ/nền rõ ràng (tránh chữ sáng trên nền trắng của trình duyệt khi ô chọn có nền trong suốt). */
+select option, select optgroup { background-color: var(--card); color: var(--fg); }

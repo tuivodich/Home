@@ -70,6 +70,7 @@ export default function StaffShell() {
   const contentItems: DdItem[] = [
     { label: t("reviewsAdmin"), to: "/app/reviews" },
     { label: t("faqPage"), to: "/faq" },
+    { label: lang === "vi" ? "Nội quy & Quy định" : "House rules", to: "/rules" },
     { label: t("privacyPage"), to: "/privacy" },
   ];
   const hrItems: DdItem[] = [

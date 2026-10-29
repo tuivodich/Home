@@ -195,7 +195,7 @@ export function Footer() {
         </div>
         <div>
           <h4>{L.footer.info}</h4>
-          <Link to="/explore">{L.menu.explore}</Link><Link to="/reviews">{L.menu.reviews}</Link><Link to="/faq">{L.menu.faq}</Link><Link to="/privacy">{L.menu.privacy}</Link><Link to="/sitemap">{L.menu.sitemap}</Link>
+          <Link to="/explore">{L.menu.explore}</Link><Link to="/reviews">{L.menu.reviews}</Link><Link to="/faq">{L.menu.faq}</Link><Link to="/rules">{L.menu.rules}</Link><Link to="/privacy">{L.menu.privacy}</Link><Link to="/sitemap">{L.menu.sitemap}</Link>
         </div>
         <div>
           <h4>{L.footer.contact}</h4>

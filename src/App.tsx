@@ -7,6 +7,7 @@ import SitemapPage from "./pages/SitemapPage";
 import RoomPage from "./pages/RoomPage";
 import InvoicePage from "./pages/InvoicePage";
 import PrivacyPage from "./pages/PrivacyPage";
+import RulesPage from "./pages/RulesPage";
 import FaqPage from "./pages/FaqPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import StaffShell from "./StaffShell";
@@ -16,6 +17,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/rules" element={<RulesPage />} />
       <Route path="/faq" element={<FaqPage />} />
       <Route path="/reviews" element={<ReviewsPage />} />
       <Route path="/account" element={<Account />} />

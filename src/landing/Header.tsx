@@ -46,7 +46,7 @@ export default function Header() {
   const homeItems: DdItem[] = [it(M.top, "/"), it(M.about, "/#about"), it(M.rooms, "/#rooms"), it(M.features, "/#features")];
   const bookItems: DdItem[] = [it(M.availability, "/#booking"), it(M.faq, "/faq")];
   const exploreItems: DdItem[] = [it(M.explore, "/explore"), it(M.reviews, "/reviews")];
-  const infoItems: DdItem[] = [it(M.contact, "/#contact"), it(M.privacy, "/privacy"), it(M.sitemap, "/sitemap")];
+  const infoItems: DdItem[] = [it(M.contact, "/#contact"), it(M.rules, "/rules"), it(M.privacy, "/privacy"), it(M.sitemap, "/sitemap")];
   const accountItems: DdItem[] = [
     it(G.myAccount, "/profile"),
     it(L.myBookings, "/account"),

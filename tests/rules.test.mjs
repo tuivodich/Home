@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 // Chạy: npm run test:rules (Firestore Emulator do firebase emulators:exec dựng lên, địa chỉ lấy từ FIRESTORE_EMULATOR_HOST).
 const [EMU_HOST, EMU_PORT] = (process.env.FIRESTORE_EMULATOR_HOST ?? "127.0.0.1:8089").split(":");
 const RULES = fileURLToPath(new URL("../firestore.rules", import.meta.url));
-import { addDoc, serverTimestamp, Timestamp, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, collection, getDocs, query, where } from "firebase/firestore";
+import { addDoc, deleteField, serverTimestamp, Timestamp, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, collection, getDocs, query, where } from "firebase/firestore";
 
 const env = await initializeTestEnvironment({
   projectId: "demo-test",
@@ -424,6 +424,15 @@ await check("customer CANNOT record own payment", updateDoc(doc(c2, "bookings/pa
 await check("customer cancels own booking with cancelledAt = server time", updateDoc(doc(c2, "bookings/pay2"), { status: "cancelled", cancelReason: "customer", cancelledAt: serverTimestamp() }), true);
 await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "bookings/pay3"), { roomId: "r1", guestName: "P", phone: "1", checkIn: "2026-12-25", checkOut: "2026-12-27", guests: 1, total: 1000000, status: "confirmed", source: "online", createdBy: "cust2" }); });
 await check("customer CANNOT backdate cancelledAt", updateDoc(doc(c2, "bookings/pay3"), { status: "cancelled", cancelReason: "customer", cancelledAt: Timestamp.fromDate(new Date("2020-01-01")) }), false);
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "bookings/eo1"), { roomId: "r1", guestName: "P", phone: "1", checkIn: "2026-12-25", checkOut: "2026-12-29", guests: 1, total: 1000000, status: "checked_in", source: "online", createdBy: "cust2" }); });
+await check("in-house customer requests early check-out", updateDoc(doc(c2, "bookings/eo1"), { earlyCheckoutRequest: { date: "2026-12-27", at: serverTimestamp() } }), true);
+await check("early request date must be inside the stay", updateDoc(doc(c2, "bookings/eo1"), { earlyCheckoutRequest: { date: "2026-12-29", at: serverTimestamp() } }), false);
+await check("early request cannot backdate 'at'", updateDoc(doc(c2, "bookings/eo1"), { earlyCheckoutRequest: { date: "2026-12-27", at: Timestamp.fromDate(new Date("2020-01-01")) } }), false);
+await check("early request cannot carry other fields", updateDoc(doc(c2, "bookings/eo1"), { earlyCheckoutRequest: { date: "2026-12-27", at: serverTimestamp() }, total: 1 }), false);
+await check("another customer CANNOT request early check-out", updateDoc(doc(c1, "bookings/eo1"), { earlyCheckoutRequest: { date: "2026-12-27", at: serverTimestamp() } }), false);
+await check("customer cannot request on a confirmed booking", updateDoc(doc(c2, "bookings/pay3"), { earlyCheckoutRequest: { date: "2026-12-26", at: serverTimestamp() } }), false);
+await check("reception dismisses the request", updateDoc(doc(rec, "bookings/eo1"), { earlyCheckoutRequest: deleteField() }), true);
+await check("reception CANNOT write an early request for the guest", updateDoc(doc(rec, "bookings/eo1"), { earlyCheckoutRequest: { date: "2026-12-27", at: serverTimestamp() } }), false);
 await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "users/lnu"), { role: "customer", email: "ln@x" }); await setDoc(doc(ctx.firestore(), "settings/app"), { maxPending: 5 }, { merge: true }); });
 const lnu = env.authenticatedContext("lnu").firestore();
 const mkL = (id, n, patch) => { const w = writeBatch(lnu); w.set(doc(lnu, "pend", `lnu_${n}`), { uid: "lnu", n, bookingId: id }); w.set(doc(lnu, "bookings", id), { ...good, createdBy: "lnu", slotId: `lnu_${n}`, ...patch }); w.set(doc(lnu, "busy", id), busyDoc); return w.commit(); };

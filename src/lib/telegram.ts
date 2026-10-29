@@ -5,7 +5,7 @@ const functions = getFunctions(app, "us-central1");
 const call = <I, O>(name: string) => httpsCallable<I, O>(functions, name);
 
 /** Báo cho bot Telegram một sự kiện của khách (yêu cầu đặt phòng, hủy, cảm nhận). Lỗi không ảnh hưởng người dùng. */
-export function tgNotify(type: "booking" | "cancel" | "review" | "dirty", id?: string) {
+export function tgNotify(type: "booking" | "cancel" | "review" | "dirty" | "earlyout", id?: string) {
   if (import.meta.env.VITE_USE_EMULATOR) return; // chạy thử cục bộ: không có Cloud Functions
   call<{ type: string; id?: string }, { sent: number }>("tgNotify")({ type, id }).catch((e) => console.warn("tgNotify", e));
 }

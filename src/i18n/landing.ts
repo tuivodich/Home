@@ -89,6 +89,7 @@ const vi = {
     fullName: "Họ và tên", confirmTitle: "Bạn chắc chắn muốn hủy đặt phòng này?",
     confirmPending: "Yêu cầu đặt phòng chưa được xác nhận sẽ bị hủy.",
     confirmConfirmed: "Đặt phòng này đã được homestay xác nhận. Sau khi hủy, phòng sẽ được nhả cho khách khác. Nếu bạn đã đặt cọc hoặc cần hoàn tiền, vui lòng liên hệ homestay.",
+    earlyBtn: "Xin trả phòng sớm", earlyTitle: "Xin trả phòng sớm", earlyHint: "Chọn ngày bạn muốn trả phòng. Homestay sẽ xác nhận với bạn; yêu cầu chưa có hiệu lực cho đến khi lễ tân xác nhận trả phòng.", earlyDate: "Ngày muốn trả phòng", earlySend: "Gửi yêu cầu", earlySent: "Đã gửi yêu cầu trả phòng sớm ngày {d}. Homestay sẽ liên hệ xác nhận.", earlyWithdraw: "Rút yêu cầu", earlyFail: "Không gửi được. Vui lòng thử lại hoặc liên hệ homestay.",
     keep: "Không, giữ lại", doCancel: "Có, hủy đặt phòng", cancelling: "Đang hủy...", cancelFailed: "Không hủy được. Vui lòng thử lại hoặc liên hệ homestay.",
   },
   menu: {
@@ -217,6 +218,7 @@ const en: Dict = {
     fullName: "Full name", confirmTitle: "Are you sure you want to cancel this booking?",
     confirmPending: "This request has not been confirmed yet and will be cancelled.",
     confirmConfirmed: "This booking has been confirmed by the homestay. Once cancelled, the room is released to other guests. If you paid a deposit or need a refund, please contact the homestay.",
+    earlyBtn: "Request early check-out", earlyTitle: "Request early check-out", earlyHint: "Pick the date you want to leave. The homestay will confirm with you; the request only takes effect once the front desk confirms your check-out.", earlyDate: "Check-out date", earlySend: "Send request", earlySent: "Early check-out requested for {d}. The homestay will contact you to confirm.", earlyWithdraw: "Withdraw request", earlyFail: "Could not send. Please try again or contact the homestay.",
     keep: "No, keep it", doCancel: "Yes, cancel booking", cancelling: "Cancelling...", cancelFailed: "Could not cancel. Please try again or contact the homestay.",
   },
   menu: {

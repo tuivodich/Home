@@ -11,7 +11,7 @@ import { useP } from "../i18n/pricing";
 import TierBadge from "../components/TierBadge";
 import { useTierLookup } from "../lib/loyalty";
 import { Link, useNavigate } from "react-router-dom";
-import { Timestamp, collection, doc, serverTimestamp, updateDoc, writeBatch } from "firebase/firestore";
+import { Timestamp, collection, deleteField, doc, serverTimestamp, updateDoc, writeBatch } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "../lib/firebase";
 import { useCollection } from "../lib/useCollection";
@@ -259,6 +259,10 @@ export default function Bookings() {
             {b.note && <small>{b.note}</small>}
             {b.status === "pending" && b.checkIn < today && <p className="overdue">{t("overdueIn")}</p>}
             {b.status === "confirmed" && b.checkIn < today && <p className="overdue">{t("overdueIn")}</p>}
+            {b.status === "checked_in" && b.earlyCheckoutRequest && (
+              <p className="overdue">🧳 {lang === "vi" ? `Khách xin trả phòng sớm ngày ${fmtDate(b.earlyCheckoutRequest.date)}.` : `Guest asks to check out early on ${fmtDate(b.earlyCheckoutRequest.date)}.`}{" "}
+                <button type="button" className="ghost" onClick={() => updateDoc(doc(db, "bookings", b.id), { earlyCheckoutRequest: deleteField() })}>{lang === "vi" ? "Bỏ qua yêu cầu" : "Dismiss"}</button></p>
+            )}
             {b.status === "checked_in" && b.checkOut < today && <p className="overdue">{t("overdueOut")}</p>}
             <div className="row">
               <div className="segbar" role="group" aria-label={t("status")}>

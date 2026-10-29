@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { collection, doc, onSnapshot, query, serverTimestamp, where, writeBatch } from "firebase/firestore";
+import { collection, deleteField, doc, onSnapshot, query, serverTimestamp, updateDoc, where, writeBatch } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../lib/auth";
 import { useCollection } from "../lib/useCollection";
 import { useMoney } from "../lib/useRate";
 import { useI18n, useL } from "../i18n";
-import { fmtDate, nightsBetween, todayStr } from "../lib/format";
+import { addDays, fmtDate, nightsBetween, todayStr } from "../lib/format";
 import type { Booking, Room } from "../lib/types";
 import { tgNotify } from "../lib/telegram";
 import CheckinModal, { type Precheckin } from "../landing/CheckinModal";
@@ -22,6 +22,7 @@ import { useP } from "../i18n/pricing";
 import { useBank, usePricingConfig } from "../lib/usePricing";
 import { daysUntil, refundPercentFor } from "../lib/pricing";
 import PayPanel from "../landing/PayPanel";
+import DateInput from "../components/DateInput";
 import SiteLayout from "../layout/SiteLayout";
 
 export default function Account() {
@@ -56,6 +57,10 @@ export default function Account() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelErr, setCancelErr] = useState("");
   const uid = user?.uid;
+  const [early, setEarly] = useState<Booking | null>(null);
+  const [earlyDate, setEarlyDate] = useState("");
+  const [earlyBusy, setEarlyBusy] = useState(false);
+  const [earlyErr, setEarlyErr] = useState("");
 
   useEffect(() => {
     if (!uid) return;
@@ -95,6 +100,18 @@ export default function Account() {
       setCancelErr(L.account.cancelFailed);
     } finally { setCancelling(false); }
   };
+
+  // Khách đang ở xin trả phòng sớm (hoặc rút lại): chỉ ghi trường earlyCheckoutRequest; nhân viên được báo qua Telegram và tự xác nhận trả phòng.
+  const sendEarly = async () => {
+    if (!early || !earlyDate) return;
+    setEarlyBusy(true); setEarlyErr("");
+    try {
+      await updateDoc(doc(db, "bookings", early.id), { earlyCheckoutRequest: { date: earlyDate, at: serverTimestamp() } });
+      tgNotify("earlyout", early.id);
+      setEarly(null);
+    } catch (ex) { console.error("early checkout", ex); setEarlyErr(L.account.earlyFail); } finally { setEarlyBusy(false); }
+  };
+  const withdrawEarly = (b: Booking) => updateDoc(doc(db, "bookings", b.id), { earlyCheckoutRequest: deleteField() }).catch((ex) => console.error("withdraw early", ex));
 
   return (
     <SiteLayout>
@@ -168,6 +185,7 @@ export default function Account() {
                 const pct = refundPercentFor(daysUntil(at, b.checkIn), cfg.cancelTiers);
                 return <div className="lp-small">{P.refundDue}: <b>{money(Math.round((b.paid ?? 0) * pct / 100))}</b> ({pct}%)</div>;
               })()}
+              {b.status === "checked_in" && b.earlyCheckoutRequest && <div className="lp-small lp-ok">⏰ {L.account.earlySent.replace("{d}", fmtDate(b.earlyCheckoutRequest.date))}</div>}
               {pres.some((p) => p.id === b.id) && <div className="lp-small lp-ok">✓ {G.checkinSent}</div>}
               {b.status === "confirmed" && !stale && (
                 <details className="lp-qr">
@@ -183,6 +201,9 @@ export default function Account() {
                 <button className="lp-pill solid" onClick={() => setPayFor(b)}>{P.payNow}</button>
               )}
               {b.status !== "cancelled" && !stale && <Link className="lp-pill" to={`/invoice/${b.id}`}>{P.invoice}</Link>}
+              {b.status === "checked_in" && (b.checkOut > todayStr()) && (b.earlyCheckoutRequest
+                ? <button className="lp-pill" onClick={() => withdrawEarly(b)}>{L.account.earlyWithdraw}</button>
+                : <button className="lp-pill solid" onClick={() => { setEarlyErr(""); setEarlyDate(todayStr() < b.checkOut ? (todayStr() > b.checkIn ? todayStr() : b.checkIn) : b.checkIn); setEarly(b); }}>{L.account.earlyBtn}</button>)}
               {((b.status === "pending" && !stale) || b.status === "confirmed") && (
                 <button className="lp-pill solid" onClick={() => setCheckinFor(b)}>{pres.some((p) => p.id === b.id) ? G.checkinEdit : G.checkinBtn}</button>
               )}
@@ -205,6 +226,22 @@ export default function Account() {
         </div>
       )}
       {checkinFor && user && <CheckinModal booking={checkinFor} existing={pres.find((p) => p.id === checkinFor.id)} base={myProfile} uid={user.uid} onClose={() => setCheckinFor(null)} />}
+      {early && (
+        <div className="lm-overlay" onClick={() => !earlyBusy && setEarly(null)} role="dialog" aria-modal="true" aria-labelledby="early-title">
+          <div className="lm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 id="early-title">{L.account.earlyTitle}</h3>
+            <div className="lm-summary">
+              <strong>{rooms.find((r) => r.id === early.roomId)?.name ?? "?"}</strong>
+              <div>{fmtDate(early.checkIn)} → {fmtDate(early.checkOut)}</div>
+            </div>
+            <p className="lm-muted">{L.account.earlyHint}</p>
+            <label>{L.account.earlyDate}<DateInput value={earlyDate} onChange={setEarlyDate} min={early.checkIn > todayStr() ? early.checkIn : todayStr()} max={addDays(early.checkOut, -1)} required /></label>
+            {earlyErr && <p className="lm-err">{earlyErr}</p>}
+            <button className="lm-btn" onClick={() => setEarly(null)} disabled={earlyBusy}>{L.account.keep}</button>
+            <button className="lm-link" onClick={sendEarly} disabled={earlyBusy || !earlyDate}>{L.account.earlySend}</button>
+          </div>
+        </div>
+      )}
       {confirming && (
         <div className="lm-overlay" onClick={() => !cancelling && setConfirming(null)} role="dialog" aria-modal="true" aria-labelledby="cancel-title">
           <div className="lm-modal" onClick={(e) => e.stopPropagation()}>

@@ -3,7 +3,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 const { createBot, webhookSecret, parseDate } = require("../bot");
 
 initializeApp({ projectId: "demo-nhago" });
@@ -82,6 +82,16 @@ test("notify: khách hủy và cảm nhận mới", async () => {
   assert.equal((await bot.notify("cus", { type: "review" })).sent, 1);
   assert.match(tg.sent[0].text, /hủy/);
   assert.match(tg.sent[1].text, /Cảm nhận mới/);
+});
+
+test("notify: khách xin trả phòng sớm báo nhân viên một lần", async () => {
+  await reset();
+  await db.doc("bookings/b1").update({ status: "checked_in", earlyCheckoutRequest: { date: "2026-12-26", at: Timestamp.fromMillis(1000) } });
+  const { tg, bot } = mk();
+  assert.deepEqual(await bot.notify("own", { type: "earlyout", id: "b1" }), { sent: 0 }); // không phải chủ đặt phòng
+  assert.equal((await bot.notify("cus", { type: "earlyout", id: "b1" })).sent, 1);
+  assert.match(tg.sent[0].text, /trả phòng sớm/);
+  assert.deepEqual(await bot.notify("cus", { type: "earlyout", id: "b1" }), { sent: 0 }); // trùng
 });
 
 test("liên kết: tạo mã → /start MÃ → chat được lưu; khách thường không tạo được mã", async () => {

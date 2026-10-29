@@ -8,6 +8,7 @@ import { useMoney } from "../lib/useRate";
 import { useI18n } from "../i18n";
 import type { Room } from "../lib/types";
 import NumInput from "../components/NumInput";
+import { usePricingConfig } from "../lib/usePricing";
 
 const empty = { name: "", type: "wood", capacity: 2, price: 500000, status: "active" } as const;
 
@@ -17,9 +18,16 @@ export default function Rooms() {
   const { data: rooms } = useCollection<Room>("rooms");
   const [form, setForm] = useState<Omit<Room, "id"> & { id?: string }>({ ...empty });
 
+  const vi = lang === "vi";
+  const { cfg } = usePricingConfig();
+  const included = form.baseGuests ?? form.capacity;
+  const baseTooBig = included > form.capacity;
+  const extraFee = cfg.extraGuestFee;
+  const extraHint = included >= form.capacity
+    ? (vi ? "Hiện chưa có phụ thu thêm khách: khách tối đa bằng số khách đã gồm trong giá. Muốn tính phụ thu, đặt \"số khách đã gồm trong giá\" nhỏ hơn sức chứa tối đa (vd tối đa 4, đã gồm 2)." : "No extra-guest surcharge: maximum equals the guests included. To charge extras, set the included number below the maximum (e.g. max 4, included 2).")
+    : (vi ? `Ví dụ: tối đa ${form.capacity} khách. ${included} khách đầu đã gồm trong giá; từ khách thứ ${included + 1} đến thứ ${form.capacity} phụ thu ${extraFee > 0 ? `${extraFee.toLocaleString("vi-VN")} VNĐ` : "(chưa đặt mức phụ thu ở Giá & chính sách)"} mỗi người mỗi đêm.` : `Example: up to ${form.capacity} guests. The first ${included} are in the price; guest ${included + 1}–${form.capacity} pay ${extraFee > 0 ? `${extraFee.toLocaleString("vi-VN")} VND` : "(set the fee in Prices & policies)"} per person per night.`);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoErr, setPhotoErr] = useState("");
-  const vi = lang === "vi";
   const photos = form.photos ?? [];
   const setPhotos = async (list: string[]) => {
     if (!form.id) return;
@@ -94,10 +102,12 @@ export default function Rooms() {
             <option value="wood">{t("wood")}</option><option value="concrete">{t("concrete")}</option>
           </select>
         </label>
-        <label>{t("capacity")}<NumInput min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: +e.target.value })} /></label>
-        <label>{lang === "vi" ? "Số khách đã gồm trong giá (vượt thì phụ thu thêm khách; để trống = bằng sức chứa)" : "Guests included in the price (more guests pay the extra-guest fee; empty = capacity)"}
-          <NumInput allowEmpty min={1} max={form.capacity} value={form.baseGuests ?? ""} onChange={(e) => { const { baseGuests: _b, ...rest } = form; setForm(e.target.value ? { ...rest, baseGuests: Math.min(form.capacity, Math.max(1, +e.target.value)) } : rest); }} />
+        <label>{vi ? "Sức chứa tối đa (số khách nhiều nhất được đặt phòng này)" : "Maximum guests (the most guests that can book this room)"}<NumInput min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: Math.max(1, Math.floor(+e.target.value)) })} /></label>
+        <label>{vi ? "Số khách đã gồm trong giá phòng (để trống = bằng sức chứa tối đa, không phụ thu)" : "Guests included in the room price (empty = same as maximum, no surcharge)"}
+          <NumInput allowEmpty min={1} max={form.capacity} value={form.baseGuests ?? ""} onChange={(e) => { const { baseGuests: _b, ...rest } = form; setForm(e.target.value ? { ...rest, baseGuests: Math.max(1, Math.floor(+e.target.value)) } : rest); }} />
         </label>
+        {baseTooBig && <p className="error">{vi ? `Số khách đã gồm trong giá (${included}) không thể lớn hơn sức chứa tối đa (${form.capacity}). Hãy tăng sức chứa tối đa hoặc giảm số này.` : `Guests included (${included}) cannot exceed the maximum (${form.capacity}).`}</p>}
+        <small>{extraHint}</small>
         <label>{t("pricePerNight")} (VNĐ)<NumInput min={0} step={10000} value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></label>
         <label>{t("status")}
           <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Room["status"] })}>
@@ -130,7 +140,7 @@ export default function Rooms() {
           )}
         </div>
         <div className="row">
-          <button type="submit">{t("save")}</button>
+          <button type="submit" disabled={baseTooBig}>{t("save")}</button>
           {form.id && <button type="button" className="ghost" onClick={() => setForm({ ...empty })}>{t("cancel")}</button>}
         </div>
       </form>

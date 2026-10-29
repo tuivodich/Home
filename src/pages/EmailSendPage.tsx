@@ -4,6 +4,7 @@ import { useCollection } from "../lib/useCollection";
 import { useI18n } from "../i18n";
 import { fmtDate } from "../lib/format";
 import { mailCampaign } from "../lib/telegram";
+import { useProfileDoc } from "../lib/profile";
 import type { Booking, UserDoc } from "../lib/types";
 
 interface Contact { email: string; name: string }
@@ -16,7 +17,8 @@ const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 export default function EmailSendPage() {
   const { lang } = useI18n();
   const T = (vi: string, en: string) => (lang === "vi" ? vi : en);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { profile: myProfile } = useProfileDoc(user?.uid);
   const { data: users } = useCollection<UserDoc & { id: string }>("users");
   const { data: bookings } = useCollection<Booking>("bookings");
   const { data: campaigns } = useCollection<{ id: string; subject: string; sent: number; failed: number; rejected: number; at?: { toDate(): Date } }>("mailCampaigns");
@@ -24,6 +26,14 @@ export default function EmailSendPage() {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  // Địa chỉ nhận thư thử: chỉ các email của chính bạn (Tài khoản của tôi, tài khoản quản trị, email đăng nhập).
+  const myEmails = useMemo(() => {
+    const seen = new Set<string>(); const out: string[] = [];
+    for (const e of [myProfile?.email, profile?.email, user?.email]) { const v = (e ?? "").trim().toLowerCase(); if (EMAIL_RE.test(v) && !seen.has(v)) { seen.add(v); out.push(v); } }
+    return out;
+  }, [myProfile?.email, profile?.email, user?.email]);
+  const [testTo, setTestTo] = useState("");
+  const testAddr = myEmails.includes(testTo) ? testTo : (myEmails[0] ?? "");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
   const [msg, setMsg] = useState("");
@@ -53,17 +63,21 @@ export default function EmailSendPage() {
   const clearAll = () => setPicked(new Set());
   const allFilteredPicked = filtered.length > 0 && filtered.every((c) => picked.has(c.email));
 
-  const run = async (to: string[], label: string) => {
+  const run = async (to: string[], label: string, test = false) => {
     setBusy(true); setMsg(""); setErr(""); setProgress("");
     try {
       let sent = 0, failed = 0, rejected = 0;
       for (let i = 0; i < to.length; i += BATCH) {
         setProgress(T(`Đang gửi… ${Math.min(i + BATCH, to.length)}/${to.length}`, `Sending… ${Math.min(i + BATCH, to.length)}/${to.length}`));
-        const r = await mailCampaign(subject.trim(), body.trim(), to.slice(i, i + BATCH));
+        const r = await mailCampaign(subject.trim(), body.trim(), to.slice(i, i + BATCH), test);
         sent += r.sent; failed += r.failed; rejected += r.rejected;
       }
-      setMsg(T(`${label}: đã gửi ${sent} email${failed ? `, lỗi ${failed}` : ""}${rejected ? `, bỏ qua ${rejected} địa chỉ không có trong hệ thống` : ""}.`, `${label}: sent ${sent}${failed ? `, failed ${failed}` : ""}${rejected ? `, skipped ${rejected}` : ""}.`));
-      if (to.length > 1) setPicked(new Set());
+      const detail = `${failed ? T(`, lỗi ${failed}`, `, failed ${failed}`) : ""}${rejected ? T(`, bỏ qua ${rejected} địa chỉ không hợp lệ hoặc không có trong hệ thống`, `, skipped ${rejected}`) : ""}`;
+      if (sent === 0) { setErr(T(`${label}: không gửi được email nào${detail}.`, `${label}: nothing was sent${detail}.`)); return; }
+      setMsg(test
+        ? T(`Đã gửi thử tới ${to[0]}. Thư có thể mất vài phút; nếu không thấy hãy kiểm tra Thư rác/Quảng cáo hoặc chọn địa chỉ khác bên dưới.`, `Test sent to ${to[0]}. It can take a few minutes; check Spam/Promotions or pick another address below.`)
+        : T(`${label}: đã gửi ${sent} email${detail}.`, `${label}: sent ${sent}${detail}.`));
+      if (!test) setPicked(new Set());
     } catch (ex) {
       console.error("campaign", ex);
       setErr((ex as { message?: string }).message?.replace(/^.*?: /, "") || T("Không gửi được. Vui lòng thử lại.", "Could not send."));
@@ -78,9 +92,8 @@ export default function EmailSendPage() {
     void run(to, T("Gửi hàng loạt", "Campaign"));
   };
   const sendTest = () => {
-    const me = user?.email;
-    if (!valid || !me) return;
-    void run([me], T("Gửi thử", "Test"));
+    if (!valid || !testAddr) return;
+    void run([testAddr], T("Gửi thử", "Test"), true);
   };
 
   return (
@@ -96,7 +109,12 @@ export default function EmailSendPage() {
           <small>{body.trim().length}/5000</small>
         </label>
         <div className="row">
-          <button type="button" className="ghost" disabled={busy || !valid || !user?.email} onClick={sendTest}>{T("Gửi thử cho tôi", "Send me a test")}</button>
+          {myEmails.length > 1 ? (
+            <label>{T("Gửi thử tới", "Send test to")}
+              <select value={testAddr} onChange={(e) => setTestTo(e.target.value)}>{myEmails.map((e) => <option key={e} value={e}>{e}</option>)}</select>
+            </label>
+          ) : <small>{T("Gửi thử tới", "Test goes to")}: <b>{testAddr || "—"}</b></small>}
+          <button type="button" className="ghost" disabled={busy || !valid || !testAddr} onClick={sendTest}>{T("Gửi thử cho tôi", "Send me a test")}</button>
         </div>
       </div>
 

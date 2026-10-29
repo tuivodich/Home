@@ -87,7 +87,12 @@ exports.mailCampaign = onCall({ ...opts, timeoutSeconds: 540, memory: "256MiB" }
   const role = (await getFirestore().doc(`users/${uid}`).get()).data()?.role;
   if (!["owner", "manager"].includes(role)) throw new HttpsError("permission-denied", "Chỉ chủ/quản lý gửi email hàng loạt.");
   try {
-    return await createCampaign({ db: getFirestore(), mailer: mailer() }).send({ uid, selfEmail: req.auth.token?.email, subject: req.data?.subject, body: req.data?.body, to: req.data?.to });
+    const db = getFirestore();
+    const [u, pr] = await Promise.all([db.doc(`users/${uid}`).get(), db.doc(`profiles/${uid}`).get()]);
+    return await createCampaign({ db, mailer: mailer() }).send({
+      uid, selfEmail: req.auth.token?.email, selfEmails: [u.data()?.email, pr.data()?.email], test: req.data?.test === true,
+      subject: req.data?.subject, body: req.data?.body, to: req.data?.to,
+    });
   } catch (e) { throw e instanceof HttpsError ? e : new HttpsError(["invalid-argument", "failed-precondition"].includes(e.code) ? e.code : "internal", e.message); }
 });
 

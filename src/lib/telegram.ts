@@ -17,7 +17,7 @@ export function guestNotify(id: string) {
   if (import.meta.env.VITE_USE_EMULATOR) return;
   call<{ id: string }, { sent: boolean }>("guestNotify")({ id }).catch((e) => console.warn("guestNotify", e));
 }
-export const mailCampaign = (subject: string, body: string, to: string[]) => call<{ subject: string; body: string; to: string[] }, { sent: number; failed: number; rejected: number }>("mailCampaign")({ subject, body, to }).then((r) => r.data);
+export const mailCampaign = (subject: string, body: string, to: string[], test = false) => call<{ subject: string; body: string; to: string[]; test: boolean }, { sent: number; failed: number; rejected: number; to: string[] }>("mailCampaign")({ subject, body, to, test }).then((r) => r.data);
 export const mailTest = (to: string) => call<{ to: string }, { ok: boolean }>("mailTest")({ to }).then((r) => r.data);
 export const mailStatus = () => call<void, { configured: boolean }>("mailStatus")().then((r) => r.data);
 export const tgSetup = () => call<void, { username: string; url: string }>("tgSetup")().then((r) => r.data);

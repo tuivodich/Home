@@ -24,7 +24,7 @@ function createCampaign({ db, mailer, now = () => new Date() }) {
     return set;
   }
 
-  async function send({ uid, selfEmail, subject, body, to }) {
+  async function send({ uid, selfEmail, selfEmails, test, subject, body, to }) {
     const sub = String(subject ?? "").trim(), text = String(body ?? "").trim();
     if (!sub || sub.length > 150) throw Object.assign(new Error("Tiêu đề từ 1 đến 150 ký tự."), { code: "invalid-argument" });
     if (!text || text.length > 5000) throw Object.assign(new Error("Nội dung từ 1 đến 5000 ký tự."), { code: "invalid-argument" });
@@ -32,8 +32,10 @@ function createCampaign({ db, mailer, now = () => new Date() }) {
     if (!list.length) throw Object.assign(new Error("Chưa chọn người nhận."), { code: "invalid-argument" });
     if (list.length > MAX_PER_CALL) throw Object.assign(new Error(`Mỗi lần gửi tối đa ${MAX_PER_CALL} địa chỉ.`), { code: "invalid-argument" });
     if (!mailer?.enabled) throw Object.assign(new Error("Chưa cấu hình tài khoản gửi email (SMTP_USER / SMTP_PASS)."), { code: "failed-precondition" });
-    const known = await knownEmails();
-    if (selfEmail) known.add(String(selfEmail).trim().toLowerCase());
+    // Địa chỉ của chính người gửi (email đăng nhập, email trong tài khoản/hồ sơ).
+    const own = new Set([selfEmail, ...(selfEmails ?? [])].filter(validEmail).map((e) => e.trim().toLowerCase()));
+    // Gửi thử: chỉ tới địa chỉ của chính người gửi. Gửi thật: tới địa chỉ đã có trong hệ thống.
+    const known = test ? own : new Set([...(await knownEmails()), ...own]);
     const targets = list.filter((e) => known.has(e));
     const rejected = list.length - targets.length;
     const mail = (await db.doc("settings/mail").get()).data() ?? {};
@@ -50,7 +52,7 @@ function createCampaign({ db, mailer, now = () => new Date() }) {
       } catch (e) { failed++; console.error("campaign mail failed", e.message); }
     }
     await db.collection("mailCampaigns").add({ subject: sub, preview: text.slice(0, 200), requested: list.length, sent, failed, rejected, by: uid, at: FieldValue.serverTimestamp() });
-    return { sent, failed, rejected };
+    return { sent, failed, rejected, to: targets };
   }
 
   return { send, MAX_PER_CALL };

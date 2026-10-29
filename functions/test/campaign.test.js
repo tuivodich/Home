@@ -29,7 +29,7 @@ test("gửi tới địa chỉ đã có trong hệ thống; địa chỉ lạ b�
   await reset();
   const mailer = fakeMailer();
   const r = await createCampaign({ db, mailer }).send({ ...base, to: ["an@x.vn", "BINH@x.vn", "chi@x.vn", "la@lạ.com", "khong-hop-le", "an@x.vn"] });
-  assert.deepEqual(r, { sent: 3, failed: 0, rejected: 1 }); // trùng và sai định dạng bị loại trước; "la@lạ.com" hợp lệ nhưng không có trong hệ thống
+  assert.deepEqual([r.sent, r.failed, r.rejected], [3, 0, 1]); // trùng và sai định dạng bị loại trước; "la@lạ.com" hợp lệ nhưng không có trong hệ thống
   assert.deepEqual(mailer.mails.map((m) => m.to).sort(), ["an@x.vn", "binh@x.vn", "chi@x.vn"]);
   const m = mailer.mails[0];
   assert.equal(m.subject, "Ưu đãi Noel");
@@ -40,16 +40,28 @@ test("gửi tới địa chỉ đã có trong hệ thống; địa chỉ lạ b�
   assert.deepEqual([c.data().sent, c.data().rejected, c.data().by, c.data().subject], [3, 1, "own", "Ưu đãi Noel"]);
 });
 
-test("cho phép gửi thử tới email của chính người gửi", async () => {
+test("cho phép gửi tới email của chính người gửi (đăng nhập, tài khoản, hồ sơ)", async () => {
   await reset();
   const mailer = fakeMailer();
-  assert.deepEqual(await createCampaign({ db, mailer }).send({ ...base, to: ["Chu@x.vn"] }), { sent: 1, failed: 0, rejected: 0 });
+  const r = await createCampaign({ db, mailer }).send({ ...base, selfEmails: ["Rieng@Gmail.com"], to: ["Chu@x.vn", "rieng@gmail.com"] });
+  assert.deepEqual([r.sent, r.rejected, r.to], [2, 0, ["chu@x.vn", "rieng@gmail.com"]]);
+});
+
+test("gửi thử (test) chỉ tới địa chỉ của chính người gửi, không tới khách", async () => {
+  await reset();
+  const mailer = fakeMailer();
+  const c = createCampaign({ db, mailer });
+  const r = await c.send({ ...base, selfEmails: ["rieng@gmail.com"], test: true, to: ["an@x.vn", "rieng@gmail.com"] });
+  assert.deepEqual([r.sent, r.rejected, mailer.mails.map((m) => m.to)], [1, 1, ["rieng@gmail.com"]]);
+  const none = await c.send({ ...base, test: true, to: ["an@x.vn"] }); // email khách không phải của người gửi
+  assert.deepEqual([none.sent, none.rejected], [0, 1]);
 });
 
 test("một địa chỉ lỗi không chặn các địa chỉ khác", async () => {
   await reset();
   const mailer = fakeMailer({ failFor: "binh@x.vn" });
-  assert.deepEqual(await createCampaign({ db, mailer }).send({ ...base, to: ["an@x.vn", "binh@x.vn", "chi@x.vn"] }), { sent: 2, failed: 1, rejected: 0 });
+  const r = await createCampaign({ db, mailer }).send({ ...base, to: ["an@x.vn", "binh@x.vn", "chi@x.vn"] });
+  assert.deepEqual([r.sent, r.failed, r.rejected], [2, 1, 0]);
 });
 
 test("kiểm tra đầu vào: tiêu đề, nội dung, số người nhận, chưa cấu hình SMTP", async () => {

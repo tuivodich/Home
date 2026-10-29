@@ -10,7 +10,8 @@ export function nightState(room: Room, busy: Busy[], d: string): Cell {
   if (room.status === "maintenance") return "maint";
   let held = false;
   for (const b of busy) {
-    if (b.roomId !== room.id || b.status === "cancelled") continue;
+    // Đã hủy hoặc khách đã trả phòng (kể cả trả sớm) thì phòng không còn bị giữ.
+    if (b.roomId !== room.id || b.status === "cancelled" || b.status === "checked_out") continue;
     // Yêu cầu chưa xác nhận mà đã qua ngày nhận phòng thì không còn giữ chỗ (sẽ bị tự từ chối).
     if (b.status === "pending" && b.checkIn < todayStr()) continue;
     if (b.checkIn <= d && d < b.checkOut) {

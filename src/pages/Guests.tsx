@@ -35,11 +35,13 @@ export default function Guests() {
   const andCheckIn = useRef(false);
 
   // Mở từ nút "Hồ sơ khách" ở đặt phòng: điền sẵn họ tên, điện thoại, email và gắn với đặt phòng.
+  const prefilled = useRef("");
   useEffect(() => {
     const bid = params.get("booking");
-    if (!bid) return;
+    if (!bid || prefilled.current === bid) return; // chỉ điền sẵn một lần (dữ liệu về muộn không được ghi đè phần khách đang gõ)
     const b = bookings.find((x) => x.id === bid);
     if (!b) return;
+    prefilled.current = bid;
     setEditing(null);
     const pre = pres.find((p) => p.id === b.id && p.status === "submitted");
     setF(pre ? fromPre(pre) : { ...emptyGuestForm, fullName: b.guestName, phone: b.phone, email: b.email ?? "" });

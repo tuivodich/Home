@@ -136,3 +136,17 @@ test("notify gửi kèm thông báo đẩy rút gọn (không HTML)", async () =
   assert.doesNotMatch(pushed[0].body, /<b>/);
   assert.equal(pushed[0].url, "/app");
 });
+
+test("xác nhận qua bot: khách đã trả phòng (kể cả còn đêm dự kiến) không còn chặn trùng lịch", async () => {
+  await reset();
+  await db.doc("bookings/old").set({ roomId: "r1", guestName: "Đã Trả", phone: "1", checkIn: "2026-11-08", checkOut: "2026-11-14", guests: 1, total: 1, status: "checked_out" });
+  await db.doc("bookings/new").set({ roomId: "r1", guestName: "Mới", phone: "1", checkIn: "2026-11-12", checkOut: "2026-11-13", guests: 1, total: 1, status: "pending", source: "online", createdBy: "cus" });
+  await db.doc("busy/new").set({ roomId: "r1", checkIn: "2026-11-12", checkOut: "2026-11-13", status: "pending" });
+  const { bot } = mk();
+  const r = await bot.decide("cf", "new", "Chủ");
+  assert.equal(r.ok, true);
+  assert.equal((await db.doc("bookings/new").get()).data().status, "confirmed");
+  await db.doc("bookings/live").set({ roomId: "r1", guestName: "Đang Ở", phone: "1", checkIn: "2026-11-12", checkOut: "2026-11-16", guests: 1, total: 1, status: "checked_in" });
+  await db.doc("bookings/new2").set({ roomId: "r1", guestName: "Mới 2", phone: "1", checkIn: "2026-11-14", checkOut: "2026-11-15", guests: 1, total: 1, status: "pending", source: "online", createdBy: "cus" });
+  assert.equal((await bot.decide("cf", "new2", "Chủ")).ok, false, "đang ở thì vẫn chặn");
+});

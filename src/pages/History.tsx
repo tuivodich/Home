@@ -14,7 +14,7 @@ type Filter = "all" | "checked_out" | "cancelled";
 const monthOf = (b: Booking) => (b.status === "checked_out" ? b.checkOut : b.checkIn).slice(0, 7);
 
 export default function History() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { money } = useMoney();
   const { profile } = useAuth();
   const isOwner = profile?.role === "owner"; // chỉ chủ được hoàn tác trả phòng / khôi phục đặt phòng đã hủy
@@ -51,6 +51,20 @@ export default function History() {
   const roomName = (id: string) => rooms.find((r) => r.id === id)?.name ?? "?";
   const profileOf = (b: Booking) => guests.find((g) => g.bookingId === b.id);
   const setStatus = (id: string, status: BookingStatus) => updateDoc(doc(db, "bookings", id), { status });
+
+  // Hoàn tác trả phòng: nếu đã trả sớm thì cố khôi phục ngày dự kiến, trừ khi phòng đã có người đặt các đêm đó.
+  const undoCheckOut = async (b: Booking) => {
+    if (!confirm(t("sure"))) return;
+    if (b.earlyCheckout && b.plannedCheckOut) {
+      const clash = bookings.some((o) => o.id !== b.id && o.roomId === b.roomId && ["confirmed", "checked_in", "pending"].includes(o.status) && overlaps(o.checkIn, o.checkOut, b.checkIn, b.plannedCheckOut!));
+      if (clash) {
+        alert(lang === "vi" ? "Phòng đã có người đặt vào các đêm sau ngày trả sớm nên không khôi phục được ngày trả dự kiến. Đặt phòng sẽ về “Đang ở” với ngày trả hiện tại." : "The room is already booked for the nights after the early check-out, so the planned check-out date can't be restored. The booking returns to Checked in with the current check-out date.");
+        return setStatus(b.id, "checked_in");
+      }
+      return updateDoc(doc(db, "bookings", b.id), { status: "checked_in", checkOut: b.plannedCheckOut, plannedCheckOut: deleteField(), earlyCheckout: deleteField() });
+    }
+    return setStatus(b.id, "checked_in");
+  };
 
   // Khôi phục đặt phòng đã hủy: không được trùng với đặt phòng còn hiệu lực của cùng phòng.
   const restore = async (b: Booking) => {
@@ -102,12 +116,13 @@ export default function History() {
               <span className={`tag ${b.status}`}>{label}</span>
             </div>
             <div>{roomName(b.roomId)} · {fmtDate(b.checkIn)} → {fmtDate(b.checkOut)} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>
+            {b.earlyCheckout && b.plannedCheckOut && <small className="overdue">⏩ {lang === "vi" ? `Trả phòng sớm (dự kiến ${fmtDate(b.plannedCheckOut)})` : `Early check-out (planned ${fmtDate(b.plannedCheckOut)})`}</small>}
             <div>{money(b.total)}{b.phone && ` · ${b.phone}`}{b.email && ` · ${b.email}`}</div>
             {b.couponCode && <small>🏷 {t("couponApplied")} {b.couponCode} (−{b.discountPercent}%)</small>}
             {g && <small>👤 {g.fullName} · {t(g.docType)}: {g.docNumber}</small>}
             {b.note && <small>{b.note}</small>}
             <div className="row">
-              {isOwner && b.status === "checked_out" && <button className="ghost" onClick={() => confirm(t("sure")) && setStatus(b.id, "checked_in")}>↩ {t("undoCheckOut")}</button>}
+              {isOwner && b.status === "checked_out" && <button className="ghost" onClick={() => undoCheckOut(b)}>↩ {t("undoCheckOut")}</button>}
               {isOwner && b.status === "cancelled" && <button className="ghost" onClick={() => restore(b)}>↩ {t("restore")}</button>}
             </div>
           </div>

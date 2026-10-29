@@ -15,6 +15,8 @@ export interface Booking {
   guests: number; total: number; status: BookingStatus; note: string;
   email?: string; createdBy?: string; source?: "online" | "staff";
   couponCode?: string; discountPercent?: number; originalTotal?: number; cancelReason?: "expired" | "customer" | "noshow";
+  /** Trả phòng sớm: `checkOut` được rút về ngày thực tế để nhả phòng; `plannedCheckOut` giữ ngày dự kiến ban đầu. */
+  plannedCheckOut?: string; earlyCheckout?: boolean;
   priceEditedBy?: string; slotId?: string;
   lines?: { label: string; labelEn?: string; amount: number }[]; deposit?: number; paid?: number; cancelledAt?: { toMillis(): number };
   payLog?: { amount: number; at: { toMillis(): number }; by: string; note: string }[];

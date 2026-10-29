@@ -5,7 +5,7 @@ const pricing = require("./pricing");
 
 /** Vai trò được nhận thông báo / thao tác qua bot. */
 const FRONT = ["owner", "manager", "reception"];
-const LIVE = ["confirmed", "checked_in", "checked_out"]; // chặn trùng khi xác nhận (giống ứng dụng)
+const LIVE = ["confirmed", "checked_in"]; // chặn trùng khi xác nhận (giống ứng dụng); khách đã trả phòng thì phòng trống
 const HELD = ["pending", "confirmed", "checked_in"]; // đang giữ phòng
 const MANAGER = ["owner", "manager"];
 const STAFF_ALL = ["owner", "manager", "reception", "housekeeping", "security"]; // giống isStaff() trong luật Firestore

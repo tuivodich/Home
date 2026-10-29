@@ -36,6 +36,8 @@ export default function Settings() {
   const [rate, setRate] = useState(DEFAULT_USD_RATE);
   const [autoReject, setAutoReject] = useState(true);
   const [autoNoShow, setAutoNoShow] = useState(true);
+  const [defLang, setDefLang] = useState<"vi" | "en">("vi");
+  const [langMsg, setLangMsg] = useState("");
   const [maxPending, setMaxPending] = useState(DEFAULT_MAX_PENDING);
 
   const isOwner = profile?.role === "owner";
@@ -77,6 +79,7 @@ export default function Settings() {
     if (typeof s.data()?.usdRate === "number") setRate(s.data()!.usdRate);
     setAutoReject(s.data()?.autoRejectPending !== false);
     setAutoNoShow(s.data()?.autoNoShow !== false);
+    setDefLang(s.data()?.defaultLang === "en" ? "en" : "vi");
     if (typeof s.data()?.maxPending === "number") setMaxPending(s.data()!.maxPending);
     setSite(parseSettings(s.data()));
   }, () => {}), []);
@@ -84,6 +87,20 @@ export default function Settings() {
   return (
     <section>
       <h2 id="settings">{t("settings")}</h2>
+      <div className="card" id="default-lang">
+        <label>{t("defaultLang")}
+          <select value={defLang} onChange={(e) => {
+            const v = e.target.value === "en" ? "en" : "vi";
+            setLangMsg(""); setDefLang(v);
+            setDoc(doc(db, "settings", "app"), { defaultLang: v }, { merge: true }).then(() => setLangMsg(t("langSaved"))).catch((ex) => console.error("default lang", ex));
+          }}>
+            <option value="vi">{t("langVi")}</option>
+            <option value="en">{t("langEn")}</option>
+          </select>
+        </label>
+        <small>{t("defaultLangHint")}</small>
+        {langMsg && <p className="ok-msg" role="status">{langMsg}</p>}
+      </div>
       <div className="card">
         <label>{t("usdRate")}
           <NumInput min={1} value={rate} onChange={(e) => setRate(+e.target.value)} />

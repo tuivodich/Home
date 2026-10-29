@@ -514,6 +514,12 @@ await check("reception marks a confirmed booking as no-show", updateDoc(doc(rec,
 await check("nobody reopens a cancelled/no-show booking except the owner (reception blocked)", updateDoc(doc(rec, "bookings/ns1"), { status: "confirmed" }), false);
 await check("customer CANNOT label their cancellation as no-show", (async () => { await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "bookings/ns2"), { roomId: "r1", guestName: "X", phone: "1", checkIn: "2026-01-01", checkOut: "2026-01-02", guests: 1, total: 1, status: "confirmed", note: "", source: "online", createdBy: "cust1" }); }); await updateDoc(doc(c1, "bookings/ns2"), { status: "cancelled", cancelReason: "noshow" }); })(), false);
 
+// ----- Ngôn ngữ mặc định -----
+await check("manager sets the default website language", setDoc(doc(mgr, "settings/app"), { defaultLang: "en" }, { merge: true }), true);
+await check("default language only accepts vi or en", setDoc(doc(mgr, "settings/app"), { defaultLang: "fr" }, { merge: true }), false);
+await check("reception CANNOT change the default language", setDoc(doc(rec, "settings/app"), { defaultLang: "vi" }, { merge: true }), false);
+await check("anyone reads the app settings (default language)", getDoc(doc(anon, "settings/app")), true);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

@@ -5,6 +5,7 @@ import { db } from "../lib/firebase";
 import { useAuth } from "../lib/auth";
 import { useI18n } from "../i18n";
 import { useP } from "../i18n/pricing";
+import { lineLabel } from "../lib/pricing";
 import { site } from "../lib/siteConfig";
 import { useContact } from "../lib/contact";
 import { usePricingConfig } from "../lib/usePricing";
@@ -81,7 +82,7 @@ export default function InvoicePage() {
         </section>
         <table>
           <thead><tr><th>{L.items}</th><th className="num">{L.amount}</th></tr></thead>
-          <tbody>{lines.map((l, i) => <tr key={i}><td>{l.label}</td><td className="num">{l.amount < 0 ? "−" : ""}{vnd(Math.abs(l.amount))}</td></tr>)}</tbody>
+          <tbody>{lines.map((l, i) => <tr key={i}><td>{lineLabel(l, lang)}</td><td className="num">{l.amount < 0 ? "−" : ""}{vnd(Math.abs(l.amount))}</td></tr>)}</tbody>
           <tfoot>
             <tr className="sum"><td>{L.total}</td><td className="num">{vnd(b.total)}</td></tr>
             <tr><td>{L.paidL}</td><td className="num">{vnd(paid)}</td></tr>

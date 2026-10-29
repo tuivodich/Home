@@ -92,23 +92,28 @@ function quoteFull(room, checkIn, count, guests, pricing, cfg, o = {}) {
   return { nights, nightsCount: count, longStayPercent, longStayDiscount, extraGuests, extraGuestFee, couponPercent, couponDiscount, earlyFee, lateFee, services, originalTotal, total, deposit: depositFor(total, cfg.depositPercent) };
 }
 
-function tagLabel(tag, percent) {
+function tagLabel(tag, percent, lang) {
   const sign = percent > 0 ? `+${percent}%` : `${percent}%`;
-  return tag.replace("weekend", "cuối tuần").replace(/^holiday$/, "ngày lễ").replace(/^season$/, "mùa cao điểm") + ` ${sign}`;
+  const vi = lang === "vi";
+  return tag.replace("weekend", vi ? "cuối tuần" : "weekend").replace(/^holiday$/, vi ? "ngày lễ" : "holiday").replace(/^season$/, vi ? "mùa cao điểm" : "peak season") + ` ${sign}`;
 }
 
-/** Các dòng chi tiết lưu cùng đặt phòng (giống quoteLines() của ứng dụng). */
+/** Các dòng chi tiết lưu cùng đặt phòng, nhãn tiếng Việt + tiếng Anh (giống quoteLines() của ứng dụng). */
 function quoteLines(q, roomName) {
   const lines = [];
   const groups = new Map();
   for (const n of q.nights) { const k = `${n.price}|${n.tag}`; const g = groups.get(k); if (g) g.n++; else groups.set(k, { price: n.price, tag: n.tag, percent: n.percent, n: 1 }); }
-  for (const g of groups.values()) lines.push({ label: `${roomName} × ${g.n} đêm${g.tag ? ` (${tagLabel(g.tag, g.percent)})` : ""} @ ${g.price.toLocaleString("vi-VN")}`, amount: g.price * g.n });
-  if (q.longStayDiscount) lines.push({ label: `Giảm ở dài ngày −${-q.longStayPercent}%`, amount: -q.longStayDiscount });
-  if (q.extraGuestFee) lines.push({ label: `Phụ thu thêm khách (${q.extraGuests} người)`, amount: q.extraGuestFee });
-  if (q.couponDiscount) lines.push({ label: `Mã giảm giá −${q.couponPercent}%`, amount: -q.couponDiscount });
-  if (q.earlyFee) lines.push({ label: "Phụ thu nhận phòng sớm", amount: q.earlyFee });
-  if (q.lateFee) lines.push({ label: "Phụ thu trả phòng muộn", amount: q.lateFee });
-  for (const s of q.services) lines.push({ label: `${s.name} × ${s.qty}`, amount: s.amount });
+  for (const g of groups.values()) lines.push({
+    label: `${roomName} × ${g.n} đêm${g.tag ? ` (${tagLabel(g.tag, g.percent, "vi")})` : ""} @ ${g.price.toLocaleString("vi-VN")}`,
+    labelEn: `${roomName} × ${g.n} night${g.n > 1 ? "s" : ""}${g.tag ? ` (${tagLabel(g.tag, g.percent, "en")})` : ""} @ ${g.price.toLocaleString("en-US")}`,
+    amount: g.price * g.n,
+  });
+  if (q.longStayDiscount) lines.push({ label: `Giảm ở dài ngày −${-q.longStayPercent}%`, labelEn: `Long-stay discount −${-q.longStayPercent}%`, amount: -q.longStayDiscount });
+  if (q.extraGuestFee) lines.push({ label: `Phụ thu thêm khách (${q.extraGuests} người)`, labelEn: `Extra guest surcharge (${q.extraGuests} ${q.extraGuests > 1 ? "guests" : "guest"})`, amount: q.extraGuestFee });
+  if (q.couponDiscount) lines.push({ label: `Mã giảm giá −${q.couponPercent}%`, labelEn: `Coupon −${q.couponPercent}%`, amount: -q.couponDiscount });
+  if (q.earlyFee) lines.push({ label: "Phụ thu nhận phòng sớm", labelEn: "Early check-in fee", amount: q.earlyFee });
+  if (q.lateFee) lines.push({ label: "Phụ thu trả phòng muộn", labelEn: "Late check-out fee", amount: q.lateFee });
+  for (const s of q.services) lines.push({ label: `${s.name} × ${s.qty}`, labelEn: `${s.name} × ${s.qty}`, amount: s.amount });
   return lines;
 }
 

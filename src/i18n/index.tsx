@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "../lib/firebase";
 import { landing, type Landing } from "./landing";
 
 export type Lang = "vi" | "en";
@@ -23,6 +25,7 @@ const dict = {
     fullName: "Họ và tên", docType: "Loại giấy tờ", docNumber: "Số giấy tờ", nationality: "Quốc tịch", dob: "Ngày sinh", docImage: "Ảnh giấy tờ",
     cccd: "Căn cước công dân", passport: "Hộ chiếu", license: "Bằng lái xe", other: "Khác", viewImage: "Xem ảnh", booking: "Đặt phòng", none2: "— Không —",
     uploading: "Đang tải lên...", privacyNote: "Ảnh giấy tờ là dữ liệu nhạy cảm, chỉ chủ/quản lý/lễ tân xem được.",
+    defaultLang: "Ngôn ngữ mặc định của website", defaultLangHint: "Áp dụng cho khách vào lần đầu. Ai đã tự bấm nút VI/EN trên trình duyệt của họ thì giữ lựa chọn của họ. Email và bot Telegram vẫn gửi bằng tiếng Việt.", langVi: "Tiếng Việt", langEn: "English (Tiếng Anh)", langSaved: "Đã lưu ngôn ngữ mặc định.",
     usdRate: "Tỷ giá (VNĐ cho 1 USD)", usdRateHint: "Dùng để hiển thị giá quy đổi USD cho khách nước ngoài.",
     staffAccounts: "Tài khoản nhân viên", role: "Vai trò",
     owner: "Chủ", manager: "Quản lý", reception: "Lễ tân", housekeeping: "Buồng phòng", security: "Bảo vệ", customer: "Khách hàng",
@@ -75,6 +78,7 @@ const dict = {
     fullName: "Full name", docType: "Document type", docNumber: "Document number", nationality: "Nationality", dob: "Date of birth", docImage: "Document photo",
     cccd: "National ID card", passport: "Passport", license: "Driver's license", other: "Other", viewImage: "View photo", booking: "Booking", none2: "— None —",
     uploading: "Uploading...", privacyNote: "ID photos are sensitive: only owner/manager/reception can view them.",
+    defaultLang: "Website default language", defaultLangHint: "Applies to first-time visitors. Anyone who has used the VI/EN button in their browser keeps their own choice. Emails and the Telegram bot are still sent in Vietnamese.", langVi: "Tiếng Việt (Vietnamese)", langEn: "English", langSaved: "Default language saved.",
     usdRate: "Exchange rate (VND per 1 USD)", usdRateHint: "Used to show USD equivalents for foreign guests.",
     staffAccounts: "Staff accounts", role: "Role",
     owner: "Owner", manager: "Manager", reception: "Reception", housekeeping: "Housekeeping", security: "Security", customer: "Customer",
@@ -115,9 +119,18 @@ export type Key = keyof typeof dict.vi;
 const Ctx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: Key) => string }>(null!);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
+  // Ưu tiên: lựa chọn của chính người xem (nút VI/EN) → ngôn ngữ mặc định do chủ/quản lý đặt (settings/app.defaultLang, nhớ lại để khỏi nháy) → tiếng Việt.
   const [lang, setLangState] = useState<Lang>(() => {
-    try { return localStorage.getItem("lang") === "en" ? "en" : "vi"; } catch { return "vi"; }
+    try { const c = localStorage.getItem("lang") ?? localStorage.getItem("siteDefaultLang"); return c === "en" ? "en" : "vi"; } catch { return "vi"; }
   });
+  useEffect(() => onSnapshot(doc(db, "settings", "app"), (s) => {
+    const d = s.data()?.defaultLang;
+    if (d !== "vi" && d !== "en") return;
+    try {
+      localStorage.setItem("siteDefaultLang", d);
+      if (!localStorage.getItem("lang")) setLangState(d); // người xem chưa tự chọn thì theo mặc định của website
+    } catch { /* bỏ qua */ }
+  }, () => {}), []);
   const setLang = (l: Lang) => {
     setLangState(l);
     try { localStorage.setItem("lang", l); } catch { /* bỏ qua */ }

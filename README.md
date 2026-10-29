@@ -104,3 +104,7 @@ Mỗi phòng có **sức chứa tối đa** (khách nhiều nhất được đ�
 
 ## Ô nhập ngày tháng
 Mọi ô ngày dùng `src/components/DateInput.tsx`: gõ tay **dd/mm/yyyy** (tự chèn dấu `/`; nhận cả `-` và `.`) hoặc bấm biểu tượng lịch để chọn. Kiểm tra bằng `src/lib/dates.ts` (ngày có thật kể cả năm nhuận, năm 1900–2100, đúng khoảng min/max); ngày sai hoặc chưa đủ báo lỗi ngay dưới ô và chặn gửi biểu mẫu, dữ liệu vẫn lưu `yyyy-mm-dd`. Ô giờ chấm công dùng cùng cách với `dd/mm/yyyy HH:mm`.
+
+## Ngôn ngữ website
+- **Ngôn ngữ mặc định**: chủ/quản lý chọn ở trang quản trị → Tổng quan → *Ngôn ngữ mặc định của website* (ô nằm trên ô tỷ giá; lưu `settings/app.defaultLang`). Khách vào lần đầu thấy ngôn ngữ này; ai đã tự bấm nút VI/EN thì giữ lựa chọn của họ (lưu trên trình duyệt). Email và bot Telegram vẫn bằng tiếng Việt.
+- **Chi tiết giá** của đặt phòng (đêm, cuối tuần, giảm ở dài ngày, phụ thu, mã giảm giá…) lưu cả nhãn tiếng Việt (`label`) và tiếng Anh (`labelEn`); hộp Xác nhận đặt phòng và hóa đơn hiển thị theo ngôn ngữ đang xem (đặt phòng cũ chỉ có tiếng Việt thì hiện tiếng Việt). Tên mùa/ngày lễ do chủ đặt nên giữ nguyên.

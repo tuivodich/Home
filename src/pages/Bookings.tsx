@@ -88,7 +88,7 @@ export default function Bookings() {
         roomId: f.roomId, guestName: g.fullName.trim(), phone: g.phone.trim(), email: g.email.trim(),
         checkIn: f.checkIn, checkOut: f.checkOut, guests: f.guests, total: finalTotal, note: f.note,
         code: bookingCode(bRef.id),
-        lines: f.total ? [{ label: "Tiền phòng (nhập tay)", amount: base }, ...(coupon ? [{ label: `Mã giảm giá −${coupon.percent}%`, amount: -(base - finalTotal) }] : [])] : (quote ? quoteLines(quote, room?.name ?? "") : []),
+        lines: f.total ? [{ label: "Tiền phòng (nhập tay)", labelEn: "Room charge (manual)", amount: base }, ...(coupon ? [{ label: `Mã giảm giá −${coupon.percent}%`, labelEn: `Coupon −${coupon.percent}%`, amount: -(base - finalTotal) }] : [])] : (quote ? quoteLines(quote, room?.name ?? "") : []),
         ...(depositFor(finalTotal, cfg.depositPercent) > 0 ? { deposit: depositFor(finalTotal, cfg.depositPercent) } : {}),
         status: "confirmed", source: "staff", createdBy: uid,
         ...(coupon ? { couponCode: coupon.code, discountPercent: coupon.percent, originalTotal: base } : {}),

@@ -7,7 +7,7 @@ import type { Guest } from "./types";
 export interface Profile {
   fullName: string; docType: Guest["docType"]; docNumber: string; nationality: string; dob: string; phone: string; email: string;
 }
-export const EMPTY_PROFILE: Profile = { fullName: "", docType: "cccd", docNumber: "", nationality: "Việt Nam", dob: "", phone: "", email: "" };
+export const EMPTY_PROFILE: Profile = { fullName: "", docType: "cccd", docNumber: "", nationality: "Vietnam", dob: "", phone: "", email: "" };
 
 export function parseProfile(d: Record<string, unknown> | undefined): Profile {
   const s = (k: keyof Profile) => (typeof d?.[k] === "string" ? (d[k] as string) : EMPTY_PROFILE[k]);

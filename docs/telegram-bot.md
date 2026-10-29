@@ -7,7 +7,7 @@ Bot chạy bằng Cloud Functions (thư mục `functions/`, Node 22, vùng `us-c
 - **Lệnh nhân viên**: `/homnay` (nhận/trả phòng hôm nay + số yêu cầu chờ), `/cho` (yêu cầu đang chờ, có nút xử lý), `/doanhthu` hoặc `/doanhthu thang` (doanh thu tuần/tháng, chỉ chủ và quản lý), `/tra MÃ`, `/huylienket`.
 - **Lệnh cho khách** (chat chưa liên kết, có chống spam): `/trong 25/12 27/12`, `/gia 2 4 [25/12]` (báo giá nhanh: 2 đêm, 4 khách, nhận ngày…; dùng bảng giá/phụ thu/giảm ở dài ngày/cọc trong Giá & chính sách), `/phong`, `/tiennghi`, `/chinhsach` (giờ nhận/trả phòng, cọc, hủy), `/diachi` (địa chỉ + nút bản đồ từ Cài đặt → Thông tin liên hệ), `/tra MÃ` (trạng thái đặt phòng theo mã; không lộ họ tên, điện thoại, email), `/lienhe`, `/dat`.
 - **Buồng phòng**: khi nhân viên bấm Trả phòng, bot báo "phòng X cần dọn" kèm nút **✅ Đã dọn xong** — bấm là phòng về trạng thái sẵn sàng.
-- **Cảnh báo tự động cho chủ/quản lý**: mỗi 15 phút (nhân viên được xếp ca nhưng quá 15 phút chưa vào ca; hết ca 60 phút mà chưa ra ca — không có ca thì sau 12 giờ); lúc 08:00 và 18:00 (khách nhận phòng trong 2 ngày tới mà chưa đủ cọc, có nút "Đã nhận cọc"; khách vừa trả phòng mà chưa có hồ sơ lưu trú). Mỗi việc chỉ báo một lần.
+- **Cảnh báo tự động cho chủ/quản lý**: mỗi 30 phút trong giờ làm việc 05:00–23:59 (nhân viên được xếp ca nhưng quá 15 phút chưa vào ca; hết ca 60 phút mà chưa ra ca — không có ca thì sau 12 giờ); lúc 08:00 và 18:00 (khách nhận phòng trong 2 ngày tới mà chưa đủ cọc, có nút "Đã nhận cọc"; khách vừa trả phòng mà chưa có hồ sơ lưu trú). Mỗi việc chỉ báo một lần.
 - Nút Xác nhận kiểm tra trùng lịch như trên web; Xác nhận/Từ chối cập nhật luôn lịch bận công khai và nhả "khe" giới hạn yêu cầu chờ.
 
 ## Khách dùng bot (không cần đăng nhập)

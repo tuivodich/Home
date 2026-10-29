@@ -3,11 +3,12 @@ import DateInput from "./DateInput";
 import { useI18n } from "../i18n";
 import { normDocNumber, normName } from "../lib/format";
 import type { Guest } from "../lib/types";
+import CountrySelect from "./CountrySelect";
 
 export interface GuestForm {
   fullName: string; docType: Guest["docType"]; docNumber: string; nationality: string; dob: string; phone: string; email: string; note: string;
 }
-export const emptyGuestForm: GuestForm = { fullName: "", docType: "cccd", docNumber: "", nationality: "Việt Nam", dob: "", phone: "", email: "", note: "" };
+export const emptyGuestForm: GuestForm = { fullName: "", docType: "cccd", docNumber: "", nationality: "Vietnam", dob: "", phone: "", email: "", note: "" };
 
 /** Số giấy tờ là duy nhất: `other` = khách khác tên cùng số (cần cảnh báo đỏ), `same` = cùng tên (khách cũ). */
 export function conflictsFor(guests: Guest[], docType: string, docNumber: string, fullName: string, selfId?: string) {
@@ -90,7 +91,7 @@ export default function GuestFields({ value: v, onChange, guests, selfId, onFile
         <p className="warn">{t("dupOther")}: {live.other.map((g) => `${g.fullName} (${t(g.docType)} ${g.docNumber})`).join("; ")}</p>
       )}
       {live.other.length === 0 && live.same.length > 0 && <p className="info">{t("dupSame")}</p>}
-      <label>{t("nationality")}<input value={v.nationality} onChange={(e) => set({ nationality: e.target.value })} /></label>
+      <label>{t("nationality")}<CountrySelect value={v.nationality} onChange={(c) => set({ nationality: c })} /></label>
       <label>{t("dob")}<DateInput value={v.dob} onChange={(v) => set({ dob: v })} /></label>
       <label>{t("phone")}<input type="tel" value={v.phone} onChange={(e) => set({ phone: e.target.value })} /></label>
       <label>{t("email")}<input type="email" value={v.email} onChange={(e) => set({ email: e.target.value })} /></label>

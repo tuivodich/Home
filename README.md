@@ -95,4 +95,9 @@ Mỗi phòng có **sức chứa tối đa** (khách nhiều nhất được đ�
 - **Chờ xác nhận** mà đã qua ngày nhận phòng → tự **Hết hạn** (Cài đặt → "Tự động từ chối…"; khách nhận email "không còn hiệu lực").
 - **Đã xác nhận** mà đã qua cả ngày trả phòng và khách chưa nhận phòng → tự **Đã hủy – Khách không đến** (Cài đặt → "Tự động đánh dấu Khách không đến…", mặc định bật). Phòng được nhả; tiền cọc đã nhận **giữ nguyên trong sổ** (`paid`), việc giữ hay hoàn xử lý theo chính sách (nút Hoàn tiền vẫn dùng được); khách không bị gửi email; chủ/quản lý nhận tin Telegram.
 - Trong khoảng từ ngày nhận phòng đến hết ngày trả phòng, đặt phòng đã xác nhận mà chưa đến chỉ hiện cảnh báo "Đã quá ngày nhận phòng" + nút **Khách không đến** để lễ tân chốt sớm; 08:00 và 18:00 bot nhắc chủ/quản lý (kèm nút) và cũng nhắc đặt phòng đang ở nhưng quá ngày trả phòng (không tự xử lý vì có thể khách gia hạn).
-- Việc tự động chạy ở Cloud Functions `bookingSweep` (mỗi 15 phút, không cần ai mở trang quản lý) và cả khi nhân viên mở trang quản lý.
+- Việc tự động chạy ở Cloud Functions `bookingSweep` (mỗi 2 giờ từ 06:00 đến 22:00 giờ Việt Nam, không cần ai mở trang quản lý) và cả khi nhân viên mở trang quản lý.
+
+## Lịch chạy tự động, quốc tịch, ô chọn
+- **Lịch Cloud Scheduler** (giờ Việt Nam): `bookingSweep` mỗi 2 giờ từ 06:00 đến 22:00 (dọn đặt phòng treo, kiểm giá, email còn sót — các việc cần tức thời đã chạy ngay khi xảy ra); `tgStaffAlerts` mỗi 30 phút trong 05:00–23:59 (nhân viên chưa vào ca/quên ra ca); `tgReminders` 08:00 và 18:00; `tgDailyReport` 21:00; `backupScheduled` 02:00.
+- **Quốc tịch** là danh sách quốc gia (tên tiếng Anh quốc tế, `src/lib/countries.ts`) kèm mục *Khác* để tự nhập; dữ liệu nhập tay cũ như "Việt Nam" được nhận ra là Vietnam.
+- Danh sách thả xuống của ô chọn luôn có nền đặc và chữ tương phản theo giao diện (trước đây nền ô trong suốt nên trình duyệt vẽ nền trắng với chữ sáng).

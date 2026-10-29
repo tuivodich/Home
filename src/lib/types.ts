@@ -14,7 +14,7 @@ export interface Booking {
   id: string; roomId: string; guestName: string; phone: string; checkIn: string; checkOut: string;
   guests: number; total: number; status: BookingStatus; note: string;
   email?: string; createdBy?: string; source?: "online" | "staff";
-  couponCode?: string; discountPercent?: number; originalTotal?: number; cancelReason?: "expired" | "customer";
+  couponCode?: string; discountPercent?: number; originalTotal?: number; cancelReason?: "expired" | "customer" | "noshow";
   priceEditedBy?: string; slotId?: string;
   lines?: { label: string; amount: number }[]; deposit?: number; paid?: number; cancelledAt?: { toMillis(): number };
   payLog?: { amount: number; at: { toMillis(): number }; by: string; note: string }[];

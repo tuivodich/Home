@@ -110,7 +110,7 @@ ${kind === "cancelled" ? "" : `<p style="color:#555;font-size:13px">Chính sách
     if (!KINDS.includes(kind)) return { email: false, telegram: 0 };
     const b = await get(`bookings/${id}`);
     if (!b || b.source !== "online") return { email: false, telegram: 0 };
-    const okState = { received: b.status === "pending", confirmed: b.status === "confirmed", cancelled: b.status === "cancelled" && b.cancelReason !== "customer", reminder: b.status === "confirmed" }[kind];
+    const okState = { received: b.status === "pending", confirmed: b.status === "confirmed", cancelled: b.status === "cancelled" && b.cancelReason !== "customer" && b.cancelReason !== "noshow", reminder: b.status === "confirmed" }[kind];
     if (!okState) return { email: false, telegram: 0 };
     if (!(await once(`gm_${id}_${kind}`))) return { email: false, telegram: 0 };
     const mail = (await get("settings/mail")) ?? {};
@@ -138,7 +138,7 @@ ${kind === "cancelled" ? "" : `<p style="color:#555;font-size:13px">Chính sách
     // Lần chạy đầu: ghi nhận trạng thái hiện có là "đã báo" để không gửi hàng loạt cho đặt phòng cũ.
     if (!state?.baselined) {
       for (const b of all) {
-        const k = b.status === "pending" ? "received" : b.status === "confirmed" ? "confirmed" : b.status === "cancelled" && b.cancelReason !== "customer" ? "cancelled" : "";
+        const k = b.status === "pending" ? "received" : b.status === "confirmed" ? "confirmed" : b.status === "cancelled" && b.cancelReason !== "customer" && b.cancelReason !== "noshow" ? "cancelled" : "";
         if (k) await once(`gm_${b.id}_${k}`);
       }
       await db.doc("settings/mailState").set({ baselined: true, at: FieldValue.serverTimestamp() });
@@ -151,6 +151,47 @@ ${kind === "cancelled" ? "" : `<p style="color:#555;font-size:13px">Chính sách
       if (kind) { const r = await dispatch(b.id, kind); if (r.email || r.telegram) sent++; }
     }
     return { verified, sent };
+  }
+
+  /**
+   * Dọn các đặt phòng bị treo (chạy định kỳ, không cần ai mở trang quản lý):
+   * - "Chờ xác nhận" mà đã qua ngày nhận phòng → hết hạn (nếu settings/app.autoRejectPending khác false), báo khách như hết hạn.
+   * - "Đã xác nhận" mà đã qua ngày trả phòng và chưa nhận phòng → "khách không đến" (nếu settings/app.autoNoShow khác false):
+   *   chuyển Đã hủy (cancelReason "noshow"), nhả phòng, GIỮ NGUYÊN tiền cọc đã nhận; báo chủ/quản lý qua Telegram; không gửi email cho khách.
+   */
+  async function expireStale() {
+    const t = todayVN(now());
+    const app = (await get("settings/app")) ?? {};
+    const rejectPending = app.autoRejectPending !== false, markNoShow = app.autoNoShow !== false;
+    const snap = await db.collection("bookings").where("status", "in", ["pending", "confirmed"]).get();
+    const expired = [], noShows = [];
+    for (const d of snap.docs) {
+      const b = { id: d.id, ...d.data() };
+      if (b.status === "pending" && rejectPending && b.checkIn < t) {
+        const w = db.batch();
+        w.update(d.ref, { status: "cancelled", cancelReason: "expired" });
+        w.delete(db.doc(`busy/${d.id}`));
+        if (b.slotId) w.delete(db.doc(`pend/${b.slotId}`));
+        await w.commit();
+        expired.push(b);
+      } else if (b.status === "confirmed" && markNoShow && b.checkOut < t) {
+        const w = db.batch();
+        w.update(d.ref, { status: "cancelled", cancelReason: "noshow", noShowAt: FieldValue.serverTimestamp() });
+        w.delete(db.doc(`busy/${d.id}`));
+        await w.commit();
+        noShows.push(b);
+      }
+    }
+    for (const b of expired) await dispatch(b.id, "cancelled").catch((e) => console.error("expire mail", e));
+    const fresh = [];
+    for (const b of noShows) if (await once(`ns_${b.id}`)) fresh.push(b);
+    if (fresh.length && tg) {
+      const rooms = new Map((await db.collection("rooms").get()).docs.map((r) => [r.id, r.data().name]));
+      const rows = fresh.map((b) => `• <b>${esc(b.guestName)}</b> — ${esc(rooms.get(b.roomId) ?? "?")}, ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)}${(b.paid ?? 0) > 0 ? ` · đã nhận ${esc(money(b.paid))} (giữ trong sổ, xử lý theo chính sách)` : ""}`);
+      const text = `🚫 <b>Khách không đến — đã tự động hủy</b>\n${rows.join("\n")}`;
+      await Promise.allSettled((await staffChats(["owner", "manager"])).map((c) => tg.sendMessage(c.id, text)));
+    }
+    return { expired: expired.length, noShows: noShows.length };
   }
 
   /** Nhắc khách có lịch nhận phòng vào ngày mai (chạy buổi sáng). */
@@ -171,7 +212,7 @@ ${kind === "cancelled" ? "" : `<p style="color:#555;font-size:13px">Chính sách
     return (await Promise.allSettled(chats.map((c) => tg.sendMessage(c.id, text)))).filter((r) => r.status === "fulfilled").length;
   }
 
-  return { verifyBooking, dispatch, sweep, reminders, alertCorrected, render };
+  return { verifyBooking, dispatch, sweep, reminders, alertCorrected, expireStale, render };
 }
 
 module.exports = { createGuest, createMailer, KINDS };

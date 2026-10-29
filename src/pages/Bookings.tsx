@@ -137,6 +137,12 @@ export default function Bookings() {
     if (status === "checked_out") { const b = bookings.find((x) => x.id === id); if (b) await markRoomDirty(b.roomId, { uid: user?.uid ?? "", name: user?.displayName || user?.email || "" }); }
   };
 
+  // Khách đã xác nhận nhưng không đến: hủy với lý do "không đến" (cọc đã nhận vẫn nằm trong sổ để xử lý theo chính sách).
+  const markNoShow = async (b: Booking) => {
+    if (!confirm(t("sureNoShow"))) return;
+    await updateDoc(doc(db, "bookings", b.id), { status: "cancelled", cancelReason: "noshow" });
+  };
+
   // Xác nhận / nhận phòng một yêu cầu đang "Chờ xác nhận": không được trùng với đặt phòng đã xác nhận / đang ở / đã trả của cùng phòng.
   const hasClash = (b: Booking) => bookings.some((o) => o.id !== b.id && o.roomId === b.roomId
     && ["confirmed", "checked_in", "checked_out"].includes(o.status) && overlaps(o.checkIn, o.checkOut, b.checkIn, b.checkOut));
@@ -205,12 +211,13 @@ export default function Bookings() {
       {sorted.length === 0 && <p>{t("noData")}</p>}
       {sorted.map((b) => {
         const expired = b.status === "cancelled" && b.cancelReason === "expired";
+        const noShow = b.status === "cancelled" && b.cancelReason === "noshow";
         const editing = pe?.id === b.id ? pe : null;
         return (
           <div className={`card${b.id === focusId ? " focus" : ""}`} id={`b-${b.id}`} key={b.id}>
             <div className="row between">
               <strong>{b.guestName}<TierBadge tier={b.source === "online" ? tiers.tierOf(b.createdBy) : null} />{b.source === "online" && <small> · {t("online")}</small>}</strong>
-              <span className={`tag ${b.status}`}>{expired ? t("expiredLabel") : t(b.status)}</span>
+              <span className={`tag ${b.status}`}>{expired ? t("expiredLabel") : noShow ? t("noShowLabel") : t(b.status)}</span>
             </div>
             <div>{roomName(b.roomId)} · {fmtDate(b.checkIn)} → {fmtDate(b.checkOut)} ({nightsBetween(b.checkIn, b.checkOut)} {t("nights")})</div>
             {pres.filter((p) => p.id === b.id).map((p) => <div key={p.id}><small>✓ {G.checkinTag}{p.status === "imported" ? ` (${G.imported})` : ""}{p.eta ? ` · ${G.etaShort} ${p.eta}` : ""}</small></div>)}
@@ -231,6 +238,7 @@ export default function Bookings() {
                 ))}
               </div>
               {b.status === "checked_in" && <button onClick={() => setStatus(b.id, "checked_out")}>{t("doCheckOut")}</button>}
+              {b.status === "confirmed" && b.checkIn < today && <button className="ghost danger" onClick={() => markNoShow(b)}>🚫 {t("doNoShow")}</button>}
               {(b.deposit ?? 0) > 0 && (b.paid ?? 0) < b.deposit! && b.status !== "cancelled" && (
                 <button onClick={() => confirm(`${P.depositReceived}: ${b.deposit! - (b.paid ?? 0)} VNĐ?`) && recordPayment(b, b.deposit! - (b.paid ?? 0), "Đặt cọc")}>💰 {P.depositReceived}</button>
               )}

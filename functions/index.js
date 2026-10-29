@@ -161,8 +161,9 @@ exports.tgReminders = onSchedule({ ...schedOpts, schedule: "0 8,18 * * *" }, asy
 exports.bookingSweep = onSchedule({ ...schedOpts, schedule: "*/15 * * * *" }, async () => {
   try {
     const g = guestFor(createTelegram(TOKEN.value()));
+    const stale = await g.expireStale().catch((e) => { console.error("expireStale", e); return null; });
     const r = await g.sweep();
-    console.log("bookingSweep", JSON.stringify(r));
+    console.log("bookingSweep", JSON.stringify({ ...r, stale }));
   } catch (e) { console.error("bookingSweep", e); }
 });
 

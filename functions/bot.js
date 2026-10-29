@@ -207,6 +207,18 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     return { ok: true, text: `💰 Đã ghi nhận cọc ${money(amount)} bởi ${esc(actor)}` };
   }
 
+  /** Nút "Khách không đến": đặt phòng đã xác nhận mà khách chưa nhận phòng sau ngày nhận → Đã hủy (không đến), nhả phòng, giữ tiền cọc đã nhận. */
+  async function markNoShow(id, actor) {
+    const b = await get(`bookings/${id}`);
+    if (!b) return { ok: false, text: "Không tìm thấy đặt phòng." };
+    if (b.status !== "confirmed") return { ok: false, text: "Đặt phòng này không còn ở trạng thái đã xác nhận." };
+    const w = db.batch();
+    w.update(db.doc(`bookings/${id}`), { status: "cancelled", cancelReason: "noshow", noShowAt: FieldValue.serverTimestamp() });
+    w.delete(db.doc(`busy/${id}`));
+    await w.commit();
+    return { ok: true, text: `🚫 Đã đánh dấu khách không đến bởi ${esc(actor)}${(b.paid ?? 0) > 0 ? ` (cọc ${money(b.paid)} giữ trong sổ)` : ""}` };
+  }
+
   /** Nút "Đã dọn xong": đưa phòng về sẵn sàng (chỉ khi đang bẩn/đang dọn). */
   async function markClean(roomId, actor, uid) {
     const rs = await get(`roomStatus/${roomId}`);
@@ -563,12 +575,12 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     const chatId = String(cb.message?.chat?.id ?? "");
     if (!memAllow(mem, chatId, now().getTime())) return;
     const [action, id] = String(cb.data ?? "").split(":");
-    if (!["cf", "rj", "pd", "rd"].includes(action) || !id) return tg.answerCallbackQuery(cb.id, "Thao tác không hợp lệ");
+    if (!["cf", "rj", "pd", "rd", "ns"].includes(action) || !id) return tg.answerCallbackQuery(cb.id, "Thao tác không hợp lệ");
     const linked = await get(`tgChats/${chatId}`);
     const u = linked && (await get(`users/${linked.uid}`));
     if (!u || !FRONT.includes(u.role)) return tg.answerCallbackQuery(cb.id, "Chat chưa liên kết hoặc không đủ quyền");
     const actor = cb.from?.first_name || u.email || "nhân viên";
-    const r = action === "pd" ? await markDeposit(id, actor) : action === "rd" ? await markClean(id, actor, linked.uid) : await decide(action, id, actor);
+    const r = action === "pd" ? await markDeposit(id, actor) : action === "rd" ? await markClean(id, actor, linked.uid) : action === "ns" ? await markNoShow(id, actor) : await decide(action, id, actor);
     await tg.answerCallbackQuery(cb.id, r.ok ? "Đã xong" : r.text.replace(/<[^>]+>/g, "").slice(0, 150));
     if (cb.message) {
       const base = cb.message.text ?? "";
@@ -638,6 +650,16 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       for (const b of dep) rows.push(`• <b>${esc(b.guestName)}</b> · ${esc(b.phone)} — ${esc(await roomName(b.roomId))}, nhận ${fmtDate(b.checkIn)}${b.checkIn === d ? " (hôm nay)" : ""} — cần cọc ${money(b.deposit - (b.paid ?? 0))}`);
       sent += await sendManagers(`💸 <b>Sắp nhận phòng nhưng chưa đủ cọc</b>\n${rows.join("\n")}\n\nBấm nút nếu đã nhận cọc, hoặc liên hệ khách.`, { reply_markup: { inline_keyboard: dep.slice(0, 8).map((b) => [{ text: `💰 Đã nhận cọc — ${String(b.guestName).slice(0, 24)}`, callback_data: `pd:${b.id}` }]) } });
     }
+    // Đã xác nhận mà quá ngày nhận phòng khách chưa đến; đang ở mà quá ngày trả phòng chưa trả. Mỗi đặt phòng nhắc một lần mỗi ngày.
+    const lateIn = [], lateOut = [];
+    for (const b of list.filter((x) => x.status === "confirmed" && x.checkIn < d && x.checkOut >= d)) if (await once(`li_${b.id}_${d}`)) lateIn.push(b);
+    for (const b of list.filter((x) => x.status === "checked_in" && x.checkOut < d)) if (await once(`lo_${b.id}_${d}`)) lateOut.push(b);
+    if (lateIn.length || lateOut.length) {
+      const rows = [];
+      for (const b of lateIn) rows.push(`• Chưa đến: <b>${esc(b.guestName)}</b> · ${esc(b.phone)} — ${esc(await roomName(b.roomId))}, nhận ${fmtDate(b.checkIn)}${(b.paid ?? 0) > 0 ? ` · đã nhận ${money(b.paid)}` : ""}`);
+      for (const b of lateOut) rows.push(`• Quá hạn trả phòng: <b>${esc(b.guestName)}</b> · ${esc(b.phone)} — ${esc(await roomName(b.roomId))}, trả ${fmtDate(b.checkOut)}`);
+      sent += await sendManagers(`⏰ <b>Đặt phòng cần xử lý</b>\n${rows.join("\n")}\n\nKhách chưa đến có thể bấm nút bên dưới; nếu qua cả ngày trả phòng hệ thống sẽ tự đánh dấu “không đến”.`, { reply_markup: { inline_keyboard: lateIn.slice(0, 8).map((b) => [{ text: `🚫 Khách không đến — ${String(b.guestName).slice(0, 24)}`, callback_data: `ns:${b.id}` }]) } });
+    }
     const noProfile = [];
     for (const b of list.filter((x) => x.status === "checked_out" && x.checkOut >= addDays(d, -1) && x.checkOut <= d && !profiled.has(x.id))) if (await once(`np_${b.id}`)) noProfile.push(b);
     if (noProfile.length) {
@@ -645,7 +667,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       for (const b of noProfile) rows.push(`• <b>${esc(b.guestName)}</b> · ${esc(b.phone)} — ${esc(await roomName(b.roomId))}, trả ${fmtDate(b.checkOut)}`);
       sent += await sendManagers(`📋 <b>Khách đã trả phòng nhưng chưa có hồ sơ lưu trú</b>\n${rows.join("\n")}\n\nBổ sung ở trang quản trị → Khách lưu trú.`);
     }
-    return { sent, deposit: dep.length, noProfile: noProfile.length };
+    return { sent, deposit: dep.length, noProfile: noProfile.length, lateIn: lateIn.length, lateOut: lateOut.length };
   }
 
   /** 21:00 hằng ngày: gửi báo cáo ngày cho chủ/quản lý. */

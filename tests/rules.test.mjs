@@ -508,6 +508,12 @@ await check("manager reads the campaign history", getDoc(doc(mgr, "mailCampaigns
 await check("reception CANNOT read the campaign history", getDoc(doc(rec, "mailCampaigns/c1")), false);
 await check("nobody writes campaign history from the client", setDoc(doc(own, "mailCampaigns/c2"), { subject: "x" }), false);
 
+// ----- Khách không đến -----
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "bookings/ns1"), { roomId: "r1", guestName: "X", phone: "1", checkIn: "2026-01-01", checkOut: "2026-01-02", guests: 1, total: 1, status: "confirmed", note: "", source: "online", createdBy: "cust1" }); });
+await check("reception marks a confirmed booking as no-show", updateDoc(doc(rec, "bookings/ns1"), { status: "cancelled", cancelReason: "noshow" }), true);
+await check("nobody reopens a cancelled/no-show booking except the owner (reception blocked)", updateDoc(doc(rec, "bookings/ns1"), { status: "confirmed" }), false);
+await check("customer CANNOT label their cancellation as no-show", (async () => { await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "bookings/ns2"), { roomId: "r1", guestName: "X", phone: "1", checkIn: "2026-01-01", checkOut: "2026-01-02", guests: 1, total: 1, status: "confirmed", note: "", source: "online", createdBy: "cust1" }); }); await updateDoc(doc(c1, "bookings/ns2"), { status: "cancelled", cancelReason: "noshow" }); })(), false);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

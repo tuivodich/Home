@@ -246,6 +246,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
             {err && <p className="lm-err">{err}</p>}
             <button className="lm-btn" type="submit" disabled={busyNow || !!dateError || unavailable}>{busyNow ? L.modal.sending : L.modal.send}</button>
             <p className="lm-muted lm-small">{L.booking.final}</p>
+            <p className="lm-muted lm-small">{L.booking.agreePre} <a href="/rules" target="_blank" rel="noopener">{L.booking.agreeLink}</a>.</p>
           </form>
         )}
       </div>

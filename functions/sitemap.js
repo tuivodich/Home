@@ -3,7 +3,7 @@ const site = require("./site");
 
 const STATIC = [
   ["/", "weekly", "1.0"], ["/explore", "monthly", "0.8"], ["/reviews", "weekly", "0.7"],
-  ["/faq", "monthly", "0.6"], ["/privacy", "yearly", "0.3"], ["/sitemap", "monthly", "0.3"],
+  ["/faq", "monthly", "0.6"], ["/rules", "yearly", "0.4"], ["/privacy", "yearly", "0.3"], ["/sitemap", "monthly", "0.3"],
 ];
 const x = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 

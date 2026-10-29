@@ -114,6 +114,9 @@ Mọi ô ngày dùng `src/components/DateInput.tsx`: gõ tay **dd/mm/yyyy** (t�
 - **Việc định kỳ** ("Vệ sinh máy lạnh | 30" = mỗi 30 ngày): đến hạn thì hiện dòng ⏰ trên thẻ phòng với nút *Đã làm* (ngày lưu ở `roomStatus/{phòng}.tasks`); bot nhắc chủ/quản lý một lần mỗi ngày (8h và 18h cùng đợt nhắc việc).
 - **Ghi chú nội bộ** từng phòng (nút 📝): lưu ở `roomNotes/{phòng}`, chỉ nhân viên thấy, không lộ ra website.
 
+## Nội quy & Quy định (`/rules`)
+Trang công khai song ngữ Việt/Anh trong menu Thông tin (và chân trang, Sơ đồ trang web, sitemap.xml): chấp hành pháp luật lưu trú và an ninh trật tự, hành vi nghiêm cấm (ma túy, mại dâm, cờ bạc, vũ khí…), nhận/trả phòng, phòng cháy (không nấu ăn trong phòng), vật nuôi, giờ yên tĩnh, khách thăm, đền bù hư hỏng/mất mát theo giá hiện hành, tài sản cá nhân, thanh toán/hủy, xử lý vi phạm, số khẩn cấp. Chủ/quản lý sửa ngay trên trang (nút “Chỉnh sửa nội dung”, hai ô Việt/Anh, có “Khôi phục nội dung mẫu”); lưu ở `pages/rules`. Hộp đặt phòng có dòng “Khi gửi yêu cầu, bạn đồng ý với Nội quy & Quy định” liên kết tới trang. Nội dung mẫu chỉ mang tính tham khảo chung, chủ nên rà lại cho đúng thực tế homestay (giờ yên tĩnh, đồ quên 30 ngày, khu nướng…) và tham vấn pháp lý nếu cần.
+
 ## Hóa đơn PDF
 Trang hóa đơn (`/invoice/<id>`, khách xem của mình, nhân viên xem mọi đặt phòng) có nút **Tải PDF**: chụp tờ hóa đơn bằng `html2canvas` rồi ghép vào các trang A4 bằng `jspdf` (hai thư viện chỉ nạp khi bấm nút). Nút **In** vẫn dùng hộp thoại in của trình duyệt (chữ sắc nét hơn, chọn “Lưu dạng PDF”). Hóa đơn luôn tạo từ dữ liệu đặt phòng hiện tại nên không lưu bản riêng.
 

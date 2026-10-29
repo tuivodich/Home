@@ -21,7 +21,7 @@ export default function SitemapPage() {
     ...(rooms.length ? [{ title: M.rooms, items: [...rooms].sort((a, b) => a.name.localeCompare(b.name, "vi", { numeric: true })).map((r): [string, string] => [r.name, `/phong/${r.id}`]) }] : []),
     { title: M.book, items: [[M.availability, "/#booking"], [M.faq, "/faq"]] },
     { title: M.exploreMenu, items: [[M.explore, "/explore"], [M.reviews, "/reviews"]] },
-    { title: M.info, items: [[M.contact, "/#contact"], [M.privacy, "/privacy"], [M.sitemap, "/sitemap"]] },
+    { title: M.info, items: [[M.contact, "/#contact"], [M.rules, "/rules"], [M.privacy, "/privacy"], [M.sitemap, "/sitemap"]] },
     ...(user ? [{ title: M.account, items: [[G.myAccount, "/profile"], [L.account.title, "/account"]] as [string, string][] }] : []),
   ];
 

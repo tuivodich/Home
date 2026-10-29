@@ -55,7 +55,7 @@ const vi = {
     book: "Đặt phòng", estimate: "Tạm tính", nights: "đêm", fullCap: "Vượt sức chứa",
     errDates: "Ngày trả phòng phải sau ngày nhận phòng.", errPast: "Ngày nhận phòng không được ở quá khứ.", errLong: "Vui lòng đặt tối đa 30 đêm mỗi lần.",
     prev: "‹ Tuần trước", next: "Tuần sau ›", today: "Hôm nay", calendarFor: "Lịch 14 ngày",
-    final: "Giá cuối cùng do homestay xác nhận.",
+    final: "Giá cuối cùng do homestay xác nhận.", agreePre: "Khi gửi yêu cầu, bạn đồng ý với", agreeLink: "Nội quy & Quy định",
   },
   modal: {
     title: "Xác nhận đặt phòng", name: "Họ và tên", phone: "Số điện thoại", guests: "Số khách", note: "Ghi chú (giờ đến, yêu cầu đặc biệt…)",
@@ -95,12 +95,13 @@ const vi = {
   menu: {
     home: "Trang chủ", book: "Đặt phòng", info: "Thông tin", account: "Tài khoản", exploreMenu: "Khám phá", top: "Đầu trang",
     about: "Giới thiệu", rooms: "Phòng nghỉ", features: "Tiện nghi", availability: "Kiểm tra phòng trống",
-    reviews: "Cảm nhận của khách", faq: "Hỏi & Đáp", privacy: "Chính sách quyền riêng tư", contact: "Liên hệ", explore: "Điểm tham quan đẹp", sitemap: "Sơ đồ trang web",
+    reviews: "Cảm nhận của khách", faq: "Hỏi & Đáp", rules: "Nội quy & Quy định", privacy: "Chính sách quyền riêng tư", contact: "Liên hệ", explore: "Điểm tham quan đẹp", sitemap: "Sơ đồ trang web",
   },
   doc: {
     updated: "Cập nhật lần cuối", edit: "Chỉnh sửa nội dung", save: "Lưu", saving: "Đang lưu...", cancel: "Hủy", saved: "Đã lưu.", failed: "Không lưu được. Vui lòng thử lại.",
     editorHint: "Cú pháp: dòng bắt đầu bằng “## ” là tiêu đề mục, “- ” là gạch đầu dòng, dòng trống ngăn cách đoạn, **chữ đậm**.",
     viLabel: "Tiếng Việt", enLabel: "English", resetDefault: "Khôi phục nội dung mẫu", resetSure: "Thay toàn bộ nội dung đang soạn bằng nội dung mẫu?",
+    rulesTitle: "Nội quy & Quy định", rulesSub: "Quy định lưu trú để kỳ nghỉ của bạn và mọi người an toàn, thoải mái.",
     privacyTitle: "Chính sách quyền riêng tư", privacySub: "Chúng tôi thu thập, dùng và bảo vệ thông tin của bạn như thế nào.",
     faqTitle: "Hỏi và Đáp", faqSub: "Giải đáp về đặt phòng, xác nhận, hủy phòng, thanh toán…",
     addQ: "Thêm câu hỏi", removeQ: "Xóa", moveUp: "Lên", moveDown: "Xuống", question: "Câu hỏi", answer: "Câu trả lời",
@@ -184,7 +185,7 @@ const en: Dict = {
     book: "Book", estimate: "Estimate", nights: "nights", fullCap: "Over capacity",
     errDates: "Check-out must be after check-in.", errPast: "Check-in cannot be in the past.", errLong: "Please book 30 nights at most at a time.",
     prev: "‹ Prev week", next: "Next week ›", today: "Today", calendarFor: "14-day calendar",
-    final: "The homestay confirms the final price.",
+    final: "The homestay confirms the final price.", agreePre: "By sending this request you agree to the", agreeLink: "House rules & policies",
   },
   modal: {
     title: "Confirm booking", name: "Full name", phone: "Phone number", guests: "Guests", note: "Notes (arrival time, special requests…)",
@@ -224,12 +225,13 @@ const en: Dict = {
   menu: {
     home: "Home", book: "Book", info: "Info", account: "Account", exploreMenu: "Explore", top: "Top of page",
     about: "About", rooms: "Rooms", features: "Amenities", availability: "Check availability",
-    reviews: "Guest reviews", faq: "FAQ", privacy: "Privacy policy", contact: "Contact", explore: "Beautiful places to visit", sitemap: "Sitemap",
+    reviews: "Guest reviews", faq: "FAQ", rules: "House rules & policies", privacy: "Privacy policy", contact: "Contact", explore: "Beautiful places to visit", sitemap: "Sitemap",
   },
   doc: {
     updated: "Last updated", edit: "Edit content", save: "Save", saving: "Saving...", cancel: "Cancel", saved: "Saved.", failed: "Could not save. Please try again.",
     editorHint: "Syntax: a line starting with “## ” is a section heading, “- ” is a bullet, a blank line separates paragraphs, **bold text**.",
     viLabel: "Tiếng Việt", enLabel: "English", resetDefault: "Restore sample content", resetSure: "Replace everything you are editing with the sample content?",
+    rulesTitle: "House rules & policies", rulesSub: "Stay rules that keep your holiday, and everyone around you, safe and comfortable.",
     privacyTitle: "Privacy policy", privacySub: "How we collect, use and protect your information.",
     faqTitle: "Questions & Answers", faqSub: "Answers about booking, confirmation, cancellation, payment…",
     addQ: "Add question", removeQ: "Delete", moveUp: "Up", moveDown: "Down", question: "Question", answer: "Answer",

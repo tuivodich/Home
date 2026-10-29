@@ -187,6 +187,8 @@ await check("anon CANNOT write page content", setDoc(doc(anon, "pages/privacy"),
 await check("customer CANNOT write page content", setDoc(doc(cu, "pages/privacy"), { vi: "hack" }), false);
 await check("reception CANNOT write page content", setDoc(doc(rec, "pages/faq"), { items: [] }), false);
 await check("owner writes page content", setDoc(doc(own, "pages/privacy"), { vi: "mới", en: "new" }), true);
+await check("owner writes the house rules page", setDoc(doc(own, "pages/rules"), { vi: "nội quy", en: "rules" }), true);
+await check("customer CANNOT write the house rules page", setDoc(doc(cu, "pages/rules"), { vi: "hack" }), false);
 await check("owner writes FAQ", setDoc(doc(own, "pages/faq"), { items: [{ qVi: "a", aVi: "b", qEn: "c", aEn: "d" }] }), true);
 
 await check("anon lists APPROVED reviews", getDocs(query(collection(anon, "reviews"), where("status", "==", "approved"))), true);

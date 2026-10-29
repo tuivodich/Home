@@ -42,12 +42,17 @@ service cloud.firestore {
     // Giao diện: chỉ nhận các mã hợp lệ, hiệu ứng / tự động theo mùa là true/false.
     match /settings/{id} {
       allow read: if !(id in ['bank', 'mail', 'mailState']);
-      allow write: if isAdmin() && !(id in ['contact', 'pricing', 'booking', 'bank', 'loyalty', 'backup', 'backupStatus', 'mail', 'mailState'])
+      allow write: if isAdmin() && !(id in ['contact', 'pricing', 'booking', 'bank', 'loyalty', 'backup', 'backupStatus', 'mail', 'mailState', 'audit'])
         && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel'])
         && (!('themeAuto' in request.resource.data) || request.resource.data.themeAuto is bool)
         && (!('defaultLang' in request.resource.data) || request.resource.data.defaultLang in ['vi', 'en'])
         && (!('effects' in request.resource.data) || request.resource.data.effects is bool)
         && (!('maxPending' in request.resource.data) || (request.resource.data.maxPending is int && request.resource.data.maxPending >= 1 && request.resource.data.maxPending <= 20));
+    }
+    // Bật/tắt ghi nhật ký hoạt động: nhân viên đọc (để biết có ghi không); CHỈ CHỦ đổi.
+    match /settings/audit {
+      allow read: if isStaff();
+      allow write: if isOwner() && request.resource.data.keys().hasOnly(['enabled']) && request.resource.data.enabled is bool;
     }
     // Thông tin liên hệ công khai (website + bot Telegram): chuỗi ngắn; đường dẫn chỉ nhận http(s) để không chèn được javascript:.
     match /settings/contact {
@@ -417,15 +422,18 @@ service cloud.firestore {
 
     // Nhật ký hoạt động: nhân viên chỉ thêm bản ghi mang tên chính mình; chủ/quản lý xem; không sửa, không xóa.
     match /auditLog/{id} {
+      function auditOn() { return !exists(/databases/$(database)/documents/settings/audit) || get(/databases/$(database)/documents/settings/audit).data.enabled != false; }
       allow read: if isAdmin();
-      allow create: if isStaff()
+      allow create: if isStaff() && auditOn()
         && request.resource.data.keys().hasOnly(['at', 'by', 'byName', 'role', 'action', 'summary', 'targetType', 'targetId'])
         && request.resource.data.by == request.auth.uid
         && request.resource.data.at == request.time
         && request.resource.data.action is string && request.resource.data.action.size() <= 40
         && request.resource.data.summary is string && request.resource.data.summary.size() <= 300
         && request.resource.data.byName is string && request.resource.data.byName.size() <= 100;
-      allow update, delete: if false;
+      // Chỉ chủ xóa được (dọn bớt dữ liệu); không ai sửa được.
+      allow update: if false;
+      allow delete: if isOwner();
     }
 
     // Khóa phòng theo ngày: nhân viên lễ tân trở lên xem; chủ/quản lý tạo, xóa.

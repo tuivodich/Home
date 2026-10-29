@@ -76,6 +76,19 @@ test("nhật ký hoạt động: thao tác qua Telegram và hệ thống tự h�
   assert.deepEqual([sys.by, sys.role, sys.targetId], ["system", "system", "old"]);
 });
 
+test("chủ tắt ghi nhật ký: bot và hệ thống không ghi nữa", async () => {
+  await reset();
+  await db.doc("settings/audit").set({ enabled: false });
+  await db.doc("bookings/p1").set(bk({ status: "pending", checkIn: "2026-11-20", checkOut: "2026-11-21", slotId: "cus_1" }));
+  await db.doc("busy/p1").set({ roomId: "r1", checkIn: "2026-11-20", checkOut: "2026-11-21", status: "pending" });
+  await db.doc("bookings/old").set(bk({ status: "pending", checkIn: "2026-11-01", checkOut: "2026-11-02", code: "OLD00002" }));
+  const { bot, guest } = mk();
+  await bot.decide("cf", "p1", "Lan");
+  await guest.expireStale();
+  assert.equal((await db.collection("auditLog").get()).size, 0);
+  assert.equal((await db.doc("bookings/p1").get()).data().status, "confirmed"); // thao tác chính vẫn chạy
+});
+
 test("xác nhận qua bot bị chặn khi phòng đang bị khóa", async () => {
   await reset();
   await db.doc("bookings/p1").set(bk({ status: "pending", checkIn: "2026-11-20", checkOut: "2026-11-22", slotId: "cus_1" }));

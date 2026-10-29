@@ -82,9 +82,14 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
 
   const roomName = async (id) => (await get(`rooms/${id}`))?.name ?? "?";
   /** Nhật ký hoạt động (cùng bộ sưu tập auditLog với trang quản trị); lỗi ghi nhật ký không làm hỏng thao tác chính. */
-  const audit = (by, action, summary, target) => db.collection("auditLog").add({
-    at: FieldValue.serverTimestamp(), by, byName: by, role: "telegram", action, summary: String(summary).slice(0, 300), targetType: target?.type ?? "", targetId: target?.id ?? "",
-  }).catch((e) => console.error("audit", e.message));
+  const audit = async (by, action, summary, target) => {
+    try {
+      if ((await get("settings/audit"))?.enabled === false) return; // chủ đã tắt ghi nhật ký
+      await db.collection("auditLog").add({
+        at: FieldValue.serverTimestamp(), by, byName: by, role: "telegram", action, summary: String(summary).slice(0, 300), targetType: target?.type ?? "", targetId: target?.id ?? "",
+      });
+    } catch (e) { console.error("audit", e.message); }
+  };
   const staffChats = async () => {
     const snap = await db.collection("tgChats").get();
     return snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((c) => FRONT.includes(c.role));
@@ -474,9 +479,13 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     const active = rooms.docs.filter((r) => r.data().status !== "maintenance").length;
     const occ = list.filter((b) => ["checked_in", "checked_out"].includes(b.status)).reduce((s, b) => s + Math.max(0, nights(b.checkIn > from ? b.checkIn : from, b.checkOut < to ? b.checkOut : to)), 0);
     const cancelled = list.filter((b) => b.status === "cancelled" && b.checkIn >= from && b.checkIn < to).length;
-    return tg.sendMessage(chatId, [`📊 <b>Doanh thu — ${label}</b>`, `💰 Doanh thu (đã trả phòng): <b>${money(rev)}</b> · ${done.length} lượt · ${sold} đêm`,
-      `📈 Dự kiến thêm (đang ở/đã xác nhận): ${money(expected)}`, `🧾 Chi phí: ${money(exp)}`, `✅ Lợi nhuận tạm tính: <b>${money(rev - exp)}</b>`,
-      `🛏 Công suất: ${active && days ? Math.round((occ / (active * days)) * 100) : 0}% · 🚫 Hủy: ${cancelled}`, "", `<i>Chi tiết ở trang quản trị → Tài chính → Báo cáo doanh thu.</i>`].join("\n"));
+    // Cọc giữ lại: tiền còn lại của đặt phòng đã hủy (sau hoàn tiền), tính theo ngày hủy — hoặc ngày nhận phòng nếu không có.
+    const forfDay = (b) => (typeof b.cancelledAt?.toDate === "function" ? todayVN(b.cancelledAt.toDate()) : b.checkIn);
+    const forf = list.filter((b) => b.status === "cancelled" && (b.paid ?? 0) > 0 && forfDay(b) >= from && forfDay(b) < to);
+    const forfeited = forf.reduce((s, b) => s + b.paid, 0);
+    return tg.sendMessage(chatId, [`📊 <b>Doanh thu — ${label}</b>`, `💰 Doanh thu (đã trả phòng): <b>${money(rev)}</b> · ${done.length} lượt · ${sold} đêm`, forfeited ? `🏦 Cọc giữ lại (hủy/không đến): <b>${money(forfeited)}</b> · ${forf.length} đặt phòng` : "",
+      `📈 Dự kiến thêm (đang ở/đã xác nhận): ${money(expected)}`, `🧾 Chi phí: ${money(exp)}`, `✅ Lợi nhuận tạm tính: <b>${money(rev + forfeited - exp)}</b>`,
+      `🛏 Công suất: ${active && days ? Math.round((occ / (active * days)) * 100) : 0}% · 🚫 Hủy: ${cancelled}`, "", `<i>Chi tiết ở trang quản trị → Tài chính → Báo cáo doanh thu.</i>`].filter((x, i) => x !== "" || i > 6).join("\n"));
   }
 
   /** Thông tin liên hệ do chủ/quản lý nhập ở Cài đặt (settings/contact), cùng nguồn với chân trang website. */

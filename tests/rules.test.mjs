@@ -551,7 +551,15 @@ await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(
 await check("manager reads the audit log", getDoc(doc(mgr, "auditLog/a1")), true);
 await check("reception CANNOT read the audit log", getDoc(doc(rec, "auditLog/a1")), false);
 await check("audit entries cannot be edited", updateDoc(doc(own, "auditLog/a1"), { summary: "đã sửa" }), false);
-await check("audit entries cannot be deleted (even by the owner)", deleteDoc(doc(own, "auditLog/a1")), false);
+await check("manager CANNOT delete audit entries", deleteDoc(doc(mgr, "auditLog/a1")), false);
+await check("owner turns audit logging off", setDoc(doc(own, "settings/audit"), { enabled: false }), true);
+await check("manager CANNOT toggle audit logging", setDoc(doc(mgr, "settings/audit"), { enabled: true }), false);
+await check("audit settings reject extra fields", setDoc(doc(own, "settings/audit"), { enabled: false, x: 1 }), false);
+await check("staff reads audit setting", getDoc(doc(rec, "settings/audit")), true);
+await check("audit entry refused while logging is off", addDoc(collection(rec, "auditLog"), logDoc()), false);
+await check("owner turns audit logging back on", setDoc(doc(own, "settings/audit"), { enabled: true }), true);
+await check("audit entry accepted again", addDoc(collection(rec, "auditLog"), logDoc()), true);
+await check("owner deletes an audit entry", deleteDoc(doc(own, "auditLog/a1")), true);
 const blk = { roomId: "r1", from: "2026-12-01", to: "2026-12-05", reason: "Sửa mái", createdBy: "mgr1", createdByName: "QL", createdAt: serverTimestamp() };
 await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "rooms/r1"), { name: "P1", type: "wood", capacity: 2, price: 1, status: "active" }); });
 await check("manager blocks a room for a date range", setDoc(doc(mgr, "roomBlocks/k1"), blk), true);

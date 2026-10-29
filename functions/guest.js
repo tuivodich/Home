@@ -32,6 +32,8 @@ function createMailer({ user, pass, host = "smtp.gmail.com", port = 465, transpo
 function createGuest({ db, tg, mailer, now = () => new Date() }) {
   const FieldValue = require("firebase-admin/firestore").FieldValue;
   const get = async (path) => { const s = await db.doc(path).get(); return s.exists ? { id: s.id, ...s.data() } : null; };
+  /** Ghi nhật ký hoạt động (bỏ qua khi chủ đã tắt trong settings/audit). */
+  const auditAdd = async (entry) => { if ((await get("settings/audit"))?.enabled === false) return; return db.collection("auditLog").add(entry); };
   const once = async (key) => { try { await db.doc(`tgSent/${key}`).create({ at: FieldValue.serverTimestamp() }); return true; } catch { return false; } };
   const staffChats = async (roles) => (await db.collection("tgChats").get()).docs.map((d) => ({ id: d.id, ...d.data() })).filter((c) => roles.includes(c.role));
 
@@ -179,14 +181,14 @@ ${kind === "cancelled" || review ? "" : `<p style="color:#555;font-size:13px">Ch
         w.delete(db.doc(`busy/${d.id}`));
         if (b.slotId) w.delete(db.doc(`pend/${b.slotId}`));
         await w.commit();
-        await db.collection("auditLog").add({ at: FieldValue.serverTimestamp(), by: "system", byName: "Hệ thống", role: "system", action: "booking.expire", summary: `Tự hết hạn: ${b.guestName} (chờ xác nhận quá ngày nhận ${fmtDate(b.checkIn)})`.slice(0, 300), targetType: "booking", targetId: d.id }).catch(() => {});
+        await auditAdd({ at: FieldValue.serverTimestamp(), by: "system", byName: "Hệ thống", role: "system", action: "booking.expire", summary: `Tự hết hạn: ${b.guestName} (chờ xác nhận quá ngày nhận ${fmtDate(b.checkIn)})`.slice(0, 300), targetType: "booking", targetId: d.id }).catch(() => {});
         expired.push(b);
       } else if (b.status === "confirmed" && markNoShow && b.checkOut < t) {
         const w = db.batch();
         w.update(d.ref, { status: "cancelled", cancelReason: "noshow", noShowAt: FieldValue.serverTimestamp() });
         w.delete(db.doc(`busy/${d.id}`));
         await w.commit();
-        await db.collection("auditLog").add({ at: FieldValue.serverTimestamp(), by: "system", byName: "Hệ thống", role: "system", action: "booking.noshow", summary: `Tự hủy do khách không đến: ${b.guestName} (${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)})${(b.paid ?? 0) > 0 ? ` · cọc ${money(b.paid)} giữ trong sổ` : ""}`.slice(0, 300), targetType: "booking", targetId: d.id }).catch(() => {});
+        await auditAdd({ at: FieldValue.serverTimestamp(), by: "system", byName: "Hệ thống", role: "system", action: "booking.noshow", summary: `Tự hủy do khách không đến: ${b.guestName} (${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)})${(b.paid ?? 0) > 0 ? ` · cọc ${money(b.paid)} giữ trong sổ` : ""}`.slice(0, 300), targetType: "booking", targetId: d.id }).catch(() => {});
         noShows.push(b);
       }
     }

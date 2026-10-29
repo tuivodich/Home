@@ -88,6 +88,23 @@ test("verifyBooking: bỏ qua đặt phòng của nhân viên và đặt phòng 
   assert.equal((await db.doc("bookings/s1").get()).data().total, 1);
 });
 
+test("dispatch: khách đặt bằng tiếng Anh nhận email tiếng Anh (giữ nguyên số liệu và mã)", async () => {
+  await reset();
+  await db.doc("bookings/en1").set({ ...base, ...RIGHT, deposit: 360000, lang: "en" });
+  const { guest, mailer } = mk();
+  assert.equal((await guest.dispatch("en1", "received")).email, true);
+  const m = mailer.mails[0];
+  assert.match(m.subject, /Booking request received — ABCD1234/);
+  assert.match(m.text, /Total: 1,200,000 VND/);
+  assert.match(m.text, /Deposit: 360,000 VND/);
+  assert.match(m.text, /Reference: NHAGO ABCD1234/);
+  assert.match(m.text, /Cancellation policy: .*days before/);
+  assert.doesNotMatch(m.text, /Tổng tiền|đêm/);
+  await db.doc("bookings/en1").update({ status: "confirmed" });
+  await guest.dispatch("en1", "confirmed");
+  assert.match(mailer.mails[1].subject, /Your booking is confirmed/);
+});
+
 test("dispatch: email đúng nội dung (mã, tiền, QR, escape HTML), chỉ một lần mỗi loại, đúng trạng thái", async () => {
   await reset();
   await db.doc("bookings/b4").set({ ...base, ...RIGHT, deposit: 360000, guestName: "An <script>" });

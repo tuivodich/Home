@@ -188,7 +188,7 @@ service cloud.firestore {
       allow create: if isFront() || (signedIn()
         && request.resource.data.keys().hasOnly(['roomId', 'guestName', 'phone', 'email', 'checkIn', 'checkOut',
                                                   'guests', 'total', 'status', 'note', 'source', 'createdBy',
-                                                  'couponCode', 'discountPercent', 'originalTotal', 'slotId', 'lines', 'deposit', 'code', 'opts'])
+                                                  'couponCode', 'discountPercent', 'originalTotal', 'slotId', 'lines', 'deposit', 'code', 'opts', 'lang'])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.source == 'online'
@@ -201,6 +201,7 @@ service cloud.firestore {
         && request.resource.data.guests is int && request.resource.data.guests >= 1 && request.resource.data.guests <= 30
         && request.resource.data.total is number
         && request.resource.data.email is string && request.resource.data.email.size() <= 200
+        && (!('lang' in request.resource.data) || request.resource.data.lang in ['vi', 'en'])
         && (!('code' in request.resource.data) || (request.resource.data.code is string && request.resource.data.code.matches('^[A-Z0-9]{1,12}$')))
         && (!('opts' in request.resource.data) || request.resource.data.opts is map)
         && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 30))

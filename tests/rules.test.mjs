@@ -437,6 +437,8 @@ await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firest
 const lnu = env.authenticatedContext("lnu").firestore();
 const mkL = (id, n, patch) => { const w = writeBatch(lnu); w.set(doc(lnu, "pend", `lnu_${n}`), { uid: "lnu", n, bookingId: id }); w.set(doc(lnu, "bookings", id), { ...good, createdBy: "lnu", slotId: `lnu_${n}`, ...patch }); w.set(doc(lnu, "busy", id), busyDoc); return w.commit(); };
 await check("online booking create accepts lines + deposit", mkL("ln1", 1, { lines: [{ label: "Phòng × 2 đêm", amount: 1000000 }], deposit: 300000 }), true);
+await check("online booking accepts lang en", mkL("ln2", 2, { lang: "en" }), true);
+await check("online booking rejects unknown lang", mkL("ln3", 3, { lang: "fr" }), false);
 await check("online booking create rejects deposit above total", mkL("ln2", 2, { deposit: 2000000 }), false);
 await check("online booking create rejects 31 lines", mkL("ln3", 2, { lines: Array.from({ length: 31 }, () => ({ label: "x", amount: 1 })) }), false);
 

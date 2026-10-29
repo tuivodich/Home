@@ -19,4 +19,15 @@ module.exports = {
     "📶 Wifi và điện lưới ổn định",
     "🛡️ Khuôn viên có hàng rào chắc chắn, an tâm cho gia đình có trẻ nhỏ",
   ],
+  amenitiesEn: [
+    "🏡 Traditional wooden house: 3 bedrooms upstairs, a spacious living room and kitchen downstairs",
+    "🛏️ 2 private brick rooms, separate from the wooden house",
+    "🚿 Private bathroom for every room",
+    "🍳 Large kitchen for cooking your own family meals",
+    "🌳 Fruit garden and green surroundings",
+    "💧 Natural spring water",
+    "🚗 Spacious parking for cars and motorbikes",
+    "📶 Wi-Fi and stable mains power",
+    "🛡️ Fully fenced grounds, safe for families with young children",
+  ],
 };

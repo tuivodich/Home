@@ -223,6 +223,30 @@ test("nhắc việc định kỳ của phòng: đến hạn thì nhắc một l�
   assert.equal((await mk().bot.dailyReminders()).periodicDue, 0, "mỗi ngày một lần");
 });
 
+test("khách Telegram tiếng Anh: lệnh và tin trả lời bằng tiếng Anh; /lang đổi được; nhân viên luôn tiếng Việt", async () => {
+  await reset();
+  const en = (chat, text) => ({ message: { chat: { id: chat, type: "private" }, from: { first_name: "Tom", language_code: "en" }, text } });
+  const { tg, bot } = mk();
+  await bot.handleUpdate(en(900, "/start"));
+  assert.match(tg.sent.at(-1).text, /Hello! This is the bot/);
+  await bot.handleUpdate(en(900, "/rooms"));
+  assert.match(tg.sent.at(-1).text, /\/night/);
+  assert.match(tg.sent.at(-1).text, /500,000 VND/);
+  await bot.handleUpdate(en(900, "/policy"));
+  assert.match(tg.sent.at(-1).text, /Cancellation/);
+  await bot.handleUpdate(en(900, "/availability 01/01"));
+  assert.match(tg.sent.at(-1).text, /rooms available|Invalid|passed/);
+  await bot.handleUpdate(en(901, "/vi"));
+  assert.match(tg.sent.at(-1).text, /Đã chuyển sang tiếng Việt/);
+  await bot.handleUpdate(en(901, "/phong"));
+  assert.match(tg.sent.at(-1).text, /\/đêm/); // lựa chọn đã lưu thắng ngôn ngữ Telegram
+  await bot.handleUpdate(en(901, "/lang en"));
+  await bot.handleUpdate(en(901, "/tra ZZZZ9999"));
+  assert.match(tg.sent.at(-1).text, /No booking found/);
+  await bot.handleUpdate({ message: { chat: { id: 111, type: "private" }, from: { first_name: "Chủ", language_code: "en" }, text: "/phong" } });
+  assert.match(tg.sent.at(-1).text, /đêm/); // nhân viên (chat đã liên kết) vẫn tiếng Việt
+});
+
 test("pricing.js cho cùng kết quả với src/lib/pricing.ts", async (t) => {
   let ts;
   try { ts = await import("../../src/lib/pricing.ts"); } catch { return t.skip("Node này chưa đọc được .ts"); }

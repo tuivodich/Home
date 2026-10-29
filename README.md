@@ -114,6 +114,10 @@ Mọi ô ngày dùng `src/components/DateInput.tsx`: gõ tay **dd/mm/yyyy** (t�
 - **Việc định kỳ** ("Vệ sinh máy lạnh | 30" = mỗi 30 ngày): đến hạn thì hiện dòng ⏰ trên thẻ phòng với nút *Đã làm* (ngày lưu ở `roomStatus/{phòng}.tasks`); bot nhắc chủ/quản lý một lần mỗi ngày (8h và 18h cùng đợt nhắc việc).
 - **Ghi chú nội bộ** từng phòng (nút 📝): lưu ở `roomNotes/{phòng}`, chỉ nhân viên thấy, không lộ ra website.
 
+## Tiếng Anh cho email và bot Telegram
+- Đặt phòng online lưu thêm `lang` (`vi`/`en`) theo ngôn ngữ khách đang dùng trên website; email và tin Telegram gửi khách (đã nhận, xác nhận, hủy, nhắc lịch, xin đánh giá) dùng đúng ngôn ngữ đó (đặt phòng cũ hoặc do nhân viên nhập: tiếng Việt). Số tiền hiển thị dạng `1,200,000 VND`. Riêng ghi chú chính sách hủy do chủ nhập vẫn giữ nguyên chữ chủ đã viết.
+- Bot cho khách (chat chưa liên kết nhân viên): tự chọn tiếng Anh nếu Telegram của họ đặt tiếng Anh; gõ `/lang en` hoặc `/lang vi` (hay `/en`, `/vi`) để đổi và được nhớ (`tgPrefs/{chat}`). Có lệnh tiếng Anh tương đương: `/availability /price /rooms /amenities /policy /address /contact /lookup /book /mybookings`; menu lệnh tiếng Anh dành cho người dùng Telegram tiếng Anh (cập nhật khi chủ bấm “Kết nối bot”). Tin gửi nhân viên luôn tiếng Việt.
+
 ## Cọc giữ lại trong doanh thu
 Đặt phòng đã hủy / khách không đến mà còn tiền đã thu (sau khi nhân viên ghi nhận hoàn tiền) được tính là **cọc giữ lại**: hiện thành thẻ riêng ở *Báo cáo doanh thu*, cộng vào lợi nhuận, vào cột biểu đồ tháng, file CSV và lệnh `/doanhthu` của bot. Ghi nhận theo ngày hủy (không có ngày hủy thì theo ngày nhận phòng). Lưu ý: nếu khách hủy đúng hạn được hoàn 100% nhưng nhân viên chưa bấm *Hoàn tiền*, khoản đó tạm được tính là cọc giữ lại cho đến khi hoàn.
 

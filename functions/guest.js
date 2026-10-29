@@ -4,6 +4,7 @@ const pricing = require("./pricing");
 
 const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const money = (n) => `${new Intl.NumberFormat("vi-VN").format(Math.round(n || 0))} VNĐ`;
+const moneyEn = (n) => `${new Intl.NumberFormat("en-US").format(Math.round(n || 0))} VND`;
 const fmtDate = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s ?? ""); return m ? `${m[3]}/${m[2]}/${m[1]}` : s ?? ""; };
 const nightsOf = (a, b) => Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400000);
 const addDays = (s, n) => new Date(Date.parse(s + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10);
@@ -76,39 +77,48 @@ function createGuest({ db, tg, mailer, now = () => new Date() }) {
   }
 
   function render(kind, b, ctx) {
+    const en = b.lang === "en"; // ngôn ngữ khách đang dùng lúc đặt phòng (website lưu vào đặt phòng); mặc định tiếng Việt
+    const $ = en ? moneyEn : money;
     const code = codeOf(b), n = nightsOf(b.checkIn, b.checkOut);
     const due = Math.max(0, (b.deposit ?? 0) - (b.paid ?? 0));
-    const head = {
+    const head = (en ? {
+      received: ["Booking request received", "Thank you for booking with us! We have received your request and will confirm it soon."],
+      confirmed: ["Your booking is confirmed", "Your booking has been confirmed. See you soon!"],
+      cancelled: ["Booking no longer active", b.cancelReason === "expired" ? "Your booking request expired because it was not confirmed before the check-in date." : "Sorry, the homestay could not hold the room for this request. You can book other dates or contact us for help."],
+      reminder: ["Check-in reminder for tomorrow", "You check in tomorrow. Here are the details to help you prepare."],
+      review: ["Thank you for staying with us", "Thank you for choosing " + site.name + "! If you have a few minutes, please share your experience — every review helps future guests choose the right place and helps us improve."],
+    } : {
       received: ["Đã nhận yêu cầu đặt phòng", "Cảm ơn bạn đã đặt phòng! Chúng tôi đã nhận yêu cầu và sẽ xác nhận sớm."],
       confirmed: ["Đặt phòng đã được xác nhận", "Đặt phòng của bạn đã được xác nhận. Hẹn gặp bạn!"],
       cancelled: ["Đặt phòng không còn hiệu lực", b.cancelReason === "expired" ? "Yêu cầu đặt phòng đã hết hạn vì chưa được xác nhận trước ngày nhận phòng." : "Rất tiếc, homestay không thể giữ phòng cho yêu cầu này. Bạn có thể đặt ngày khác hoặc liên hệ để được hỗ trợ."],
       reminder: ["Nhắc lịch nhận phòng ngày mai", "Ngày mai bạn nhận phòng. Dưới đây là thông tin để bạn chuẩn bị."],
       review: ["Cảm ơn bạn đã lưu trú", "Cảm ơn bạn đã chọn " + site.name + "! Nếu có vài phút, bạn chia sẻ cảm nhận về kỳ nghỉ giúp chúng tôi nhé — mỗi lời nhận xét giúp những vị khách sau chọn đúng nơi nghỉ và giúp chúng tôi phục vụ tốt hơn."],
-    }[kind];
+    })[kind];
+    const T = (vi, e) => (en ? e : vi);
     const rows = [
-      ["Mã đặt phòng", code], ["Phòng", ctx.roomName], ["Nhận phòng", `${fmtDate(b.checkIn)} (từ ${ctx.cfg.checkInTime})`],
-      ["Trả phòng", `${fmtDate(b.checkOut)} (trước ${ctx.cfg.checkOutTime})`], ["Số đêm / khách", `${n} đêm · ${b.guests} khách`], ["Tổng tiền", money(b.total)],
+      [T("Mã đặt phòng", "Booking code"), code], [T("Phòng", "Room"), ctx.roomName], [T("Nhận phòng", "Check-in"), T(`${fmtDate(b.checkIn)} (từ ${ctx.cfg.checkInTime})`, `${fmtDate(b.checkIn)} (from ${ctx.cfg.checkInTime})`)],
+      [T("Trả phòng", "Check-out"), T(`${fmtDate(b.checkOut)} (trước ${ctx.cfg.checkOutTime})`, `${fmtDate(b.checkOut)} (before ${ctx.cfg.checkOutTime})`)], [T("Số đêm / khách", "Nights / guests"), T(`${n} đêm · ${b.guests} khách`, `${n} night${n > 1 ? "s" : ""} · ${b.guests} guest${b.guests > 1 ? "s" : ""}`)], [T("Tổng tiền", "Total"), $(b.total)],
     ];
-    if (b.deposit > 0) rows.push(["Tiền cọc", `${money(b.deposit)}${(b.paid ?? 0) >= b.deposit ? " (đã nhận)" : ""}`]);
+    if (b.deposit > 0) rows.push([T("Tiền cọc", "Deposit"), `${$(b.deposit)}${(b.paid ?? 0) >= b.deposit ? T(" (đã nhận)", " (received)") : ""}`]);
     const review = kind === "review";
     const showPay = !review && kind !== "cancelled" && due > 0 && ctx.bank;
-    const payText = showPay ? `\nChuyển khoản đặt cọc ${money(due)}:\n${ctx.bank.bankName || "Ngân hàng"} · STK ${ctx.bank.accountNo} · ${ctx.bank.accountName}\nNội dung: NHAGO ${code}` : "";
+    const payText = showPay ? `\n${T("Chuyển khoản đặt cọc", "Pay the deposit by bank transfer")} ${$(due)}:\n${ctx.bank.bankName || T("Ngân hàng", "Bank")} · ${T("STK", "Acc.")} ${ctx.bank.accountNo} · ${ctx.bank.accountName}\n${T("Nội dung", "Reference")}: NHAGO ${code}` : "";
     const qr = showPay ? `https://img.vietqr.io/image/${ctx.bank.bankBin}-${ctx.bank.accountNo}-compact2.png?${new URLSearchParams({ amount: String(due), addInfo: `NHAGO ${code}`, accountName: ctx.bank.accountName })}` : "";
-    const cancelPolicy = ctx.cfg.cancelTiers.map((t) => `từ ${t.daysBefore} ngày trước: hoàn ${t.refundPercent}%`).join("; ");
-    const foot = kind === "cancelled" || review ? "" : `\nChính sách hủy: ${cancelPolicy}.${ctx.cfg.cancelNote ? ` ${ctx.cfg.cancelNote}` : ""}`;
+    const cancelPolicy = ctx.cfg.cancelTiers.map((t) => T(`từ ${t.daysBefore} ngày trước: hoàn ${t.refundPercent}%`, `${t.daysBefore}+ days before: ${t.refundPercent}% refund`)).join("; ");
+    const foot = kind === "cancelled" || review ? "" : `\n${T("Chính sách hủy", "Cancellation policy")}: ${cancelPolicy}.${ctx.cfg.cancelNote ? ` ${ctx.cfg.cancelNote}` : ""}`;
     const subject = `[${site.name}] ${head[0]} — ${code}`;
     const reviewUrl = `${site.url}/reviews#write`;
     const text = review
-      ? `${head[1]}\n\nViết cảm nhận: ${reviewUrl}\n\nMã đặt phòng: ${code} · ${ctx.roomName} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)}`
-      : `${head[1]}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}${payText}${foot}\n\nXem trạng thái: ${site.url}/account\nTra nhanh trên Telegram: gõ /tra ${code}`;
+      ? `${head[1]}\n\n${T("Viết cảm nhận", "Write a review")}: ${reviewUrl}\n\n${T("Mã đặt phòng", "Booking code")}: ${code} · ${ctx.roomName} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)}`
+      : `${head[1]}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}${payText}${foot}\n\n${T("Xem trạng thái", "View status")}: ${site.url}/account\n${T("Tra nhanh trên Telegram: gõ /tra", "Quick lookup on Telegram: send /tra")} ${code}`;
     const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:auto;color:#1f2a24">
 <h2 style="color:#1e4d3a;margin:0 0 8px">${esc(head[0])}</h2><p>${esc(head[1])}</p>
 ${review ? "" : `<table style="border-collapse:collapse;width:100%">${rows.map(([k, v]) => `<tr><td style="padding:6px 8px;border-bottom:1px solid #e5e5e0;color:#666">${esc(k)}</td><td style="padding:6px 8px;border-bottom:1px solid #e5e5e0"><b>${esc(v)}</b></td></tr>`).join("")}</table>`}
-${showPay ? `<h3 style="margin:18px 0 6px">Đặt cọc ${esc(money(due))}</h3><p style="margin:0">${esc(ctx.bank.bankName || "Ngân hàng")} · STK <b>${esc(ctx.bank.accountNo)}</b> · ${esc(ctx.bank.accountName)}<br>Nội dung chuyển khoản: <b>NHAGO ${esc(code)}</b></p><p><img src="${esc(qr)}" alt="VietQR" width="220" style="max-width:100%"></p>` : ""}
-${kind === "cancelled" || review ? "" : `<p style="color:#555;font-size:13px">Chính sách hủy: ${esc(cancelPolicy)}.${ctx.cfg.cancelNote ? ` ${esc(ctx.cfg.cancelNote)}` : ""}</p>`}
-<p><a href="${esc(review ? reviewUrl : site.url + "/account")}" style="background:#1e4d3a;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">${review ? "Viết cảm nhận của bạn" : "Xem đặt phòng của tôi"}</a></p>
+${showPay ? `<h3 style="margin:18px 0 6px">${T("Đặt cọc", "Deposit")} ${esc($(due))}</h3><p style="margin:0">${esc(ctx.bank.bankName || T("Ngân hàng", "Bank"))} · ${T("STK", "Acc.")} <b>${esc(ctx.bank.accountNo)}</b> · ${esc(ctx.bank.accountName)}<br>${T("Nội dung chuyển khoản", "Transfer reference")}: <b>NHAGO ${esc(code)}</b></p><p><img src="${esc(qr)}" alt="VietQR" width="220" style="max-width:100%"></p>` : ""}
+${kind === "cancelled" || review ? "" : `<p style="color:#555;font-size:13px">${T("Chính sách hủy", "Cancellation policy")}: ${esc(cancelPolicy)}.${ctx.cfg.cancelNote ? ` ${esc(ctx.cfg.cancelNote)}` : ""}</p>`}
+<p><a href="${esc(review ? reviewUrl : site.url + "/account")}" style="background:#1e4d3a;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">${review ? T("Viết cảm nhận của bạn", "Write your review") : T("Xem đặt phòng của tôi", "View my booking")}</a></p>
 <p style="color:#888;font-size:12px">${esc(site.name)} · ${esc(site.url)}</p></div>`;
-    const tgText = review ? `<b>${esc(head[0])}</b>\n${esc(head[1])}\n\n⭐ <a href="${esc(reviewUrl)}">Viết cảm nhận của bạn</a>` : `<b>${esc(head[0])}</b>\n${esc(head[1])}\n\n${rows.map(([k, v]) => `${esc(k)}: <b>${esc(v)}</b>`).join("\n")}${showPay ? `\n\n💸 Đặt cọc ${esc(money(due))}: ${esc(ctx.bank.bankName || "")} STK <code>${esc(ctx.bank.accountNo)}</code> · ${esc(ctx.bank.accountName)}\nNội dung: <code>NHAGO ${esc(code)}</code>` : ""}`;
+    const tgText = review ? `<b>${esc(head[0])}</b>\n${esc(head[1])}\n\n⭐ <a href="${esc(reviewUrl)}">${T("Viết cảm nhận của bạn", "Write your review")}</a>` : `<b>${esc(head[0])}</b>\n${esc(head[1])}\n\n${rows.map(([k, v]) => `${esc(k)}: <b>${esc(v)}</b>`).join("\n")}${showPay ? `\n\n💸 ${T("Đặt cọc", "Deposit")} ${esc($(due))}: ${esc(ctx.bank.bankName || "")} ${T("STK", "Acc.")} <code>${esc(ctx.bank.accountNo)}</code> · ${esc(ctx.bank.accountName)}\n${T("Nội dung", "Reference")}: <code>NHAGO ${esc(code)}</code>` : ""}`;
     return { subject, text, html, tg: tgText };
   }
 

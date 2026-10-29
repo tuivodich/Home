@@ -4,7 +4,7 @@ const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { createTelegram } = require("./telegram");
-const { createBot, webhookSecret, safeEq, STAFF_COMMANDS, GUEST_COMMANDS } = require("./bot");
+const { createBot, webhookSecret, safeEq, STAFF_COMMANDS, GUEST_COMMANDS, GUEST_COMMANDS_EN } = require("./bot");
 const { createGuest, createMailer } = require("./guest");
 const { createPush } = require("./push");
 const { createCampaign } = require("./campaign");
@@ -116,6 +116,7 @@ exports.tgSetup = onCall(opts, async (req) => {
     const bot = await tg.getMe();
     await tg.setWebhook(url, webhookSecret(TOKEN.value()));
     await tg.setMyCommands(GUEST_COMMANDS);
+    await tg.setMyCommands(GUEST_COMMANDS_EN, undefined, "en"); // người dùng Telegram tiếng Anh thấy menu tiếng Anh
     // Chat nhân viên đã liên kết có menu riêng (đặt lại ở đây để đồng bộ khi nâng cấp).
     const staff = await getFirestore().collection("tgChats").get();
     await Promise.allSettled(staff.docs.map((d) => tg.setMyCommands(STAFF_COMMANDS, { type: "chat", chat_id: Number(d.id) })));

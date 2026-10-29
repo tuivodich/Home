@@ -35,6 +35,7 @@ export default function Settings() {
   const { user, profile } = useAuth();
   const [rate, setRate] = useState(DEFAULT_USD_RATE);
   const [autoReject, setAutoReject] = useState(true);
+  const [autoNoShow, setAutoNoShow] = useState(true);
   const [maxPending, setMaxPending] = useState(DEFAULT_MAX_PENDING);
 
   const isOwner = profile?.role === "owner";
@@ -75,6 +76,7 @@ export default function Settings() {
   useEffect(() => onSnapshot(doc(db, "settings", "app"), (s) => {
     if (typeof s.data()?.usdRate === "number") setRate(s.data()!.usdRate);
     setAutoReject(s.data()?.autoRejectPending !== false);
+    setAutoNoShow(s.data()?.autoNoShow !== false);
     if (typeof s.data()?.maxPending === "number") setMaxPending(s.data()!.maxPending);
     setSite(parseSettings(s.data()));
   }, () => {}), []);
@@ -95,6 +97,11 @@ export default function Settings() {
           <span>{t("autoReject")}</span>
         </label>
         <small>{t("autoRejectHint")}</small>
+        <label className="check">
+          <input type="checkbox" checked={autoNoShow} onChange={(e) => setDoc(doc(db, "settings", "app"), { autoNoShow: e.target.checked }, { merge: true })} />
+          <span>{t("autoNoShow")}</span>
+        </label>
+        <small>{t("autoNoShowHint")}</small>
       </div>
       <div className="card">
         <label>{vi ? "Số yêu cầu đặt phòng đang chờ xác nhận tối đa mỗi tài khoản" : "Max pending booking requests per account"}

@@ -90,3 +90,9 @@ Không commit token bot Telegram hay service account. Token bot sẽ lưu bằng
 
 ## Sức chứa và phụ thu thêm khách
 Mỗi phòng có **sức chứa tối đa** (khách nhiều nhất được đặt) và **số khách đã gồm trong giá** (mặc định bằng sức chứa tối đa, tức không phụ thu). Đặt số đã gồm nhỏ hơn sức chứa thì khách từ người thứ (đã gồm + 1) đến người thứ (tối đa) phụ thu thêm theo mức *Thêm khách* ở Giá & chính sách. Ví dụ tối đa 4, đã gồm 2 → khách thứ 3 và 4 phụ thu mỗi người mỗi đêm. Biểu mẫu phòng hiện ví dụ này và không cho lưu khi số đã gồm lớn hơn sức chứa tối đa.
+
+## Đặt phòng bị treo: hết hạn và khách không đến
+- **Chờ xác nhận** mà đã qua ngày nhận phòng → tự **Hết hạn** (Cài đặt → "Tự động từ chối…"; khách nhận email "không còn hiệu lực").
+- **Đã xác nhận** mà đã qua cả ngày trả phòng và khách chưa nhận phòng → tự **Đã hủy – Khách không đến** (Cài đặt → "Tự động đánh dấu Khách không đến…", mặc định bật). Phòng được nhả; tiền cọc đã nhận **giữ nguyên trong sổ** (`paid`), việc giữ hay hoàn xử lý theo chính sách (nút Hoàn tiền vẫn dùng được); khách không bị gửi email; chủ/quản lý nhận tin Telegram.
+- Trong khoảng từ ngày nhận phòng đến hết ngày trả phòng, đặt phòng đã xác nhận mà chưa đến chỉ hiện cảnh báo "Đã quá ngày nhận phòng" + nút **Khách không đến** để lễ tân chốt sớm; 08:00 và 18:00 bot nhắc chủ/quản lý (kèm nút) và cũng nhắc đặt phòng đang ở nhưng quá ngày trả phòng (không tự xử lý vì có thể khách gia hạn).
+- Việc tự động chạy ở Cloud Functions `bookingSweep` (mỗi 15 phút, không cần ai mở trang quản lý) và cả khi nhân viên mở trang quản lý.

@@ -94,7 +94,7 @@ export default function History() {
       {list.length === 0 && <p>{t("noData")}</p>}
       {list.map((b) => {
         const g = profileOf(b);
-        const label = b.status !== "cancelled" ? t(b.status) : b.cancelReason === "expired" ? t("expiredLabel") : b.cancelReason === "customer" ? t("customerCancelled") : t("cancelled");
+        const label = b.status !== "cancelled" ? t(b.status) : b.cancelReason === "expired" ? t("expiredLabel") : b.cancelReason === "customer" ? t("customerCancelled") : b.cancelReason === "noshow" ? t("noShowLabel") : t("cancelled");
         return (
           <div className="card" key={b.id}>
             <div className="row between">

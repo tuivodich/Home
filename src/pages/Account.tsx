@@ -178,7 +178,7 @@ export default function Account() {
               )}
             </div>
             <div className="lp-booking-side">
-              <span className={`lp-status ${expired ? "cancelled" : b.status}`}>{expired ? L.account.expired : t(b.status)}</span>
+              <span className={`lp-status ${expired ? "cancelled" : b.status}`}>{expired ? L.account.expired : b.status === "cancelled" && b.cancelReason === "noshow" ? G.noShow : t(b.status)}</span>
               {(b.deposit ?? 0) > 0 && (b.paid ?? 0) < b.deposit! && ["pending", "confirmed"].includes(b.status) && !stale && (
                 <button className="lp-pill solid" onClick={() => setPayFor(b)}>{P.payNow}</button>
               )}

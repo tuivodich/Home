@@ -14,16 +14,19 @@ export interface PendSlot { id: string; uid: string; n: number; bookingId: strin
  *    cập nhật trạng thái, gỡ đặt phòng đã hủy/xóa.
  * 2. Nhả khe giữ chỗ (giới hạn số yêu cầu đang chờ mỗi tài khoản) của yêu cầu không còn "chờ xác nhận" hoặc đã bị xóa.
  * 3. Tự từ chối yêu cầu online còn "chờ xác nhận" mà ngày nhận phòng đã qua (nếu bật trong Cài đặt).
+ * 4. Đặt phòng "đã xác nhận" mà đã qua ngày trả phòng và khách chưa nhận phòng → "khách không đến" (nếu bật trong Cài đặt).
+ * Cloud Functions (bookingSweep) làm cùng việc này mỗi 15 phút, kể cả khi không ai mở trang quản lý.
  */
 export function useBusySync(enabled: boolean) {
   const { data: bookings, loading: l1 } = useCollection<Booking>("bookings", enabled);
   const { data: busy, loading: l2 } = useCollection<Busy>("busy", enabled);
   const { data: slots, loading: l3 } = useCollection<PendSlot>("pend", enabled);
   const [autoReject, setAutoReject] = useState(true);
+  const [autoNoShow, setAutoNoShow] = useState(true);
 
   useEffect(() => {
     if (!enabled) return;
-    return onSnapshot(doc(db, "settings", "app"), (s) => setAutoReject(s.data()?.autoRejectPending !== false), () => {});
+    return onSnapshot(doc(db, "settings", "app"), (s) => { setAutoReject(s.data()?.autoRejectPending !== false); setAutoNoShow(s.data()?.autoNoShow !== false); }, () => {});
   }, [enabled]);
 
   useEffect(() => {
@@ -46,6 +49,11 @@ export function useBusySync(enabled: boolean) {
         ops.push(updateDoc(doc(db, "bookings", b.id), { status: "cancelled", cancelReason: "expired" }));
         continue;
       }
+      if (b.status === "confirmed" && autoNoShow && b.checkOut < today) {
+        // Đã xác nhận nhưng qua cả ngày trả phòng mà khách chưa nhận phòng → "khách không đến" (tiền cọc đã nhận vẫn nằm trong sổ).
+        ops.push(updateDoc(doc(db, "bookings", b.id), { status: "cancelled", cancelReason: "noshow" }));
+        continue;
+      }
       if (b.status === "cancelled") {
         if (cur) ops.push(deleteDoc(doc(db, "busy", b.id)));
         continue;
@@ -57,7 +65,7 @@ export function useBusySync(enabled: boolean) {
     }
     for (const id of byId.keys()) ops.push(deleteDoc(doc(db, "busy", id))); // đặt phòng đã bị xóa
     if (ops.length) Promise.all(ops).catch((e) => console.error("busy sync", e));
-  }, [enabled, bookings, busy, l1, l2, autoReject]);
+  }, [enabled, bookings, busy, l1, l2, autoReject, autoNoShow]);
 }
 
 /** Đổi tên phòng cũ có chữ "bê tông" thành "xây dựng" (chỉ chủ/quản lý ghi được, chạy một lần khi có dữ liệu cũ). */

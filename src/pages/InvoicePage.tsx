@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -27,6 +27,9 @@ export default function InvoicePage() {
   const { cfg } = usePricingConfig();
   const [b, setB] = useState<Booking | null | undefined>(undefined);
   const [room, setRoom] = useState<Room | null>(null);
+  const sheet = useRef<HTMLElement>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfErr, setPdfErr] = useState(false);
   useTitle(`${P.invoice} ${bookingCode(id)}`);
 
   useEffect(() => {
@@ -37,6 +40,27 @@ export default function InvoicePage() {
     if (!b) return;
     getDoc(doc(db, "rooms", b.roomId)).then((s) => setRoom(s.exists() ? ({ ...(s.data() as object), id: s.id } as Room) : null)).catch(() => setRoom(null));
   }, [b?.roomId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tải PDF: chụp tờ hóa đơn thành ảnh rồi ghép vào các trang A4 (thư viện nạp khi bấm nút, không làm nặng trang).
+  const downloadPdf = async () => {
+    if (!sheet.current || !b) return;
+    setPdfBusy(true); setPdfErr(false);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas"), import("jspdf")]);
+      const canvas = await html2canvas(sheet.current, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight(), m = 8;
+      const w = pageW - 2 * m, slice = Math.floor(((pageH - 2 * m) * canvas.width) / w); // chiều cao (px ảnh) vừa một trang
+      for (let y = 0, page = 0; y < canvas.height; y += slice, page++) {
+        const part = document.createElement("canvas");
+        part.width = canvas.width; part.height = Math.min(slice, canvas.height - y);
+        part.getContext("2d")!.drawImage(canvas, 0, y, canvas.width, part.height, 0, 0, canvas.width, part.height);
+        if (page > 0) pdf.addPage();
+        pdf.addImage(part.toDataURL("image/jpeg", 0.92), "JPEG", m, m, w, (part.height * w) / canvas.width);
+      }
+      pdf.save(`hoa-don-${bookingCode(b.id)}.pdf`);
+    } catch (ex) { console.error("invoice pdf", ex); setPdfErr(true); } finally { setPdfBusy(false); }
+  };
 
   if (loading) return null;
   if (!user) return <Navigate to="/?login=1" replace />;
@@ -59,9 +83,13 @@ export default function InvoicePage() {
     <div className="invoice-page">
       <div className="invoice-actions no-print">
         <Link className="ghost" to={back}>← {P.back}</Link>
-        <button onClick={() => window.print()}>🖨 {P.print}</button>
+        <span className="invoice-btns">
+          <button onClick={downloadPdf} disabled={pdfBusy}>⬇ {pdfBusy ? "…" : lang === "vi" ? "Tải PDF" : "Download PDF"}</button>
+          <button className="ghost" onClick={() => window.print()}>🖨 {lang === "vi" ? "In" : "Print"}</button>
+        </span>
       </div>
-      <article className="invoice">
+      {pdfErr && <p className="no-print" role="alert" style={{ textAlign: "center" }}>{lang === "vi" ? "Không tạo được PDF. Bạn có thể bấm In rồi chọn “Lưu dạng PDF”." : "Could not create the PDF. You can use Print and choose “Save as PDF”."}</p>}
+      <article className="invoice" ref={sheet}>
         <header>
           <div>
             <h1>{site.name}</h1>

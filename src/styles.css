@@ -234,3 +234,4 @@ table.cal td.blocked { background: repeating-linear-gradient(45deg, #9a9a9a, #9a
 .hk-check { display: grid; gap: .15rem; padding: .35rem 0; } .hk-item { display: flex; align-items: center; gap: .4rem; font-size: .92rem; }
 .hk-note { background: rgba(216,155,18,.14); border-radius: 6px; padding: .2rem .4rem; }
 .ical-url { word-break: break-all; }
+.invoice-btns { display: flex; gap: 8px; }

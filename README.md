@@ -19,7 +19,8 @@ Phần mềm quản lý homestay (React + Vite + Firebase), giao diện song ng�
 - Thông tin liên hệ (điện thoại, Zalo, email, địa chỉ, Facebook, bản đồ) do chủ/quản lý nhập ở *Tổng quan → Cài đặt → Thông tin liên hệ* (Lịch phòng và Cài đặt nằm ngay dưới bảng Tổng quan; *Nhân sự → Tài khoản nhân viên* để phân quyền); hiện ở footer website và trong lệnh `/lienhe` của bot Telegram. Tên homestay chỉnh trong `src/lib/siteConfig.ts`.
 
 ## Giao diện website
-- Trang công khai có 4 giao diện: **Đêm rừng thông** (mặc định), **Sương mai**, **Hoàng hôn tím sương** và **Đêm Noel tuyết trắng** (dây đèn, tuyết rơi, cây thông Noel, người tuyết, nút đỏ). Bật "Tự chuyển sang Noel" ở Cài đặt để trang tự dùng giao diện Noel từ 01/12 đến 05/01 mỗi năm.
+- Trang công khai có 6 giao diện: **Đêm rừng thông** (mặc định), **Sương mai**, **Hoàng hôn tím sương**, **Đêm Noel tuyết trắng** (dây đèn, tuyết rơi, cây thông Noel, người tuyết, nút đỏ), **Đêm Halloween** (trăng cam khổng lồ, dơi bay, bí ngô thắp sáng, cây khô, bóng ma, nút cam) và **Tết cổ truyền** (dây pháo đỏ, đèn lồng đung đưa, cây nêu có cờ và khánh, bánh chưng xanh buộc lạt, cô gái áo dài nón lá, cây mai vàng, hoa mai và lì xì rơi, nút vàng đỏ).
+- **Tự chuyển theo mùa** (bật ở Cài đặt): Halloween 20/10–01/11, Noel 01/12–05/01, Tết từ 21 ngày trước đến 10 ngày sau mùng 1 (bảng ngày mùng 1 Tết 2025–2035 ở `src/lib/seasons.ts`; năm ngoài bảng thì không tự bật, thêm một dòng vào bảng là được). Ngoài mùa dùng giao diện chủ đã chọn. Xem thử không cần lưu: thêm `?theme=tet` (hoặc `halloween`, `noel`…) vào địa chỉ trang, chỉ có tác dụng trên trình duyệt đó.
 - Chỉ **chủ/quản lý** đổi được ở *Cài đặt → Giao diện website* (lưu trong `settings/app`: `theme`, `themeAuto`, `effects`; luật Firestore kiểm tra giá trị hợp lệ). Khu quản lý của nhân viên giữ nguyên giao diện.
 - Tranh nhà gỗ giữa rừng thông là SVG tự sinh (`src/landing/forest.ts`); hiệu ứng đom đóm/khói tắt được và tự tắt khi người dùng chọn giảm chuyển động.
 

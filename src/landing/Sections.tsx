@@ -6,7 +6,7 @@ import { safeUrl, useContact, zaloHref } from "../lib/contact";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
 import Icon, { type IconName } from "./Icon";
-import ForestScene, { Drift, Fireflies, MiniPines, Snowfall, TreeLine } from "./ForestScene";
+import ForestScene, { Bats, Drift, Fireflies, MiniPines, Petals, Snowfall, TreeLine } from "./ForestScene";
 import { useTheme } from "../lib/theme";
 import HashLink from "../components/HashLink";
 import Stars from "../components/Stars";
@@ -181,7 +181,7 @@ export function Footer() {
       <TreeLine seed={29} />
       <div className="lp-foot-bg" aria-hidden="true">
         <ForestScene theme={theme} id="foot" />
-        {effects && <>{theme !== "mist" && <Fireflies count={10} />}<Drift />{theme === "noel" && <Snowfall count={26} />}</>}
+        {effects && <>{theme !== "mist" && <Fireflies count={10} />}<Drift />{theme === "noel" && <Snowfall count={26} />}{theme === "halloween" && <Bats count={4} />}{theme === "tet" && <Petals count={18} />}</>}
       </div>
       <div className="lp-wrap lp-footer-in">
         <div>

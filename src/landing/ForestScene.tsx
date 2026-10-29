@@ -21,7 +21,7 @@ const ForestScene = memo(function ForestScene({ theme, id }: { theme: ThemeId; i
   const narrow = useNarrow();
   const html = useMemo(() => {
     const p = PALETTES[theme];
-    return sceneSvg(p, narrow ? { id, cabinX: 800, cabinScale: 1.35, withTree: false, withSnowman: false } : { id });
+    return sceneSvg(p, narrow ? { id, cabinX: 800, cabinScale: 1.35, withTree: false, withSnowman: false } : { id, lift: p.lift });
   }, [theme, id, narrow]);
   return <div className="lp-scene-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: html }} />;
 });
@@ -66,6 +66,45 @@ export const Garland = memo(function Garland() {
     <div className="lp-garland" aria-hidden="true">
       <svg viewBox="0 0 1600 40" preserveAspectRatio="none"><path d="M0 4 Q 100 34 200 4 T 400 4 T 600 4 T 800 4 T 1000 4 T 1200 4 T 1400 4 T 1600 4" fill="none" stroke="#1b2a22" strokeWidth="2.5" /></svg>
       {bulbs.map((i) => <i key={i} style={{ left: `${(i + .5) * (100 / 28)}%`, top: i % 2 ? "14px" : "2px", animationDelay: `${(i % 7) * -.45}s` }} data-c={i % 4} />)}
+    </div>
+  );
+});
+
+/** Dơi bay ngang bầu trời (chỉ giao diện Halloween). */
+export const Bats = memo(function Bats({ count = 6 }: { count?: number }) {
+  const bats = useMemo(() => {
+    const r = rng(31);
+    return Array.from({ length: count }, (_, i) => ({ key: i, top: 6 + r() * 42, size: 26 + r() * 26, dur: 16 + r() * 16, delay: -r() * 30, flap: .35 + r() * .25 }));
+  }, [count]);
+  return (
+    <div className="lp-bats" aria-hidden="true">
+      {bats.map((b) => <i key={b.key} style={{ top: `${b.top}%`, width: b.size, height: b.size * .5, animationDuration: `${b.dur}s`, animationDelay: `${b.delay}s`, ["--flap" as string]: `${b.flap}s` }} />)}
+    </div>
+  );
+});
+
+/** Đèn lồng đỏ đung đưa và hai dây pháo đỏ dọc mép tranh (chỉ giao diện Tết). */
+export const Lanterns = memo(function Lanterns() {
+  const lamps = useMemo(() => Array.from({ length: 9 }, (_, i) => i), []);
+  return (
+    <div className="lp-lanterns" aria-hidden="true">
+      <svg viewBox="0 0 1600 20" preserveAspectRatio="none"><path d="M0 3 H1600" stroke="#7a5a2c" strokeWidth="3" /></svg>
+      {lamps.map((i) => <i key={i} style={{ left: `${(i + .5) * (100 / 9)}%`, animationDelay: `${(i % 4) * -.7}s`, ["--len" as string]: `${10 + (i % 3) * 12}px` }} />)}
+      <div className="lp-crackers l">{Array.from({ length: 9 }, (_, i) => <b key={i} style={{ animationDelay: `${i * -.12}s` }} />)}</div>
+      <div className="lp-crackers r">{Array.from({ length: 9 }, (_, i) => <b key={i} style={{ animationDelay: `${i * -.12}s` }} />)}</div>
+    </div>
+  );
+});
+
+/** Cánh hoa mai vàng và lá xì đỏ rơi nhẹ (chỉ giao diện Tết). */
+export const Petals = memo(function Petals({ count = 30 }: { count?: number }) {
+  const items = useMemo(() => {
+    const r = rng(8888);
+    return Array.from({ length: count }, (_, i) => ({ key: i, left: r() * 100, size: 7 + r() * 8, dur: 9 + r() * 10, delay: -r() * 18, drift: (r() - .5) * 90, red: r() > .8 }));
+  }, [count]);
+  return (
+    <div className="lp-petals" aria-hidden="true">
+      {items.map((f) => <i key={f.key} className={f.red ? "red" : ""} style={{ left: `${f.left}%`, width: f.size, height: f.size * (f.red ? 1.5 : 1), animationDuration: `${f.dur}s`, animationDelay: `${f.delay}s`, ["--dx" as string]: `${f.drift}px` }} />)}
     </div>
   );
 });

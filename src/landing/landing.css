@@ -86,6 +86,89 @@
 .landing[data-theme="noel"] .lp-stats, .landing[data-theme="noel"] .lp-section.forest, .landing[data-theme="noel"] .lp-footer { border-color: #c93c3c; }
 .landing[data-theme="noel"] .lm-overlay { background: rgba(2, 8, 12, .74); }
 
+/* ===== Đêm Halloween: tím đen, trăng cam, nút cam bí ngô ===== */
+.landing[data-theme="halloween"] {
+  --forest: #5b2a86; --forest2: #12061f; --moss: #b36bf0; --leaf: rgba(255, 170, 80, .07); --wood: #ff9a2e; --orange: #ff8a1f;
+  --cream: #0b0514; --paper: #190c28; --ink: #f2e9f7; --muted: #b9a6c9; --line: rgba(255, 160, 70, .22);
+  --shadow: 0 12px 30px rgba(0, 0, 0, .5); --gold: #ffb347;
+  --head: #fff0dc; --link: #ffbd73; --prose: #cdbbdb; --input: rgba(255, 255, 255, .07); --on-accent: #1d0a00;
+  --ok-bg: rgba(120, 220, 140, .16); --ok-fg: #9be8ae; --bad-bg: rgba(255, 110, 100, .2); --bad-fg: #ffa59c; --warn-bg: rgba(255, 170, 60, .2); --warn-fg: #ffd08a;
+  --info-bg: rgba(150, 120, 255, .2); --info-fg: #cbbaff; --err: #ff8f86; --skin: rgba(255, 255, 255, .05);
+  --gold-ink: #ffb347; --shade: 11, 5, 20; --hdr: rgba(11, 5, 20, .82); --hero-bg: #080212; --hero-h1: #fff4e6; --hero-p: #e6d6f0; --hero-shadow: rgba(0, 0, 0, .65);
+  --band: #12081f; --band-a: #1d0f31; --band-b: #0d0618; --band-ink: #f2e9f7; --band-h: #fff0dc; --band-p: #cdbbdb; --foot: #060210;
+  --glass: rgba(25, 12, 40, .88); --glass2: rgba(25, 12, 40, .8); --past: rgba(255, 255, 255, .06); --ghost-bg: rgba(255, 255, 255, .06); --ghost-bd: rgba(255, 170, 80, .45);
+  --maint-a: #3a2a4a; --maint-b: #281a36; --tile4: #5b2a86; --fly: #ff9a2e; --eyebrow-fg: #ffb347; --hover-shadow: rgba(0, 0, 0, .55);
+    --feat-bg: rgba(24, 11, 38, .86); --feat-bd1: rgba(255, 154, 46, .6); --feat-bd2: rgba(179, 107, 240, .5); --feat-glow: rgba(255, 138, 31, .25); --ico1: #ffb347; --ico2: #e8701a; --ico-fg: #2a1000; --aur1: rgba(150, 70, 210, .5); --aur2: rgba(255, 130, 40, .32); --aur3: rgba(255, 190, 90, .22); --foot-a: #0c0418;
+  --pine-tint: rgba(255, 154, 46, .05);
+  color-scheme: dark;
+}
+.landing[data-theme="halloween"] .lp-btn.primary { background: #ff8a1f; color: #1d0a00; box-shadow: 0 8px 22px rgba(255, 138, 31, .42); }
+.landing[data-theme="halloween"] .lp-btn.primary:hover { background: #ffa044; }
+.landing[data-theme="halloween"] .lp-pill.solid, .landing[data-theme="halloween"] .lm-btn { background: #e8741a; border-color: #e8741a; color: #1d0a00; }
+.landing[data-theme="halloween"] .lp-pill.solid:hover, .landing[data-theme="halloween"] .lm-btn:hover { background: #ff9238; }
+.landing[data-theme="halloween"] .lp-stars { color: #ffb347; }
+.landing[data-theme="halloween"] .lp-review::before { background: linear-gradient(90deg, #5b2a86, #ff8a1f, #5b2a86); }
+.landing[data-theme="halloween"] .lp-review.featured { background: linear-gradient(160deg, rgba(255, 138, 31, .16), rgba(255, 138, 31, .03) 60%), var(--paper); border-color: rgba(255, 138, 31, .5); }
+.landing[data-theme="halloween"] .lp-stats, .landing[data-theme="halloween"] .lp-section.forest, .landing[data-theme="halloween"] .lp-footer { border-color: #ff8a1f; }
+.landing[data-theme="halloween"] .lm-overlay { background: rgba(6, 2, 12, .78); }
+.landing[data-theme="halloween"] .lp-hero-badges { display: none; }
+
+/* ===== Tết cổ truyền: đỏ son, vàng mai, xanh lá chuối ===== */
+.landing[data-theme="tet"] {
+  --forest: #b3202a; --forest2: #3a0a10; --moss: #e0a62a; --leaf: rgba(255, 210, 90, .09); --wood: #f1c34b; --orange: #ffb02e;
+  --cream: #2a070c; --paper: #430f16; --ink: #fdeed4; --muted: #e1bf9a; --line: rgba(255, 210, 90, .26);
+  --shadow: 0 12px 30px rgba(0, 0, 0, .42); --gold: #ffd77a;
+  --head: #fff3d6; --link: #ffd77a; --prose: #f0d7b8; --input: rgba(255, 255, 255, .08); --on-accent: #3a0a10;
+  --ok-bg: rgba(120, 210, 130, .18); --ok-fg: #a5eab0; --bad-bg: rgba(255, 120, 110, .22); --bad-fg: #ffb0a8; --warn-bg: rgba(255, 190, 70, .22); --warn-fg: #ffdb8a;
+  --info-bg: rgba(120, 170, 235, .2); --info-fg: #b5d0ff; --err: #ff9a90; --skin: rgba(255, 255, 255, .06);
+  --gold-ink: #ffd77a; --shade: 42, 7, 12; --hdr: rgba(58, 10, 16, .86); --hero-bg: #3a0a10; --hero-h1: #fff5dc; --hero-p: #fbe3c2; --hero-shadow: rgba(40, 0, 0, .6);
+  --band: #4a0f17; --band-a: #5e141d; --band-b: #370a10; --band-ink: #fdeed4; --band-h: #fff3d6; --band-p: #f0d7b8; --foot: #240509;
+  --glass: rgba(67, 15, 22, .88); --glass2: rgba(67, 15, 22, .8); --past: rgba(255, 255, 255, .07); --ghost-bg: rgba(255, 255, 255, .08); --ghost-bd: rgba(255, 215, 122, .55);
+  --maint-a: #5a2a2e; --maint-b: #3f1c20; --tile4: #b3202a; --fly: #ffd23f; --eyebrow-fg: #ffd77a; --hover-shadow: rgba(0, 0, 0, .5);
+    --feat-bg: rgba(60, 12, 18, .86); --feat-bd1: rgba(255, 215, 122, .65); --feat-bd2: rgba(224, 60, 60, .55); --feat-glow: rgba(255, 190, 60, .28); --ico1: #ffd23f; --ico2: #e8a317; --ico-fg: #4a0f17; --aur1: rgba(220, 60, 60, .5); --aur2: rgba(255, 190, 60, .34); --aur3: rgba(255, 140, 60, .26); --foot-a: #2e070c;
+  --pine-tint: rgba(255, 210, 90, .06);
+  color-scheme: dark;
+}
+.landing[data-theme="tet"] .lp-btn.primary { background: #e0b020; color: #3a0a10; box-shadow: 0 8px 22px rgba(255, 200, 60, .35); }
+.landing[data-theme="tet"] .lp-btn.primary:hover { background: #f5c63a; }
+.landing[data-theme="tet"] .lp-pill.solid, .landing[data-theme="tet"] .lm-btn { background: #c9272f; border-color: #c9272f; color: #fff7e0; }
+.landing[data-theme="tet"] .lp-pill.solid:hover, .landing[data-theme="tet"] .lm-btn:hover { background: #e03a40; }
+.landing[data-theme="tet"] .lp-stars { color: #ffd23f; }
+.landing[data-theme="tet"] .lp-review::before { background: linear-gradient(90deg, #c9272f, #ffd23f, #c9272f); }
+.landing[data-theme="tet"] .lp-review.featured { background: linear-gradient(160deg, rgba(255, 210, 63, .16), rgba(255, 210, 63, .03) 60%), var(--paper); border-color: rgba(255, 210, 63, .55); }
+.landing[data-theme="tet"] .lp-stats, .landing[data-theme="tet"] .lp-section.forest, .landing[data-theme="tet"] .lp-footer { border-color: #ffd23f; }
+.landing[data-theme="tet"] .lm-overlay { background: rgba(30, 2, 6, .78); }
+.landing[data-theme="tet"] .lp-hero-badges { display: none; }
+
+/* Dơi bay (chỉ Halloween) */
+.lp-bats { position: absolute; inset: 0; overflow: hidden; pointer-events: none; display: none; z-index: 2; }
+.landing[data-theme="halloween"] .lp-bats { display: block; }
+.lp-bats i { position: absolute; left: -10%; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-36 -16 72 30'%3E%3Cpath fill='%2305020b' d='M0 0C-6-9-19-15-34-10-27-4-25 2-19 7-15 3-9 3-5 9-3 4 3 4 5 9 9 3 15 3 19 7 25 2 27-4 34-10 19-15 6-9 0 0ZM-4-3-3-11 0-6 3-11 4-3Z'/%3E%3C/svg%3E") center / contain no-repeat; animation: lp-bat-x linear infinite, lp-bat-flap var(--flap, .4s) ease-in-out infinite alternate; filter: drop-shadow(0 0 3px rgba(255, 138, 31, .5)); }
+@keyframes lp-bat-x { from { transform: translate(0, 0); } 50% { transform: translate(60vw, -24px); } to { transform: translate(125vw, 10px); } }
+@keyframes lp-bat-flap { from { scale: 1 1; } to { scale: 1 .55; } }
+.landing[data-fx="off"] .lp-bats { display: none !important; }
+
+/* Đèn lồng, dây pháo đỏ, hoa mai rơi (chỉ Tết) */
+.lp-lanterns, .lp-petals { position: absolute; left: 0; right: 0; top: 0; pointer-events: none; display: none; }
+.lp-petals { bottom: 0; overflow: hidden; }
+.lp-lanterns { height: 120px; z-index: 3; }
+.landing[data-theme="tet"] .lp-lanterns, .landing[data-theme="tet"] .lp-petals { display: block; }
+.lp-lanterns svg { position: absolute; inset: 0 0 auto; width: 100%; height: 20px; }
+.lp-lanterns > i { position: absolute; top: 3px; width: 30px; height: 36px; margin-left: -15px; transform-origin: 50% -6px; animation: lp-swing 3.2s ease-in-out infinite alternate; }
+.lp-lanterns > i::before { content: ""; position: absolute; left: 50%; top: 0; width: 2px; height: var(--len, 12px); background: #7a5a2c; transform: translateX(-50%); }
+.lp-lanterns > i::after { content: ""; position: absolute; left: 0; right: 0; top: var(--len, 12px); height: 30px; border-radius: 50% / 46%; background: radial-gradient(ellipse at 50% 40%, #ff5a4a, #d62d2d 60%, #a31a22); box-shadow: 0 0 16px 3px rgba(255, 90, 70, .5), inset 0 -4px 0 #f1c34b, inset 0 4px 0 #f1c34b; border-top: 3px solid #f1c34b; border-bottom: 3px solid #f1c34b; }
+@keyframes lp-swing { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+.lp-crackers { position: absolute; top: 0; display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.lp-crackers.l { left: 10px; } .lp-crackers.r { right: 10px; }
+.lp-crackers b { display: block; width: 12px; height: 20px; border-radius: 3px; background: linear-gradient(180deg, #f1c34b 0 3px, #d62d2d 3px 17px, #f1c34b 17px); box-shadow: 0 1px 3px rgba(0, 0, 0, .4); animation: lp-twinkle 1.1s ease-in-out infinite; }
+.lp-crackers b:nth-child(even) { transform: translateX(3px); } .lp-crackers b:nth-child(odd) { transform: translateX(-3px); }
+.lp-petals i { position: absolute; top: -20px; border-radius: 80% 20% 80% 20%; background: #ffd23f; box-shadow: 0 0 6px rgba(255, 210, 63, .6); animation: lp-snow linear infinite; }
+.lp-petals i.red { background: #d62d2d; border-radius: 3px; box-shadow: 0 0 6px rgba(255, 90, 70, .5), inset 0 0 0 2px #f1c34b; }
+.landing[data-fx="off"] .lp-petals { display: none !important; }
+.landing[data-fx="off"] .lp-lanterns > i, .landing[data-fx="off"] .lp-crackers b { animation: none; }
+.lp-scene-art .ghost { animation: lp-ghost 5.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes lp-ghost { 50% { transform: translateY(-14px); } }
+
 /* Tuyết rơi và dây đèn (chỉ Noel) */
 .lp-snowfall, .lp-garland { position: absolute; left: 0; right: 0; top: 0; pointer-events: none; display: none; }
 .lp-snowfall { bottom: 0; overflow: hidden; }
@@ -443,7 +526,8 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   .landing .reveal { opacity: 1; transform: none; transition: none; }
   .lp-float, .lm-modal, .lm-overlay, .lp-fireflies i, .smoke, .lit, .lp-drift i, .lp-garland i { animation: none; }
-  .lp-snowfall { display: none !important; }
+  .lp-snowfall, .lp-bats, .lp-petals { display: none !important; }
+  .lp-lanterns > i, .lp-crackers b, .lp-scene-art .ghost, .bulb { animation: none; }
   .lp-fireflies { display: none; }
   html { scroll-behavior: auto; }
 }

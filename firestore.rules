@@ -43,7 +43,7 @@ service cloud.firestore {
     match /settings/{id} {
       allow read: if !(id in ['bank', 'mail', 'mailState', 'housekeeping', 'ical', 'icalState', 'bankhook']);
       allow write: if isAdmin() && !(id in ['contact', 'pricing', 'booking', 'bank', 'loyalty', 'backup', 'backupStatus', 'mail', 'mailState', 'audit', 'housekeeping', 'ical', 'icalState', 'bankhook'])
-        && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel'])
+        && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel', 'halloween', 'tet'])
         && (!('themeAuto' in request.resource.data) || request.resource.data.themeAuto is bool)
         && (!('defaultLang' in request.resource.data) || request.resource.data.defaultLang in ['vi', 'en'])
         && (!('effects' in request.resource.data) || request.resource.data.effects is bool)

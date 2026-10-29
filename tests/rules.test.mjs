@@ -223,6 +223,8 @@ await check("owner deletes any review", deleteDoc(doc(own, "reviews/pend")), tru
 // ===== Cài đặt giao diện =====
 await check("anon reads settings (theme)", getDoc(doc(anon, "settings/app")), true);
 await check("owner sets a valid theme", setDoc(doc(own, "settings/app"), { theme: "noel", themeAuto: true, effects: false }, { merge: true }), true);
+await check("owner sets the Halloween theme", setDoc(doc(own, "settings/app"), { theme: "halloween" }, { merge: true }), true);
+await check("owner sets the Tet theme", setDoc(doc(own, "settings/app"), { theme: "tet" }, { merge: true }), true);
 await check("owner CANNOT set an unknown theme", setDoc(doc(own, "settings/app"), { theme: "neon" }, { merge: true }), false);
 await check("owner CANNOT set themeAuto to a string", setDoc(doc(own, "settings/app"), { themeAuto: "yes" }, { merge: true }), false);
 await check("owner CANNOT set effects to a number", setDoc(doc(own, "settings/app"), { effects: 1 }, { merge: true }), false);

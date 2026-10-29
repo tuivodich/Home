@@ -17,6 +17,8 @@ import { db, storage } from "../lib/firebase";
 import { useCollection } from "../lib/useCollection";
 import { useMoney } from "../lib/useRate";
 import { useAuth } from "../lib/auth";
+import { useAudit } from "../lib/audit";
+import type { RoomBlock } from "../lib/blocks";
 import { useI18n } from "../i18n";
 import { addDays, fmtDate, nightsBetween, overlaps, todayStr } from "../lib/format";
 import { checkCoupon, discounted, type CouponCheck } from "../lib/coupons";
@@ -34,6 +36,9 @@ export default function Bookings() {
   const { money } = useMoney();
   const { data: rooms } = useCollection<Room>("rooms");
   const { data: bookings } = useCollection<Booking>("bookings");
+  const { data: blocks } = useCollection<RoomBlock>("roomBlocks");
+  const audit = useAudit();
+  const who = (b: { guestName: string; roomId: string }) => `${b.guestName} (${rooms.find((r) => r.id === b.roomId)?.name ?? "?"})`;
   const { data: guests, loading: guestsLoading } = useCollection<Guest>("guests");
   const { data: pres } = useCollection<Precheckin>("precheckins");
   const G = useG();
@@ -76,9 +81,10 @@ export default function Bookings() {
     setErr(""); setNotice("");
     if (nights < 1) return setErr(t("badDates"));
     if (file && !g.docNumber.trim()) return setErr(t("photoNeedsNumber"));
-    const clash = bookings.some((b) => b.roomId === f.roomId && b.status !== "cancelled"
+    const clash = bookings.some((b) => b.roomId === f.roomId && b.status !== "cancelled" && b.status !== "checked_out"
       && overlaps(b.checkIn, b.checkOut, f.checkIn, f.checkOut));
     if (clash) return setErr(t("overlap"));
+    if (blocks.some((k) => k.roomId === f.roomId && overlaps(k.from, k.to, f.checkIn, f.checkOut))) return setErr(lang === "vi" ? "Phòng đang bị khóa trong khoảng ngày này (Đặt phòng → Khóa phòng theo ngày)." : "The room is blocked for these dates (Bookings → Block rooms).");
     setBusy(true);
     try {
       const uid = user?.uid ?? "";
@@ -98,6 +104,7 @@ export default function Bookings() {
       if (gRef) w.set(gRef, { ...g, fullName: g.fullName.trim(), bookingId: bRef.id, docImagePath: "" });
       if (coupon) w.update(doc(db, "coupons", coupon.code), { used: true, usedBy: uid, usedAt: serverTimestamp(), bookingId: bRef.id });
       await w.commit();
+      audit("booking.create", `Tạo đặt phòng ${bookingCode(bRef.id)}: ${g.fullName.trim()} · ${rooms.find((r) => r.id === f.roomId)?.name ?? "?"} · ${fmtDate(f.checkIn)}→${fmtDate(f.checkOut)} · ${finalTotal.toLocaleString("vi-VN")} VNĐ`, { type: "booking", id: bRef.id });
       let warn = "";
       if (gRef) {
         const dup = conflictsFor(guests, g.docType, g.docNumber, g.fullName).other;
@@ -126,11 +133,13 @@ export default function Bookings() {
   const recordPayment = async (b: Booking, amount: number, note: string) => {
     if (!amount) return;
     await updateDoc(doc(db, "bookings", b.id), { paid: Math.max(0, (b.paid ?? 0) + amount), payLog: [...(b.payLog ?? []), { amount, at: Timestamp.now(), by: user?.uid ?? "", note }] });
+    audit(amount > 0 ? "payment.in" : "payment.refund", `${amount > 0 ? "Thu" : "Hoàn"} ${Math.abs(amount).toLocaleString("vi-VN")} VNĐ (${note}) — ${who(b)}`, { type: "booking", id: b.id });
   };
   const askAmount = (msg: string, def: number) => { const v = prompt(msg, String(Math.max(0, Math.round(def)))); const n = v === null ? 0 : Number(v.replace(/[^\d]/g, "")); return Number.isFinite(n) ? n : 0; };
 
   const setStatus = async (id: string, status: BookingStatus) => {
     await updateDoc(doc(db, "bookings", id), { status });
+    { const cur = bookings.find((x) => x.id === id); audit("booking.status", `${cur ? who(cur) : id}: ${cur?.status ?? "?"} → ${status}`, { type: "booking", id }); }
     // Xác nhận/hủy → báo khách qua email/Telegram (nếu đã bật).
     if (status === "confirmed" || status === "cancelled") guestNotify(id);
     // Khách trả phòng → phòng chuyển "Cần dọn" và báo buồng phòng qua Telegram.
@@ -151,6 +160,7 @@ export default function Bookings() {
     if (!confirm(msg)) return;
     if (!early) return setStatus(b.id, "checked_out");
     await updateDoc(doc(db, "bookings", b.id), { status: "checked_out", checkOut: day > b.checkIn ? day : b.checkIn, plannedCheckOut: b.checkOut, earlyCheckout: true });
+    audit("booking.status", `${who(b)}: trả phòng SỚM (dự kiến ${fmtDate(b.checkOut)}, thực tế ${fmtDate(day)})`, { type: "booking", id: b.id });
     await markRoomDirty(b.roomId, { uid: user?.uid ?? "", name: user?.displayName || user?.email || "" });
   };
 
@@ -158,10 +168,11 @@ export default function Bookings() {
   const markNoShow = async (b: Booking) => {
     if (!confirm(t("sureNoShow"))) return;
     await updateDoc(doc(db, "bookings", b.id), { status: "cancelled", cancelReason: "noshow" });
+    audit("booking.noshow", `Khách không đến: ${who(b)}${(b.paid ?? 0) > 0 ? ` · cọc ${(b.paid ?? 0).toLocaleString("vi-VN")} VNĐ giữ trong sổ` : ""}`, { type: "booking", id: b.id });
   };
 
   // Xác nhận / nhận phòng một yêu cầu đang "Chờ xác nhận": không được trùng với đặt phòng đã xác nhận / đang ở / đã trả của cùng phòng.
-  const hasClash = (b: Booking) => bookings.some((o) => o.id !== b.id && o.roomId === b.roomId
+  const hasClash = (b: Booking) => blocks.some((k) => k.roomId === b.roomId && overlaps(k.from, k.to, b.checkIn, b.checkOut)) || bookings.some((o) => o.id !== b.id && o.roomId === b.roomId
     && ["confirmed", "checked_in"].includes(o.status) && overlaps(o.checkIn, o.checkOut, b.checkIn, b.checkOut)); // khách đã trả phòng thì phòng trống, không tính trùng
 
   const hasProfile = (b: Booking) => guests.some((x) => x.bookingId === b.id);
@@ -187,6 +198,7 @@ export default function Bookings() {
     if (!pe || pe.total < 0) return;
     setPe({ ...pe, busy: true });
     await updateDoc(doc(db, "bookings", b.id), { total: pe.total, priceEditedBy: user?.uid ?? "" });
+    audit("price.edit", `Sửa giá ${who(b)}: ${b.total.toLocaleString("vi-VN")} → ${pe.total.toLocaleString("vi-VN")} VNĐ`, { type: "booking", id: b.id });
     setPe(null);
   };
   const applyPriceCode = async (b: Booking) => {
@@ -207,6 +219,7 @@ export default function Bookings() {
       });
       w.update(doc(db, "coupons", pe.coupon.code), { used: true, usedBy: user?.uid ?? "", usedAt: serverTimestamp(), bookingId: b.id });
       await w.commit();
+      audit("price.coupon", `Áp mã ${pe.coupon.code} (−${pe.coupon.percent}%) cho ${who(b)}: ${price.toLocaleString("vi-VN")} → ${discounted(price, pe.coupon.percent).toLocaleString("vi-VN")} VNĐ`, { type: "booking", id: b.id });
       setPe(null);
     } catch (ex) {
       console.error("redeem failed", ex);

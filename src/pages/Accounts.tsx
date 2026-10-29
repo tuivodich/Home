@@ -8,6 +8,7 @@ import { ROLES, isStaffRole, type Role, type UserDoc } from "../lib/types";
 import { EMPTY_PROFILE, saveProfile, useProfileDoc, type Profile } from "../lib/profile";
 import ProfileFields from "../components/ProfileFields";
 import { useG } from "../i18n/guest";
+import { useAudit } from "../lib/audit";
 
 /** Tài khoản nhân viên (chủ/quản lý): chọn vai trò rồi bấm "Lưu lại" mới áp dụng; "Hủy bỏ" trả về vai trò đã lưu. */
 export default function Accounts() {
@@ -15,6 +16,7 @@ export default function Accounts() {
   const { user, profile } = useAuth();
   const isOwner = profile?.role === "owner";
   const { data: users } = useCollection<UserDoc & { id: string }>("users", profile?.role === "owner" || profile?.role === "manager");
+  const audit = useAudit();
   // Vai trò chọn nhưng chưa lưu: chỉ áp dụng khi bấm "Lưu lại".
   const [draft, setDraft] = useState<Record<string, Role>>({});
   const [savingRoles, setSavingRoles] = useState(false);
@@ -32,6 +34,7 @@ export default function Accounts() {
       const w = writeBatch(db);
       Object.entries(draft).forEach(([id, role]) => w.update(doc(db, "users", id), { role }));
       await w.commit();
+      for (const [id, role] of Object.entries(draft)) { const u = users.find((x) => x.id === id); audit("account.role", `Đổi vai trò ${u?.email ?? id}: ${u?.role ?? "?"} → ${role}`, { type: "user", id }); }
       setDraft({}); setRoleMsg(t("rolesSaved"));
     } catch (ex) { console.error("save roles failed", ex); setRoleErr(t("rolesFailed")); }
     finally { setSavingRoles(false); }

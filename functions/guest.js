@@ -12,7 +12,7 @@ const codeOf = (b) => b.code || String(b.id).replace(/[^A-Za-z0-9]/g, "").slice(
 const validEmail = (s) => typeof s === "string" && /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(s.trim()) && s.length <= 200;
 
 /** Kiểu tin gửi cho khách theo trạng thái đặt phòng. */
-const KINDS = ["received", "confirmed", "cancelled", "reminder"];
+const KINDS = ["received", "confirmed", "cancelled", "reminder", "review"];
 
 /** Máy gửi email (SMTP). Chưa cấu hình tài khoản thì `enabled` = false và mọi lần gửi bị bỏ qua. */
 function createMailer({ user, pass, host = "smtp.gmail.com", port = 465, transport } = {}) {
@@ -81,27 +81,32 @@ function createGuest({ db, tg, mailer, now = () => new Date() }) {
       confirmed: ["Đặt phòng đã được xác nhận", "Đặt phòng của bạn đã được xác nhận. Hẹn gặp bạn!"],
       cancelled: ["Đặt phòng không còn hiệu lực", b.cancelReason === "expired" ? "Yêu cầu đặt phòng đã hết hạn vì chưa được xác nhận trước ngày nhận phòng." : "Rất tiếc, homestay không thể giữ phòng cho yêu cầu này. Bạn có thể đặt ngày khác hoặc liên hệ để được hỗ trợ."],
       reminder: ["Nhắc lịch nhận phòng ngày mai", "Ngày mai bạn nhận phòng. Dưới đây là thông tin để bạn chuẩn bị."],
+      review: ["Cảm ơn bạn đã lưu trú", "Cảm ơn bạn đã chọn " + site.name + "! Nếu có vài phút, bạn chia sẻ cảm nhận về kỳ nghỉ giúp chúng tôi nhé — mỗi lời nhận xét giúp những vị khách sau chọn đúng nơi nghỉ và giúp chúng tôi phục vụ tốt hơn."],
     }[kind];
     const rows = [
       ["Mã đặt phòng", code], ["Phòng", ctx.roomName], ["Nhận phòng", `${fmtDate(b.checkIn)} (từ ${ctx.cfg.checkInTime})`],
       ["Trả phòng", `${fmtDate(b.checkOut)} (trước ${ctx.cfg.checkOutTime})`], ["Số đêm / khách", `${n} đêm · ${b.guests} khách`], ["Tổng tiền", money(b.total)],
     ];
     if (b.deposit > 0) rows.push(["Tiền cọc", `${money(b.deposit)}${(b.paid ?? 0) >= b.deposit ? " (đã nhận)" : ""}`]);
-    const showPay = kind !== "cancelled" && due > 0 && ctx.bank;
+    const review = kind === "review";
+    const showPay = !review && kind !== "cancelled" && due > 0 && ctx.bank;
     const payText = showPay ? `\nChuyển khoản đặt cọc ${money(due)}:\n${ctx.bank.bankName || "Ngân hàng"} · STK ${ctx.bank.accountNo} · ${ctx.bank.accountName}\nNội dung: NHAGO ${code}` : "";
     const qr = showPay ? `https://img.vietqr.io/image/${ctx.bank.bankBin}-${ctx.bank.accountNo}-compact2.png?${new URLSearchParams({ amount: String(due), addInfo: `NHAGO ${code}`, accountName: ctx.bank.accountName })}` : "";
     const cancelPolicy = ctx.cfg.cancelTiers.map((t) => `từ ${t.daysBefore} ngày trước: hoàn ${t.refundPercent}%`).join("; ");
-    const foot = kind === "cancelled" ? "" : `\nChính sách hủy: ${cancelPolicy}.${ctx.cfg.cancelNote ? ` ${ctx.cfg.cancelNote}` : ""}`;
+    const foot = kind === "cancelled" || review ? "" : `\nChính sách hủy: ${cancelPolicy}.${ctx.cfg.cancelNote ? ` ${ctx.cfg.cancelNote}` : ""}`;
     const subject = `[${site.name}] ${head[0]} — ${code}`;
-    const text = `${head[1]}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}${payText}${foot}\n\nXem trạng thái: ${site.url}/account\nTra nhanh trên Telegram: gõ /tra ${code}`;
+    const reviewUrl = `${site.url}/reviews#write`;
+    const text = review
+      ? `${head[1]}\n\nViết cảm nhận: ${reviewUrl}\n\nMã đặt phòng: ${code} · ${ctx.roomName} · ${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)}`
+      : `${head[1]}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}${payText}${foot}\n\nXem trạng thái: ${site.url}/account\nTra nhanh trên Telegram: gõ /tra ${code}`;
     const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:auto;color:#1f2a24">
 <h2 style="color:#1e4d3a;margin:0 0 8px">${esc(head[0])}</h2><p>${esc(head[1])}</p>
-<table style="border-collapse:collapse;width:100%">${rows.map(([k, v]) => `<tr><td style="padding:6px 8px;border-bottom:1px solid #e5e5e0;color:#666">${esc(k)}</td><td style="padding:6px 8px;border-bottom:1px solid #e5e5e0"><b>${esc(v)}</b></td></tr>`).join("")}</table>
+${review ? "" : `<table style="border-collapse:collapse;width:100%">${rows.map(([k, v]) => `<tr><td style="padding:6px 8px;border-bottom:1px solid #e5e5e0;color:#666">${esc(k)}</td><td style="padding:6px 8px;border-bottom:1px solid #e5e5e0"><b>${esc(v)}</b></td></tr>`).join("")}</table>`}
 ${showPay ? `<h3 style="margin:18px 0 6px">Đặt cọc ${esc(money(due))}</h3><p style="margin:0">${esc(ctx.bank.bankName || "Ngân hàng")} · STK <b>${esc(ctx.bank.accountNo)}</b> · ${esc(ctx.bank.accountName)}<br>Nội dung chuyển khoản: <b>NHAGO ${esc(code)}</b></p><p><img src="${esc(qr)}" alt="VietQR" width="220" style="max-width:100%"></p>` : ""}
-${kind === "cancelled" ? "" : `<p style="color:#555;font-size:13px">Chính sách hủy: ${esc(cancelPolicy)}.${ctx.cfg.cancelNote ? ` ${esc(ctx.cfg.cancelNote)}` : ""}</p>`}
-<p><a href="${esc(site.url)}/account" style="background:#1e4d3a;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">Xem đặt phòng của tôi</a></p>
+${kind === "cancelled" || review ? "" : `<p style="color:#555;font-size:13px">Chính sách hủy: ${esc(cancelPolicy)}.${ctx.cfg.cancelNote ? ` ${esc(ctx.cfg.cancelNote)}` : ""}</p>`}
+<p><a href="${esc(review ? reviewUrl : site.url + "/account")}" style="background:#1e4d3a;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">${review ? "Viết cảm nhận của bạn" : "Xem đặt phòng của tôi"}</a></p>
 <p style="color:#888;font-size:12px">${esc(site.name)} · ${esc(site.url)}</p></div>`;
-    const tgText = `<b>${esc(head[0])}</b>\n${esc(head[1])}\n\n${rows.map(([k, v]) => `${esc(k)}: <b>${esc(v)}</b>`).join("\n")}${showPay ? `\n\n💸 Đặt cọc ${esc(money(due))}: ${esc(ctx.bank.bankName || "")} STK <code>${esc(ctx.bank.accountNo)}</code> · ${esc(ctx.bank.accountName)}\nNội dung: <code>NHAGO ${esc(code)}</code>` : ""}`;
+    const tgText = review ? `<b>${esc(head[0])}</b>\n${esc(head[1])}\n\n⭐ <a href="${esc(reviewUrl)}">Viết cảm nhận của bạn</a>` : `<b>${esc(head[0])}</b>\n${esc(head[1])}\n\n${rows.map(([k, v]) => `${esc(k)}: <b>${esc(v)}</b>`).join("\n")}${showPay ? `\n\n💸 Đặt cọc ${esc(money(due))}: ${esc(ctx.bank.bankName || "")} STK <code>${esc(ctx.bank.accountNo)}</code> · ${esc(ctx.bank.accountName)}\nNội dung: <code>NHAGO ${esc(code)}</code>` : ""}`;
     return { subject, text, html, tg: tgText };
   }
 
@@ -110,10 +115,11 @@ ${kind === "cancelled" ? "" : `<p style="color:#555;font-size:13px">Chính sách
     if (!KINDS.includes(kind)) return { email: false, telegram: 0 };
     const b = await get(`bookings/${id}`);
     if (!b || b.source !== "online") return { email: false, telegram: 0 };
-    const okState = { received: b.status === "pending", confirmed: b.status === "confirmed", cancelled: b.status === "cancelled" && b.cancelReason !== "customer" && b.cancelReason !== "noshow", reminder: b.status === "confirmed" }[kind];
+    const okState = { received: b.status === "pending", confirmed: b.status === "confirmed", cancelled: b.status === "cancelled" && b.cancelReason !== "customer" && b.cancelReason !== "noshow", reminder: b.status === "confirmed", review: b.status === "checked_out" }[kind];
     if (!okState) return { email: false, telegram: 0 };
-    if (!(await once(`gm_${id}_${kind}`))) return { email: false, telegram: 0 };
     const mail = (await get("settings/mail")) ?? {};
+    if (kind === "review" && mail.reviewRequest === false) return { email: false, telegram: 0 }; // chủ tắt email xin đánh giá
+    if (!(await once(`gm_${id}_${kind}`))) return { email: false, telegram: 0 };
     const ctx = await context(b);
     const msg = render(kind, b, ctx);
     let email = false, telegram = 0;
@@ -173,12 +179,14 @@ ${kind === "cancelled" ? "" : `<p style="color:#555;font-size:13px">Chính sách
         w.delete(db.doc(`busy/${d.id}`));
         if (b.slotId) w.delete(db.doc(`pend/${b.slotId}`));
         await w.commit();
+        await db.collection("auditLog").add({ at: FieldValue.serverTimestamp(), by: "system", byName: "Hệ thống", role: "system", action: "booking.expire", summary: `Tự hết hạn: ${b.guestName} (chờ xác nhận quá ngày nhận ${fmtDate(b.checkIn)})`.slice(0, 300), targetType: "booking", targetId: d.id }).catch(() => {});
         expired.push(b);
       } else if (b.status === "confirmed" && markNoShow && b.checkOut < t) {
         const w = db.batch();
         w.update(d.ref, { status: "cancelled", cancelReason: "noshow", noShowAt: FieldValue.serverTimestamp() });
         w.delete(db.doc(`busy/${d.id}`));
         await w.commit();
+        await db.collection("auditLog").add({ at: FieldValue.serverTimestamp(), by: "system", byName: "Hệ thống", role: "system", action: "booking.noshow", summary: `Tự hủy do khách không đến: ${b.guestName} (${fmtDate(b.checkIn)} → ${fmtDate(b.checkOut)})${(b.paid ?? 0) > 0 ? ` · cọc ${money(b.paid)} giữ trong sổ` : ""}`.slice(0, 300), targetType: "booking", targetId: d.id }).catch(() => {});
         noShows.push(b);
       }
     }
@@ -200,7 +208,18 @@ ${kind === "cancelled" ? "" : `<p style="color:#555;font-size:13px">Chính sách
     const snap = await db.collection("bookings").where("checkIn", "==", tomorrow).get();
     let sent = 0;
     for (const d of snap.docs) { const r = await dispatch(d.id, "reminder"); if (r.email || r.telegram) sent++; }
-    return { sent };
+    // Xin đánh giá: khách online đã trả phòng 1–3 ngày trước và chưa viết cảm nhận.
+    const t = todayVN(now());
+    const done = await db.collection("bookings").where("checkOut", ">=", addDays(t, -3)).get();
+    let asked = 0;
+    for (const d of done.docs) {
+      const b = d.data();
+      if (b.status !== "checked_out" || b.source !== "online" || b.checkOut >= t || !b.createdBy) continue;
+      if ((await db.doc(`reviews/${b.createdBy}`).get()).exists) continue; // đã có cảm nhận
+      const r = await dispatch(d.id, "review");
+      if (r.email || r.telegram) asked++;
+    }
+    return { sent, asked };
   }
 
   /** Báo quản lý khi hệ thống phải sửa giá do khách gửi lên khác bảng giá. */

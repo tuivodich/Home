@@ -8,6 +8,7 @@ import TierBadge from "../components/TierBadge";
 import { DEFAULT_TIERS, completedStays, tierFor, useLoyaltyCfg, useTierLookup, type LoyaltyCfg, type Tier } from "../lib/loyalty";
 import type { Booking, UserDoc } from "../lib/types";
 import NumInput from "../components/NumInput";
+import { useAudit } from "../lib/audit";
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const newId = (name: string) => `${name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "").slice(0, 12) || "tier"}${Math.random().toString(36).slice(2, 5)}`;
@@ -23,6 +24,7 @@ export default function LoyaltyPage() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const { data: users } = useCollection<UserDoc & { id: string }>("users");
+  const audit = useAudit();
   const { data: bookings } = useCollection<Booking>("bookings");
   const look = useTierLookup(bookings);
   useEffect(() => { if (!loading) setDraft(clone(saved)); }, [loading, saved]);
@@ -38,11 +40,12 @@ export default function LoyaltyPage() {
         enabled: draft.enabled,
         tiers: [...draft.tiers].sort((a, b) => a.minBookings - b.minBookings).map((t) => ({ id: t.id, name: t.name.trim(), color: t.color, minBookings: Math.max(0, Math.floor(t.minBookings)), couponPercent: Math.min(50, Math.max(0, t.couponPercent)) })),
       });
+      audit("tier.config", `Lưu cấu hình hạng khách hàng thân thiết (${draft.tiers.length} hạng, ${draft.enabled ? "bật" : "tắt"})`);
       setMsg(T("Đã lưu cấu hình thành viên thân thiết.", "Loyalty settings saved."));
     } catch (ex) { console.error("save loyalty", ex); setErr(T("Không lưu được. Vui lòng thử lại.", "Could not save.")); } finally { setBusy(false); }
   };
 
-  const setManual = (uid: string, tier: string) => setDoc(doc(db, "members", uid), { tier, updatedAt: serverTimestamp(), updatedBy: user?.uid ?? "" }, { merge: true }).catch((ex) => { console.error("manual tier", ex); setErr(T("Không đặt được hạng.", "Could not set the tier.")); });
+  const setManual = (uid: string, tier: string) => setDoc(doc(db, "members", uid), { tier, updatedAt: serverTimestamp(), updatedBy: user?.uid ?? "" }, { merge: true }).then(() => audit("tier.set", `Đặt hạng khách ${users.find((u) => u.id === uid)?.email ?? uid}: ${draft.tiers.find((x) => x.id === tier)?.name ?? (tier || "tự động")}`, { type: "user", id: uid })).catch((ex) => { console.error("manual tier", ex); setErr(T("Không đặt được hạng.", "Could not set the tier.")); });
 
   const customers = useMemo(() => {
     const ids = new Set<string>(bookings.filter((b) => b.source === "online" && b.createdBy).map((b) => b.createdBy!));

@@ -64,8 +64,9 @@ service cloud.firestore {
     match /settings/mail {
       allow read: if isAdmin();
       allow write: if isOwner()
-        && request.resource.data.keys().hasOnly(['enabled', 'fromName', 'replyTo'])
+        && request.resource.data.keys().hasOnly(['enabled', 'fromName', 'replyTo', 'reviewRequest'])
         && request.resource.data.enabled is bool
+        && (!('reviewRequest' in request.resource.data) || request.resource.data.reviewRequest is bool)
         && (!('fromName' in request.resource.data) || (request.resource.data.fromName is string && request.resource.data.fromName.size() <= 60))
         && (!('replyTo' in request.resource.data) || (request.resource.data.replyTo is string && request.resource.data.replyTo.size() <= 200));
     }
@@ -397,6 +398,32 @@ service cloud.firestore {
         && request.resource.data.ua is string && request.resource.data.ua.size() <= 120
         && request.resource.data.at == request.time;
       allow delete: if isFront() && resource.data.uid == request.auth.uid;
+    }
+
+    // Nhật ký hoạt động: nhân viên chỉ thêm bản ghi mang tên chính mình; chủ/quản lý xem; không sửa, không xóa.
+    match /auditLog/{id} {
+      allow read: if isAdmin();
+      allow create: if isStaff()
+        && request.resource.data.keys().hasOnly(['at', 'by', 'byName', 'role', 'action', 'summary', 'targetType', 'targetId'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.at == request.time
+        && request.resource.data.action is string && request.resource.data.action.size() <= 40
+        && request.resource.data.summary is string && request.resource.data.summary.size() <= 300
+        && request.resource.data.byName is string && request.resource.data.byName.size() <= 100;
+      allow update, delete: if false;
+    }
+
+    // Khóa phòng theo ngày: nhân viên lễ tân trở lên xem; chủ/quản lý tạo, xóa.
+    match /roomBlocks/{id} {
+      allow read: if isFront();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['roomId', 'from', 'to', 'reason', 'createdBy', 'createdByName', 'createdAt'])
+        && request.resource.data.from.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && request.resource.data.to.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.from < request.resource.data.to
+        && request.resource.data.reason is string && request.resource.data.reason.size() <= 200
+        && exists(/databases/$(database)/documents/rooms/$(request.resource.data.roomId));
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     // Chat Telegram của khách đã liên kết (Cloud Functions ghi); khách chỉ xem của mình.

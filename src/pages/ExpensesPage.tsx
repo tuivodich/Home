@@ -11,6 +11,7 @@ import { downloadCsv, lastMonths, monthRange } from "../lib/hr";
 import { bookingCode } from "../lib/banks";
 import type { Booking } from "../lib/types";
 import NumInput from "../components/NumInput";
+import { useAudit } from "../lib/audit";
 
 export const EXPENSE_CATS = ["electric", "water", "salary", "maintenance", "supplies", "food", "marketing", "tax", "other"] as const;
 type Cat = (typeof EXPENSE_CATS)[number];
@@ -28,6 +29,7 @@ export default function ExpensesPage() {
   const { money, moneyText } = useMoney();
   const { user } = useAuth();
   const { data: expenses } = useCollection<Expense>("expenses");
+  const audit = useAudit();
   const { data: bookings } = useCollection<Booking>("bookings");
   const months = useMemo(() => lastMonths(24), []);
   const [month, setMonth] = useState(months[0]);
@@ -50,6 +52,7 @@ export default function ExpensesPage() {
     if (!(f.amount > 0)) return setErr(T("Số tiền phải lớn hơn 0.", "Amount must be greater than 0."));
     try {
       await addDoc(collection(db, "expenses"), { date: f.date, category: f.category, amount: f.amount, vendor: f.vendor.trim(), note: f.note.trim(), paid: f.paid, ...(!f.paid && f.dueDate ? { dueDate: f.dueDate } : {}), createdBy: user?.uid ?? "" });
+      audit("expense.add", `Chi phí ${CAT[f.category][0]}: ${f.amount.toLocaleString("vi-VN")} VNĐ${f.vendor.trim() ? ` · ${f.vendor.trim()}` : ""}${f.paid ? "" : " (chưa thanh toán)"}`);
       setF(blank());
     } catch (ex) { console.error("add expense", ex); setErr(T("Không lưu được.", "Could not save.")); }
   };

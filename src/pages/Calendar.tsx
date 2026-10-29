@@ -8,6 +8,7 @@ import { useI18n } from "../i18n";
 import { addDays, fmtDate, nightsBetween, overlaps, todayStr } from "../lib/format";
 import GuestInfo from "../components/GuestInfo";
 import type { Booking, Guest, Room } from "../lib/types";
+import type { RoomBlock } from "../lib/blocks";
 
 const DAYS = 14;
 
@@ -20,6 +21,7 @@ export default function CalendarPage() {
   const { data: rooms } = useCollection<Room>("rooms");
   const { data: bookings } = useCollection<Booking>("bookings");
   const { data: guests } = useCollection<Guest>("guests", canSeeGuests);
+  const { data: blocks } = useCollection<RoomBlock>("roomBlocks", canSeeGuests);
   const [start, setStart] = useState(todayStr());
   const [openId, setOpenId] = useState("");
   const days = Array.from({ length: DAYS }, (_, i) => addDays(start, i));
@@ -49,6 +51,14 @@ export default function CalendarPage() {
               for (let i = 0; i < DAYS;) {
                 const d = days[i];
                 const b = live.find((x) => x.roomId === r.id && overlaps(x.checkIn, x.checkOut, d, addDays(d, 1)));
+                const blk = !b ? blocks.find((x) => x.roomId === r.id && x.from <= d && d < x.to) : undefined;
+                if (blk) {
+                  let span = 1; // các ngày liên tiếp của cùng một khóa phòng
+                  while (i + span < DAYS && days[i + span] < blk.to) span++;
+                  cells.push(<td key={d} colSpan={span} className="blocked" title={blk.reason}>🔒 {blk.reason || t("blockedRoom")}</td>);
+                  i += span;
+                  continue;
+                }
                 if (!b) {
                   cells.push(<td key={d} className={r.status === "maintenance" ? "maint" : ""} />);
                   i++;

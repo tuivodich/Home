@@ -21,6 +21,9 @@ import ReportsPage from "./pages/ReportsPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import HousekeepingPage from "./pages/HousekeepingPage";
 import BackupPage from "./pages/BackupPage";
+import ResidencePage from "./pages/ResidencePage";
+import RoomBlocksPage from "./pages/RoomBlocksPage";
+import AuditPage from "./pages/AuditPage";
 import EmailSettingsPage from "./pages/EmailSettingsPage";
 import EmailSendPage from "./pages/EmailSendPage";
 import { useHr } from "./i18n/hr";
@@ -44,13 +47,14 @@ export default function StaffShell() {
   // Menu gọn: các mục liên quan gom vào nhóm thả xuống.
   const bookingItems: DdItem[] = [
     { label: t("bookings"), to: "/app/bookings" },
-    ...(admin ? [{ label: t("menuRooms"), to: "/app/rooms" }, { label: lang === "vi" ? "Giá & chính sách" : "Prices & policies", to: "/app/pricing" }] : []),
+    ...(admin ? [{ label: t("menuRooms"), to: "/app/rooms" }, { label: lang === "vi" ? "Giá & chính sách" : "Prices & policies", to: "/app/pricing" }, { label: lang === "vi" ? "Khóa phòng theo ngày" : "Block rooms", to: "/app/blocks" }] : []),
     { label: t("history"), to: "/app/history" },
     ...(admin ? [{ label: t("coupons"), to: "/app/coupons" }] : []),
   ];
   const customerItems: DdItem[] = [
     { label: lang === "vi" ? "Quản lý khách hàng" : "Manage customers", to: "/app/guests" },
     ...(admin ? [{ label: lang === "vi" ? "Khách hàng thân thiết" : "Loyal customers", to: "/app/loyalty" }] : []),
+    { label: lang === "vi" ? "Khai báo lưu trú" : "Guest registration", to: "/app/residence" },
   ];
   const emailItems: DdItem[] = [
     { label: lang === "vi" ? "Cài đặt email" : "Email settings", to: "/app/email/settings" },
@@ -68,7 +72,7 @@ export default function StaffShell() {
   const hrItems: DdItem[] = [
     ...(admin ? [{ label: t("staffAccounts"), to: "/app/accounts" }] : []),
     { label: H.attendance, to: "/app/attendance" },
-    ...(admin ? [{ label: H.roster, to: "/app/roster" }, { label: H.timesheet, to: "/app/timesheet" }] : []),
+    ...(admin ? [{ label: H.roster, to: "/app/roster" }, { label: H.timesheet, to: "/app/timesheet" }, { label: lang === "vi" ? "Nhật ký hoạt động" : "Activity log", to: "/app/audit" }] : []),
   ];
 
   return (
@@ -82,12 +86,12 @@ export default function StaffShell() {
       </header>
       <nav>
         <NavLink to="/app" end>{t("dashboard")}</NavLink>
-        {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/rooms", "/app/pricing", "/app/history", "/app/coupons")} />}
-        {front && <Dropdown className="st-dd" label={t("guests")} items={customerItems} active={isIn("/app/guests", "/app/loyalty")} />}
+        {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/rooms", "/app/pricing", "/app/blocks", "/app/history", "/app/coupons")} />}
+        {front && <Dropdown className="st-dd" label={t("guests")} items={customerItems} active={isIn("/app/guests", "/app/loyalty", "/app/residence")} />}
         <NavLink to="/app/housekeeping">{lang === "vi" ? "Dọn phòng" : "Cleaning"}</NavLink>
         {admin && <Dropdown className="st-dd" label={lang === "vi" ? "Tài chính" : "Finance"} items={financeItems} active={isIn("/app/reports", "/app/expenses")} />}
         {admin
-          ? <Dropdown className="st-dd" label={H.menu} items={hrItems} active={isIn("/app/accounts", "/app/attendance", "/app/roster", "/app/timesheet")} />
+          ? <Dropdown className="st-dd" label={H.menu} items={hrItems} active={isIn("/app/accounts", "/app/attendance", "/app/roster", "/app/timesheet", "/app/audit")} />
           : <NavLink to="/app/attendance">{H.attendance}</NavLink>}
         {admin && <Dropdown className="st-dd" label={lang === "vi" ? "Quản lý email" : "Email"} items={emailItems} active={isIn("/app/email")} />}
         {profile?.role === "owner" && <NavLink to="/app/backup">{lang === "vi" ? "Sao lưu" : "Backup"}</NavLink>}
@@ -99,6 +103,7 @@ export default function StaffShell() {
           {front && <Route path="bookings" element={<Bookings />} />}
           {front && <Route path="history" element={<History />} />}
           {front && <Route path="guests" element={<Guests />} />}
+          {front && <Route path="residence" element={<ResidencePage />} />}
           {admin && <Route path="accounts" element={<Accounts />} />}
           <Route path="attendance" element={<Attendance />} />
           {admin && <Route path="roster" element={<Roster />} />}
@@ -107,6 +112,8 @@ export default function StaffShell() {
           {admin && <Route path="reviews" element={<ReviewsAdmin />} />}
           {admin && <Route path="rooms" element={<Rooms />} />}
           {admin && <Route path="pricing" element={<PricingPage />} />}
+          {admin && <Route path="blocks" element={<RoomBlocksPage />} />}
+          {admin && <Route path="audit" element={<AuditPage />} />}
           {admin && <Route path="loyalty" element={<LoyaltyPage />} />}
           {admin && <Route path="email/settings" element={<EmailSettingsPage />} />}
           {admin && <Route path="email/send" element={<EmailSendPage />} />}

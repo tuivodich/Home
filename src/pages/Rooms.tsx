@@ -9,12 +9,14 @@ import { useI18n } from "../i18n";
 import type { Room } from "../lib/types";
 import NumInput from "../components/NumInput";
 import { usePricingConfig } from "../lib/usePricing";
+import { useAudit } from "../lib/audit";
 
 const empty = { name: "", type: "wood", capacity: 2, price: 500000, status: "active" } as const;
 
 export default function Rooms() {
   const { t, lang } = useI18n();
   const { money } = useMoney();
+  const audit = useAudit();
   const { data: rooms } = useCollection<Room>("rooms");
   const [form, setForm] = useState<Omit<Room, "id"> & { id?: string }>({ ...empty });
 
@@ -63,6 +65,7 @@ export default function Rooms() {
     const { id, ...rest } = form;
     if (id) await setDoc(doc(db, "rooms", id), rest);
     else await addDoc(collection(db, "rooms"), rest);
+    audit(id ? "room.update" : "room.create", `${id ? "Sửa" : "Thêm"} phòng ${rest.name}: ${rest.price.toLocaleString("vi-VN")} VNĐ/đêm, tối đa ${rest.capacity} khách, ${rest.status}`, id ? { type: "room", id } : undefined);
     setForm({ ...empty });
   };
 
@@ -89,7 +92,7 @@ export default function Rooms() {
             <span className={`tag ${r.status}`}>{t(r.status)}</span>
             <div className="row">
               <button className="ghost" onClick={() => setForm(r)}>{t("edit")}</button>
-              <button className="ghost danger" onClick={() => confirm(t("sure")) && deleteDoc(doc(db, "rooms", r.id))}>{t("delete")}</button>
+              <button className="ghost danger" onClick={() => { if (confirm(t("sure"))) { void deleteDoc(doc(db, "rooms", r.id)); audit("room.delete", `Xóa phòng ${r.name}`, { type: "room", id: r.id }); } }}>{t("delete")}</button>
             </div>
           </div>
         ))}

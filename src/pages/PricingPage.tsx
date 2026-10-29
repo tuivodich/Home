@@ -9,6 +9,7 @@ import { DEFAULT_BOOKING_CFG, DEFAULT_PRICING, type BookingCfg, type PricingCfg,
 import { useBank, usePricingConfig } from "../lib/usePricing";
 import { TIME_RE } from "../lib/hr";
 import NumInput from "../components/NumInput";
+import { useAudit } from "../lib/audit";
 
 const DAYS: [number, string, string][] = [[1, "T2", "Mon"], [2, "T3", "Tue"], [3, "T4", "Wed"], [4, "T5", "Thu"], [5, "T6", "Fri"], [6, "T7", "Sat"], [0, "CN", "Sun"]];
 const newId = () => `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
@@ -19,6 +20,7 @@ export default function PricingPage() {
   const { lang } = useI18n();
   const T = (vi: string, en: string) => (lang === "vi" ? vi : en);
   const { profile } = useAuth();
+  const audit = useAudit();
   const isOwner = profile?.role === "owner";
   const { pricing: savedP, cfg: savedC, loading } = usePricingConfig();
   const savedB = useBank(isOwner);
@@ -61,6 +63,7 @@ export default function PricingPage() {
         services: c.services.filter((s) => s.name.trim()).map((s) => ({ id: s.id, name: s.name.trim(), price: Math.max(0, s.price), unit: s.unit, active: s.active })),
       });
       if (isOwner && bankFilled) await setDoc(doc(db, "settings", "bank"), { bankBin: b.bankBin, bankName: b.bankName.trim(), accountNo: b.accountNo.trim(), accountName: b.accountName.trim().toUpperCase() });
+      audit("settings.pricing", `Lưu giá & chính sách: cọc ${c.depositPercent}%, ${p.seasons.length} mùa, ${p.holidays.length} ngày lễ, ${c.services.length} dịch vụ${isOwner && bankFilled ? ", tài khoản nhận cọc" : ""}`);
       setMsg(T("Đã lưu giá và chính sách.", "Prices and policies saved."));
     } catch (ex) { console.error("save pricing", ex); setErr(T("Không lưu được. Vui lòng thử lại.", "Could not save. Please try again.")); } finally { setBusy(false); }
   };

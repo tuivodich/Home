@@ -215,3 +215,19 @@ table.cal { border-collapse: collapse; min-width: 700px; width: 100%; margin-top
 
 /* Danh sách thả xuống của ô chọn: ép màu chữ/nền rõ ràng (tránh chữ sáng trên nền trắng của trình duyệt khi ô chọn có nền trong suốt). */
 select option, select optgroup { background-color: var(--card); color: var(--fg); }
+
+/* Khai báo lưu trú */
+.restbl td, .restbl th { white-space: nowrap; }
+.restbl tr.off { opacity: .45; }
+.restbl tr.warnrow td { background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.print-only { display: none; }
+@media print {
+  .residence .no-print { display: none !important; }
+  .residence .print-only { display: block; font-weight: 700; }
+  .shell > header, .shell > nav { display: none; }
+}
+
+/* Nhật ký hoạt động, khóa phòng */
+.auditlist { display: grid; gap: 4px; }
+.audit-row { padding: 6px 2px; border-bottom: 1px solid var(--line); gap: 12px; align-items: baseline; flex-wrap: wrap; }
+table.cal td.blocked { background: repeating-linear-gradient(45deg, #9a9a9a, #9a9a9a 6px, #b3b3b3 6px, #b3b3b3 12px); color: #222; font-size: .7rem; text-align: center; }

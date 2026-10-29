@@ -134,6 +134,14 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       if (!(await once(`c_${id}`))) return { sent: 0 };
       return { sent: await sendAll(await bookingText(b, "🚫 <b>Khách đã hủy đặt phòng</b>")) };
     }
+    if (type === "earlyout") {
+      const b = await get(`bookings/${id}`);
+      const rq = b?.earlyCheckoutRequest;
+      if (!b || b.createdBy !== uid || b.status !== "checked_in" || !rq?.date) return { sent: 0 };
+      const stamp = typeof rq.at?.toMillis === "function" ? rq.at.toMillis() : 0;
+      if (!(await once(`e_${id}_${stamp}`))) return { sent: 0 };
+      return { sent: await sendAll((await bookingText(b, "🧳 <b>Khách xin trả phòng sớm</b>")) + `\n⏰ Muốn trả phòng ngày <b>${fmtDate(rq.date)}</b> (dự kiến ${fmtDate(b.checkOut)}).\nXác nhận ở trang quản trị → Đặt phòng → Trả phòng.`) };
+    }
     if (type === "review") {
       const r = await get(`reviews/${uid}`);
       if (!r || r.status !== "pending") return { sent: 0 };

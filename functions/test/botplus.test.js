@@ -210,6 +210,19 @@ test("nhắc quản lý: sắp nhận phòng chưa cọc và trả phòng chưa 
   assert.deepEqual([again.deposit, again.noProfile], [0, 0]);
 });
 
+test("nhắc việc định kỳ của phòng: đến hạn thì nhắc một lần mỗi ngày, làm rồi thì thôi", async () => {
+  await reset();
+  await db.doc("settings/housekeeping").set({ checklist: [], periodic: [{ id: "ac", label: "Vệ sinh máy lạnh", everyDays: 30 }] });
+  await db.doc("roomStatus/r1").set({ status: "ready", tasks: { ac: "2026-10-20" } }); // 21 ngày trước: chưa đến hạn
+  await db.doc("roomStatus/r2").set({ status: "ready", tasks: { ac: "2026-10-01" } }); // 40 ngày trước: đến hạn
+  const { tg, bot } = mk();
+  const r = await bot.dailyReminders();
+  assert.equal(r.periodicDue, 1);
+  const m = tg.sent.find((x) => /Vệ sinh máy lạnh/.test(x.text));
+  assert.match(m.text, /Phòng gỗ 2/); assert.doesNotMatch(m.text, /Phòng gỗ 1/);
+  assert.equal((await mk().bot.dailyReminders()).periodicDue, 0, "mỗi ngày một lần");
+});
+
 test("pricing.js cho cùng kết quả với src/lib/pricing.ts", async (t) => {
   let ts;
   try { ts = await import("../../src/lib/pricing.ts"); } catch { return t.skip("Node này chưa đọc được .ts"); }

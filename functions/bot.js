@@ -246,7 +246,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   async function markClean(roomId, actor, uid) {
     const rs = await get(`roomStatus/${roomId}`);
     if (!rs || !["dirty", "cleaning"].includes(rs.status)) return { ok: false, text: "Phòng này đã được đánh dấu sẵn sàng rồi." };
-    await db.doc(`roomStatus/${roomId}`).set({ status: "ready", updatedAt: FieldValue.serverTimestamp(), updatedBy: uid, updatedByName: String(actor).slice(0, 100) });
+    await db.doc(`roomStatus/${roomId}`).set({ status: "ready", updatedAt: FieldValue.serverTimestamp(), updatedBy: uid, updatedByName: String(actor).slice(0, 100) }, { merge: true });
     return { ok: true, text: `✅ ${esc(await roomName(roomId))} đã dọn xong (${esc(actor)})` };
   }
 
@@ -695,7 +695,21 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       for (const b of noProfile) rows.push(`• <b>${esc(b.guestName)}</b> · ${esc(b.phone)} — ${esc(await roomName(b.roomId))}, trả ${fmtDate(b.checkOut)}`);
       sent += await sendManagers(`📋 <b>Khách đã trả phòng nhưng chưa có hồ sơ lưu trú</b>\n${rows.join("\n")}\n\nBổ sung ở trang quản trị → Khách lưu trú.`);
     }
-    return { sent, deposit: dep.length, noProfile: noProfile.length, lateIn: lateIn.length, lateOut: lateOut.length };
+    // Việc định kỳ của phòng (settings/housekeeping.periodic) đã đến hạn: mỗi việc nhắc một lần mỗi ngày.
+    let periodicDue = 0;
+    const hkCfg = await get("settings/housekeeping");
+    const periodic = Array.isArray(hkCfg?.periodic) ? hkCfg.periodic.filter((t) => t && typeof t.id === "string" && typeof t.label === "string" && t.everyDays >= 1) : [];
+    if (periodic.length) {
+      const [rooms, st] = await Promise.all([roomsSorted(), db.collection("roomStatus").get()]);
+      const last = new Map(st.docs.map((x) => [x.id, x.data().tasks ?? {}]));
+      for (const t of periodic) {
+        const due = rooms.filter((r) => r.status !== "maintenance").filter((r) => { const l = last.get(r.id)?.[t.id]; return !l || nights(l, d) >= t.everyDays; });
+        if (!due.length || !(await once(`pt_${t.id}_${d}`))) continue;
+        periodicDue += due.length;
+        sent += await sendManagers(`🧰 <b>Việc định kỳ đến hạn: ${esc(t.label)}</b>\n${due.map((r) => `• ${esc(r.name)}`).join("\n")}\n\nGhi nhận ở trang quản trị → Dọn phòng (nút “Đã làm”).`);
+      }
+    }
+    return { sent, deposit: dep.length, noProfile: noProfile.length, lateIn: lateIn.length, lateOut: lateOut.length, periodicDue };
   }
 
   /** 21:00 hằng ngày: gửi báo cáo ngày cho chủ/quản lý. */

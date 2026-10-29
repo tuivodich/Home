@@ -459,6 +459,16 @@ await check("housekeeping sets a room dirty", setDoc(doc(hk1, "roomStatus/r1"), 
 await check("housekeeping marks it ready", setDoc(doc(hk1, "roomStatus/r1"), { status: "ready", updatedAt: Timestamp.now(), updatedBy: "hk1", updatedByName: "Hà" }), true);
 await check("room status rejects unknown status", setDoc(doc(hk1, "roomStatus/r1"), { status: "wow" }), false);
 await check("room status rejects extra field", setDoc(doc(hk1, "roomStatus/r1"), { status: "ready", secret: 1 }), false);
+await check("housekeeping ticks the checklist and records a recurring task", setDoc(doc(hk1, "roomStatus/r1"), { status: "dirty", done: ["linen", "towel"], tasks: { ac: "2026-11-10" }, updatedAt: Timestamp.now(), updatedBy: "hk1", updatedByName: "Hà" }), true);
+await check("checklist must be a list", setDoc(doc(hk1, "roomStatus/r1"), { status: "dirty", done: "linen" }), false);
+await check("staff reads/writes internal room notes", setDoc(doc(hk1, "roomNotes/r1"), { text: "Máy lạnh kêu to", updatedAt: serverTimestamp(), updatedByName: "Hà" }), true);
+await check("room note too long is rejected", setDoc(doc(hk1, "roomNotes/r1"), { text: "x".repeat(1001), updatedAt: serverTimestamp(), updatedByName: "Hà" }), false);
+await check("customer CANNOT read room notes", getDoc(doc(c1, "roomNotes/r1")), false);
+await check("anon CANNOT read room notes", getDoc(doc(anon, "roomNotes/r1")), false);
+await check("owner saves the housekeeping checklist", setDoc(doc(own, "settings/housekeeping"), { checklist: [{ id: "a", label: "Thay ga" }], periodic: [{ id: "ac", label: "Vệ sinh máy lạnh", everyDays: 30 }] }), true);
+await check("housekeeping staff CANNOT edit the checklist", setDoc(doc(hk1, "settings/housekeeping"), { checklist: [], periodic: [] }), false);
+await check("staff reads the checklist", getDoc(doc(hk1, "settings/housekeeping")), true);
+await check("customer CANNOT read the checklist", getDoc(doc(c1, "settings/housekeeping")), false);
 await check("customer CANNOT read room status", getDoc(doc(c1, "roomStatus/r1")), false);
 await check("customer CANNOT write room status", setDoc(doc(c1, "roomStatus/r1"), { status: "ready" }), false);
 await check("housekeeping CANNOT delete room status", deleteDoc(doc(hk1, "roomStatus/r1")), false);

@@ -3,7 +3,7 @@ import { DEFAULT_MAX_PENDING } from "../lib/theme";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EMPTY_PROFILE, useProfileDoc, type Profile } from "../lib/profile";
 import { useBank, usePricingConfig } from "../lib/usePricing";
-import { quoteLines, quoteStay } from "../lib/pricing";
+import { lineLabel, quoteLines, quoteStay } from "../lib/pricing";
 import { fillP, policyLines, useP } from "../i18n/pricing";
 import PayPanel from "./PayPanel";
 import { bookingCode } from "../lib/banks";
@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import { collection, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db } from "../lib/firebase";
-import { useL } from "../i18n";
+import { useI18n, useL } from "../i18n";
 import { useMoney } from "../lib/useRate";
 import { addDays, nightsBetween, todayStr } from "../lib/format";
 import type { Busy, Coupon, Room, UserDoc } from "../lib/types";
@@ -27,6 +27,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
   room: Room; search: Search; user: User; profile: UserDoc | null; busy: Busy[]; onClose: () => void;
 }) {
   const L = useL();
+  const { lang } = useI18n();
   const G = useG();
   const P = useP();
   const { pricing, cfg } = usePricingConfig();
@@ -171,7 +172,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
               <div>{nights > 0 ? `${nights} ${L.booking.nights}` : "—"} · {fillP(P.checkInFrom, { t: cfg.checkInTime })} · {fillP(P.checkOutBefore, { t: cfg.checkOutTime })}</div>
               {nights > 0 && (
                 <div className="price-table" aria-label={P.breakdown}>
-                  {quoteLines(quote, room.name).map((l, i) => <div key={i} className={l.amount < 0 ? "neg" : ""}><span>{l.label}</span><span>{l.amount < 0 ? "−" : ""}{money(Math.abs(l.amount))}</span></div>)}
+                  {quoteLines(quote, room.name).map((l, i) => <div key={i} className={l.amount < 0 ? "neg" : ""}><span>{lineLabel(l, lang)}</span><span>{l.amount < 0 ? "−" : ""}{money(Math.abs(l.amount))}</span></div>)}
                   <div className="sum"><span>{coupon ? L.modal.total : L.booking.estimate}{coupon && <> <span className="lm-off">−{coupon.percent}%</span></>}</span><b>{money(total)}</b></div>
                   {quote.deposit > 0 && <div><span>{P.deposit} ({cfg.depositPercent}%) — {P.depositNote}</span><b>{money(quote.deposit)}</b></div>}
                   {quote.deposit > 0 && <div><span>{P.balance} — {P.dueAtArrival}</span><span>{money(total - quote.deposit)}</span></div>}

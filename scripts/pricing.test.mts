@@ -91,3 +91,19 @@ test("dòng chi tiết gộp các đêm cùng giá và có tổng khớp", () =>
   assert.equal(lines.reduce((s, l) => s + l.amount, 0), q.total);
   assert.ok(lines.some((l) => /cuối tuần/.test(l.label) && /× 2 đêm/.test(l.label)));
 });
+
+test("quoteLines: nhãn tiếng Anh cho đêm, cuối tuần, giảm giá ở dài ngày, phụ thu, mã giảm giá", async () => {
+  const { quoteLines, quoteStay, parsePricing, parseBookingCfg, lineLabel } = await import("../src/lib/pricing.ts");
+  const pricing = parsePricing({ weekendDays: [5, 6], weekendPercent: 20, longStay: [{ minNights: 3, percent: -10 }] });
+  const cfg = parseBookingCfg({ extraGuestFee: 100000, earlyCheckInFee: 150000, lateCheckOutFee: 80000, services: [{ id: "bbq", name: "BBQ", price: 200000, unit: "once", active: true }] });
+  // 2026-11-12 (Thứ Năm) → 4 đêm: Thứ Năm giá thường; Thứ Sáu, Thứ Bảy +20%; Chủ Nhật giá thường
+  const q = quoteStay({ price: 500000, capacity: 4, baseGuests: 2 }, "2026-11-12", "2026-11-16", 3, pricing, cfg, { early: true, late: true, services: { bbq: 1 }, couponPercent: 10 });
+  const lines = quoteLines(q, "Room A");
+  const en = lines.map((l) => lineLabel(l, "en")), vi = lines.map((l) => lineLabel(l, "vi"));
+  assert.ok(en.some((x) => x === "Room A × 2 nights @ 500,000"), en.join(" | "));
+  assert.ok(en.some((x) => x === "Room A × 2 nights (weekend +20%) @ 600,000"), en.join(" | "));
+  assert.ok(en.includes("Long-stay discount −10%") && en.includes("Extra guest surcharge (1 guest)") && en.includes("Coupon −10%") && en.includes("Early check-in fee") && en.includes("Late check-out fee") && en.includes("BBQ × 1"), en.join(" | "));
+  assert.ok(vi.some((x) => /× 2 đêm \(cuối tuần \+20%\)/.test(x)) && vi.includes("Giảm ở dài ngày −10%"), vi.join(" | "));
+  for (const x of en) assert.ok(!/đêm|cuối tuần|Giảm|Phụ thu|người|nhận phòng|trả phòng/.test(x), `không còn chữ Việt: ${x}`);
+  assert.equal(lineLabel({ label: "Tiền phòng", amount: 1 }, "en"), "Tiền phòng", "đặt phòng cũ chỉ có bản tiếng Việt thì dùng bản đó");
+});

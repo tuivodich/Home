@@ -15,7 +15,10 @@ export interface BookingCfg {
   extraGuestFee: number; earlyCheckInFee: number; lateCheckOutFee: number; services: ServiceDef[];
 }
 export interface RoomPrice { price: number; capacity: number; baseGuests?: number }
-export interface Line { label: string; amount: number }
+/** Một dòng chi tiết giá: `label` tiếng Việt, `labelEn` tiếng Anh (đặt phòng cũ chỉ có tiếng Việt). */
+export interface Line { label: string; labelEn?: string; amount: number }
+/** Nhãn dòng theo ngôn ngữ đang xem (rơi về tiếng Việt nếu chưa có bản tiếng Anh). */
+export const lineLabel = (l: Line, lang: string) => (lang === "en" && l.labelEn ? l.labelEn : l.label);
 
 export const DEFAULT_PRICING: PricingCfg = { weekendDays: [5, 6], weekendPercent: 0, seasons: [], holidays: [], longStay: [] };
 export const DEFAULT_BOOKING_CFG: BookingCfg = {
@@ -115,23 +118,28 @@ export function quoteStay(room: RoomPrice, checkIn: string, checkOut: string, gu
 /** Tiền cọc: làm tròn lên nghìn đồng. */
 export const depositFor = (total: number, percent: number) => (percent > 0 ? Math.min(total, Math.ceil((total * percent) / 100 / 1000) * 1000) : 0);
 
-/** Các dòng chi tiết lưu cùng đặt phòng (để hóa đơn tái hiện đúng giá lúc đặt, dù bảng giá đổi sau này); nhãn bằng tiếng Việt. */
+/** Các dòng chi tiết lưu cùng đặt phòng (để hóa đơn tái hiện đúng giá lúc đặt, dù bảng giá đổi sau này); có cả nhãn tiếng Việt và tiếng Anh. */
 export function quoteLines(q: Quote, roomName: string): Line[] {
   const lines: Line[] = [];
   const groups = new Map<string, { price: number; tag: string; percent: number; n: number }>();
   for (const n of q.nights) { const k = `${n.price}|${n.tag}`; const g = groups.get(k); if (g) g.n++; else groups.set(k, { price: n.price, tag: n.tag, percent: n.percent, n: 1 }); }
-  for (const g of groups.values()) lines.push({ label: `${roomName} × ${g.n} đêm${g.tag ? ` (${tagLabel(g.tag, g.percent)})` : ""} @ ${g.price.toLocaleString("vi-VN")}`, amount: g.price * g.n });
-  if (q.longStayDiscount) lines.push({ label: `Giảm ở dài ngày −${-q.longStayPercent}%`, amount: -q.longStayDiscount });
-  if (q.extraGuestFee) lines.push({ label: `Phụ thu thêm khách (${q.extraGuests} người)`, amount: q.extraGuestFee });
-  if (q.couponDiscount) lines.push({ label: `Mã giảm giá −${q.couponPercent}%`, amount: -q.couponDiscount });
-  if (q.earlyFee) lines.push({ label: "Phụ thu nhận phòng sớm", amount: q.earlyFee });
-  if (q.lateFee) lines.push({ label: "Phụ thu trả phòng muộn", amount: q.lateFee });
-  for (const s of q.services) lines.push({ label: `${s.name} × ${s.qty}`, amount: s.amount });
+  for (const g of groups.values()) lines.push({
+    label: `${roomName} × ${g.n} đêm${g.tag ? ` (${tagLabel(g.tag, g.percent, "vi")})` : ""} @ ${g.price.toLocaleString("vi-VN")}`,
+    labelEn: `${roomName} × ${g.n} night${g.n > 1 ? "s" : ""}${g.tag ? ` (${tagLabel(g.tag, g.percent, "en")})` : ""} @ ${g.price.toLocaleString("en-US")}`,
+    amount: g.price * g.n,
+  });
+  if (q.longStayDiscount) lines.push({ label: `Giảm ở dài ngày −${-q.longStayPercent}%`, labelEn: `Long-stay discount −${-q.longStayPercent}%`, amount: -q.longStayDiscount });
+  if (q.extraGuestFee) lines.push({ label: `Phụ thu thêm khách (${q.extraGuests} người)`, labelEn: `Extra guest surcharge (${q.extraGuests} ${q.extraGuests > 1 ? "guests" : "guest"})`, amount: q.extraGuestFee });
+  if (q.couponDiscount) lines.push({ label: `Mã giảm giá −${q.couponPercent}%`, labelEn: `Coupon −${q.couponPercent}%`, amount: -q.couponDiscount });
+  if (q.earlyFee) lines.push({ label: "Phụ thu nhận phòng sớm", labelEn: "Early check-in fee", amount: q.earlyFee });
+  if (q.lateFee) lines.push({ label: "Phụ thu trả phòng muộn", labelEn: "Late check-out fee", amount: q.lateFee });
+  for (const s of q.services) lines.push({ label: `${s.name} × ${s.qty}`, labelEn: `${s.name} × ${s.qty}`, amount: s.amount });
   return lines;
 }
-function tagLabel(tag: string, percent: number) {
+function tagLabel(tag: string, percent: number, lang: "vi" | "en") {
   const sign = percent > 0 ? `+${percent}%` : `${percent}%`;
-  return tag.replace("weekend", "cuối tuần").replace(/^holiday$/, "ngày lễ").replace(/^season$/, "mùa cao điểm") + ` ${sign}`;
+  const vi = lang === "vi";
+  return tag.replace("weekend", vi ? "cuối tuần" : "weekend").replace(/^holiday$/, vi ? "ngày lễ" : "holiday").replace(/^season$/, vi ? "mùa cao điểm" : "peak season") + ` ${sign}`;
 }
 
 /** Số ngày từ ngày `at` (yyyy-mm-dd) tới ngày nhận phòng. */

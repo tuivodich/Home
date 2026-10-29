@@ -45,6 +45,7 @@ service cloud.firestore {
       allow write: if isAdmin() && !(id in ['contact', 'pricing', 'booking', 'bank', 'loyalty', 'backup', 'backupStatus', 'mail', 'mailState'])
         && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel'])
         && (!('themeAuto' in request.resource.data) || request.resource.data.themeAuto is bool)
+        && (!('defaultLang' in request.resource.data) || request.resource.data.defaultLang in ['vi', 'en'])
         && (!('effects' in request.resource.data) || request.resource.data.effects is bool)
         && (!('maxPending' in request.resource.data) || (request.resource.data.maxPending is int && request.resource.data.maxPending >= 1 && request.resource.data.maxPending <= 20));
     }

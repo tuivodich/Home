@@ -148,8 +148,8 @@ export default function Settings() {
           <span>{vi ? "Bật hiệu ứng (đom đóm, khói, ánh đèn)" : "Enable effects (fireflies, smoke, glow)"}</span>
         </label>
         <label className="check">
-          <input type="checkbox" checked={shown.themeAuto} disabled={!READY_THEMES.includes("noel") || themeSaving} onChange={(e) => pickSite("themeAuto", e.target.checked)} />
-          <span>{vi ? "Tự chuyển sang Noel từ 01/12 đến 05/01 (ngoài mùa dùng giao diện đã chọn)" : "Switch to Christmas automatically 1 Dec – 5 Jan (otherwise your chosen theme)"}</span>
+          <input type="checkbox" checked={shown.themeAuto} disabled={themeSaving} onChange={(e) => pickSite("themeAuto", e.target.checked)} />
+          <span>{vi ? "Tự chuyển theo mùa lễ: Halloween 20/10–01/11, Noel 01/12–05/01, Tết (21 ngày trước đến 10 ngày sau mùng 1). Ngoài mùa dùng giao diện đã chọn." : "Switch automatically for the season: Halloween 20 Oct–1 Nov, Christmas 1 Dec–5 Jan, Tet (21 days before to 10 days after Lunar New Year's Day). Otherwise your chosen theme."}</span>
         </label>
         <div className="rolebar">
           <button type="button" disabled={themeDirty === 0 || themeSaving} onClick={saveTheme}>{t("rolesSave")}</button>

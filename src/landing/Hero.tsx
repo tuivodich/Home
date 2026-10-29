@@ -4,7 +4,7 @@ import { todayStr } from "../lib/format";
 import type { Room } from "../lib/types";
 import type { Search } from "./availability";
 import { useTheme } from "../lib/theme";
-import ForestScene, { Drift, Fireflies, Garland, Snowfall } from "./ForestScene";
+import ForestScene, { Bats, Drift, Fireflies, Garland, Lanterns, Petals, Snowfall } from "./ForestScene";
 import NumInput from "../components/NumInput";
 
 export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; search: Search; setSearch: (s: Search) => void }) {
@@ -18,7 +18,7 @@ export default function Hero({ rooms, search, setSearch }: { rooms: Room[]; sear
 
   return (
     <section id="home" className="lp-hero">
-      <div className="lp-scene"><ForestScene theme={theme} id="hero" />{theme === "noel" && <Garland />}{effects && <><Fireflies /><Drift />{theme === "noel" && <Snowfall />}</>}</div>
+      <div className="lp-scene"><ForestScene theme={theme} id="hero" />{theme === "noel" && <Garland />}{theme === "tet" && <Lanterns />}{effects && <><Fireflies /><Drift />{theme === "noel" && <Snowfall />}{theme === "halloween" && <Bats />}{theme === "tet" && <Petals />}</>}</div>
       <div className="lp-wrap lp-hero-in">
         <div className="lp-hero-l reveal">
           <span className="lp-eyebrow">{L.hero.eyebrow}</span>

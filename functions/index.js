@@ -150,18 +150,18 @@ exports.backupScheduled = onSchedule({ region: REGION, schedule: "0 2 * * *", ti
 
 // ===== Cảnh báo và nhắc tự động qua Telegram cho quản lý =====
 const schedOpts = { region: REGION, timeZone: "Asia/Ho_Chi_Minh", secrets: [TOKEN, SMTP_USER, SMTP_PASS], timeoutSeconds: 120 };
-/** Mỗi 30 phút trong giờ làm việc (05:00–23:59): báo nhân viên chưa vào ca / quên ra ca. */
-exports.tgStaffAlerts = onSchedule({ ...schedOpts, schedule: "*/30 5-23 * * *" }, async () => { try { await botFor().staffAlerts(); } catch (e) { console.error("staffAlerts", e); } });
+/** Mỗi giờ (phút thứ 20) từ 05:00 đến 23:59: báo nhân viên chưa vào ca / quên ra ca. Phút 20 để cảnh báo đến ngay sau 15 phút châm chước của ca bắt đầu đầu giờ. */
+exports.tgStaffAlerts = onSchedule({ ...schedOpts, schedule: "20 5-23 * * *" }, async () => { try { await botFor().staffAlerts(); } catch (e) { console.error("staffAlerts", e); } });
 /** 08:00 và 18:00 mỗi ngày: khách sắp nhận phòng chưa cọc; khách vừa trả phòng chưa có hồ sơ. */
 exports.tgReminders = onSchedule({ ...schedOpts, schedule: "0 8,18 * * *" }, async () => {
   try { await botFor().dailyReminders(); } catch (e) { console.error("dailyReminders", e); }
   try { await guestFor(createTelegram(TOKEN.value())).reminders(); } catch (e) { console.error("guest reminders", e); }
 });
 /**
- * Mỗi 2 giờ từ 06:00 đến 22:00 (giờ Việt Nam): dọn đặt phòng bị treo (hết hạn / khách không đến), tính lại giá các yêu cầu mới
+ * Mỗi 3 giờ từ 06:00 đến 22:00 (06, 09, 12, 15, 18, 21 giờ Việt Nam): dọn đặt phòng bị treo (hết hạn / khách không đến), tính lại giá các yêu cầu mới
  * và gửi email/Telegram còn sót cho khách. Đây là lớp dự phòng: các việc cần tức thời (báo nhân viên, xác nhận qua bot hoặc web) đã chạy ngay khi xảy ra.
  */
-exports.bookingSweep = onSchedule({ ...schedOpts, schedule: "0 6-22/2 * * *" }, async () => {
+exports.bookingSweep = onSchedule({ ...schedOpts, schedule: "0 6-22/3 * * *" }, async () => {
   try {
     const g = guestFor(createTelegram(TOKEN.value()));
     const stale = await g.expireStale().catch((e) => { console.error("expireStale", e); return null; });

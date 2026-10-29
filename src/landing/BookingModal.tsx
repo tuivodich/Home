@@ -9,6 +9,7 @@ import PayPanel from "./PayPanel";
 import { bookingCode } from "../lib/banks";
 import { useG } from "../i18n/guest";
 import DateInput from "../components/DateInput";
+import CountrySelect from "../components/CountrySelect";
 import { Link } from "react-router-dom";
 import { collection, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -221,7 +222,7 @@ export default function BookingModal({ room, search, user, profile, busy, onClos
                 </select>
               </label>
               <label>{G.docNumber}<input maxLength={30} value={ci.docNumber} onChange={(e) => setCi({ ...ci, docNumber: e.target.value })} /></label>
-              <label>{G.nationality}<input maxLength={60} value={ci.nationality} onChange={(e) => setCi({ ...ci, nationality: e.target.value })} /></label>
+              <label>{G.nationality}<CountrySelect value={ci.nationality} onChange={(v) => setCi({ ...ci, nationality: v })} /></label>
               <label>{G.dob}<DateInput value={ci.dob} onChange={(v) => setCi({ ...ci, dob: v })} /></label>
               <label>{G.eta}<input inputMode="numeric" maxLength={5} placeholder={G.etaPh} pattern="([01][0-9]|2[0-3]):[0-5][0-9]|" value={eta} onChange={(e) => setEta(e.target.value)} /></label>
               <label className="lm-check"><input type="checkbox" checked={saveToAccount} onChange={(e) => setSaveToAccount(e.target.checked)} /><span>{G.saveToAccount}</span></label>

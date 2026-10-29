@@ -109,6 +109,11 @@ Mọi ô ngày dùng `src/components/DateInput.tsx`: gõ tay **dd/mm/yyyy** (t�
 - **Ngôn ngữ mặc định**: chủ/quản lý chọn ở trang quản trị → Tổng quan → *Ngôn ngữ mặc định của website* (ô nằm trên ô tỷ giá; lưu `settings/app.defaultLang`). Khách vào lần đầu thấy ngôn ngữ này; ai đã tự bấm nút VI/EN thì giữ lựa chọn của họ (lưu trên trình duyệt). Email và bot Telegram vẫn bằng tiếng Việt.
 - **Chi tiết giá** của đặt phòng (đêm, cuối tuần, giảm ở dài ngày, phụ thu, mã giảm giá…) lưu cả nhãn tiếng Việt (`label`) và tiếng Anh (`labelEn`); hộp Xác nhận đặt phòng và hóa đơn hiển thị theo ngôn ngữ đang xem (đặt phòng cũ chỉ có tiếng Việt thì hiện tiếng Việt). Tên mùa/ngày lễ do chủ đặt nên giữ nguyên.
 
+## Dọn phòng: danh sách kiểm tra, việc định kỳ, ghi chú nội bộ
+- **Danh sách kiểm tra** (mặc định: thay ga/gối, thay khăn, bổ sung nước…): phòng "Cần dọn/Đang dọn" hiện các ô tích; bấm *Đã dọn xong* khi còn việc chưa tích sẽ hỏi lại. Phòng vừa bẩn lại thì danh sách bắt đầu lại. Chủ/quản lý sửa danh sách ở nút ⚙ trên trang (`settings/housekeeping`).
+- **Việc định kỳ** ("Vệ sinh máy lạnh | 30" = mỗi 30 ngày): đến hạn thì hiện dòng ⏰ trên thẻ phòng với nút *Đã làm* (ngày lưu ở `roomStatus/{phòng}.tasks`); bot nhắc chủ/quản lý một lần mỗi ngày (8h và 18h cùng đợt nhắc việc).
+- **Ghi chú nội bộ** từng phòng (nút 📝): lưu ở `roomNotes/{phòng}`, chỉ nhân viên thấy, không lộ ra website.
+
 ## Cọc giữ lại trong doanh thu
 Đặt phòng đã hủy / khách không đến mà còn tiền đã thu (sau khi nhân viên ghi nhận hoàn tiền) được tính là **cọc giữ lại**: hiện thành thẻ riêng ở *Báo cáo doanh thu*, cộng vào lợi nhuận, vào cột biểu đồ tháng, file CSV và lệnh `/doanhthu` của bot. Ghi nhận theo ngày hủy (không có ngày hủy thì theo ngày nhận phòng). Lưu ý: nếu khách hủy đúng hạn được hoàn 100% nhưng nhân viên chưa bấm *Hoàn tiền*, khoản đó tạm được tính là cọc giữ lại cho đến khi hoàn.
 

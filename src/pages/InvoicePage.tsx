@@ -10,7 +10,7 @@ import { site } from "../lib/siteConfig";
 import { useContact } from "../lib/contact";
 import { usePricingConfig } from "../lib/usePricing";
 import { bookingCode } from "../lib/banks";
-import { fmtDate, nightsBetween, todayStr } from "../lib/format";
+import { fmtDate, nightsBetween, todayStr, toDateStr } from "../lib/format";
 import { isStaffRole, type Booking, type Room } from "../lib/types";
 import { policyLines } from "../i18n/pricing";
 import { useTitle } from "../lib/useTitle";
@@ -95,7 +95,7 @@ export default function InvoicePage() {
             <h3>{L.payments}</h3>
             <table className="small">
               <thead><tr><th>{L.date}</th><th>{L.note}</th><th className="num">{L.amount}</th></tr></thead>
-              <tbody>{log.map((p, i) => <tr key={i}><td>{fmtDate(p.d.toISOString().slice(0, 10))}</td><td>{p.note}</td><td className="num">{p.amount < 0 ? "−" : ""}{vnd(Math.abs(p.amount))}</td></tr>)}</tbody>
+              <tbody>{log.map((p, i) => <tr key={i}><td>{fmtDate(toDateStr(p.d))}</td><td>{p.note}</td><td className="num">{p.amount < 0 ? "−" : ""}{vnd(Math.abs(p.amount))}</td></tr>)}</tbody>
             </table>
           </section>
         )}

@@ -114,6 +114,9 @@ Mọi ô ngày dùng `src/components/DateInput.tsx`: gõ tay **dd/mm/yyyy** (t�
 - **Việc định kỳ** ("Vệ sinh máy lạnh | 30" = mỗi 30 ngày): đến hạn thì hiện dòng ⏰ trên thẻ phòng với nút *Đã làm* (ngày lưu ở `roomStatus/{phòng}.tasks`); bot nhắc chủ/quản lý một lần mỗi ngày (8h và 18h cùng đợt nhắc việc).
 - **Ghi chú nội bộ** từng phòng (nút 📝): lưu ở `roomNotes/{phòng}`, chỉ nhân viên thấy, không lộ ra website.
 
+## Hóa đơn PDF
+Trang hóa đơn (`/invoice/<id>`, khách xem của mình, nhân viên xem mọi đặt phòng) có nút **Tải PDF**: chụp tờ hóa đơn bằng `html2canvas` rồi ghép vào các trang A4 bằng `jspdf` (hai thư viện chỉ nạp khi bấm nút). Nút **In** vẫn dùng hộp thoại in của trình duyệt (chữ sắc nét hơn, chọn “Lưu dạng PDF”). Hóa đơn luôn tạo từ dữ liệu đặt phòng hiện tại nên không lưu bản riêng.
+
 ## Đồng bộ lịch iCal (Đặt phòng → Đồng bộ lịch)
 - **Xuất:** mỗi phòng có đường dẫn `https://<site>/ical/<mã phòng>.ics?k=<mã bí mật>` (Cloud Function `ical`, hosting rewrite `/ical/**`) để dán vào Airbnb / Booking.com / Agoda. Gồm đặt phòng chờ/đã xác nhận/đang ở và khóa phòng thủ công; chỉ có ngày bận, không có tên hay liên hệ khách; không xuất lại lịch nhập từ kênh khác (tránh vòng lặp). Mã bí mật lưu ở `settings/ical.token` (chủ/quản lý xem; đổi mã thì đường dẫn cũ ngừng hoạt động).
 - **Nhập:** dán đường dẫn lịch của kênh (chỉ `https://`, chặn địa chỉ nội bộ) → hàm `icalSync` chạy mỗi giờ (nút *Đồng bộ ngay* gọi `icalSyncNow`) tạo/cập nhật/gỡ khóa phòng `source: "ical"` + lịch bận `busy/blk_ical_…`. Lỗi mạng giữ nguyên dữ liệu cũ; trạng thái từng nguồn ở `settings/icalState`. Nếu đêm kênh nhận trùng một đặt phòng của mình → báo chủ/quản lý qua Telegram. Giới hạn: các kênh tự làm mới lịch của họ sau vài giờ nên vẫn có độ trễ — iCal không phải đồng bộ tức thời.

@@ -12,7 +12,7 @@ const pct = (x: number) => `${(x * 100).toFixed(1).replace(/\.0$/, "")}%`;
 export default function ReportsPage() {
   const { lang } = useI18n();
   const T = (vi: string, en: string) => (lang === "vi" ? vi : en);
-  const { money } = useMoney();
+  const { money, moneyText } = useMoney();
   const { data: bookings } = useCollection<RBooking & { id: string }>("bookings");
   const { data: expenses } = useCollection<RExpense & { id: string }>("expenses");
   const { data: rooms } = useCollection<Room>("rooms");
@@ -76,8 +76,8 @@ export default function ReportsPage() {
               const x = 14 + i * 58, h = (v: number) => (v / maxBar) * 150;
               return (
                 <g key={m.ym}>
-                  <rect x={x} y={170 - h(m.revenue)} width="22" height={h(m.revenue)} rx="3" className="bar-rev"><title>{`${m.ym}: ${money(m.revenue)}`}</title></rect>
-                  <rect x={x + 24} y={170 - h(m.expenses)} width="22" height={h(m.expenses)} rx="3" className="bar-exp"><title>{`${m.ym}: ${T("chi phí", "expenses")} ${money(m.expenses)}`}</title></rect>
+                  <rect x={x} y={170 - h(m.revenue)} width="22" height={h(m.revenue)} rx="3" className="bar-rev"><title>{`${m.ym}: ${moneyText(m.revenue)}`}</title></rect>
+                  <rect x={x + 24} y={170 - h(m.expenses)} width="22" height={h(m.expenses)} rx="3" className="bar-exp"><title>{`${m.ym}: ${T("chi phí", "expenses")} ${moneyText(m.expenses)}`}</title></rect>
                   <text x={x + 23} y="188" textAnchor="middle" className="bar-lbl">{m.ym.slice(5)}</text>
                 </g>
               );

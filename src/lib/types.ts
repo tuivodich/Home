@@ -18,7 +18,7 @@ export interface Booking {
   /** Trả phòng sớm: `checkOut` được rút về ngày thực tế để nhả phòng; `plannedCheckOut` giữ ngày dự kiến ban đầu. */
   plannedCheckOut?: string; earlyCheckout?: boolean; earlyCheckoutRequest?: { date: string; at?: { toMillis(): number } };
   priceEditedBy?: string; slotId?: string;
-  lang?: "vi" | "en"; lines?: { label: string; labelEn?: string; amount: number }[]; deposit?: number; paid?: number; cancelledAt?: { toMillis(): number };
+  lang?: "vi" | "en"; code?: string; lines?: { label: string; labelEn?: string; amount: number }[]; deposit?: number; paid?: number; cancelledAt?: { toMillis(): number };
   payLog?: { amount: number; at: { toMillis(): number }; by: string; note: string }[];
 }
 

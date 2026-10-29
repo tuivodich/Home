@@ -16,6 +16,13 @@
         }
       },
       {
+        "source": "/ical/**",
+        "function": {
+          "functionId": "ical",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

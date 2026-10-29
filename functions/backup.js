@@ -1,7 +1,7 @@
 "use strict";
 
 /** Các bộ sưu tập được sao lưu (không gồm ảnh giấy tờ trong Storage, không gồm nhật ký tạm như tgRate/tgSent/pend). */
-const COLLECTIONS = ["users", "profiles", "members", "rooms", "roomStatus", "roomNotes", "bookings", "busy", "guests", "precheckins", "coupons", "reviews", "pages", "settings",
+const COLLECTIONS = ["users", "profiles", "members", "rooms", "roomStatus", "roomNotes", "bankTx", "bookings", "busy", "guests", "precheckins", "coupons", "reviews", "pages", "settings",
   "expenses", "shifts", "schedule", "attendance", "tgChats"];
 const NAME_RE = /^nhago-\d{8}-\d{6}\.json$/;
 const PREFIX = "backups/";

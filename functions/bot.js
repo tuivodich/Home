@@ -760,7 +760,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   /** 21:00 hằng ngày: gửi báo cáo ngày cho chủ/quản lý. */
   async function dailyReport() { return { sent: await sendManagers(await daySummary()) }; }
 
-  return { notify, linkCode, guestLinkCode, handleUpdate, decide, staffAlerts, dailyReminders, dailyReport };
+  return { notify, linkCode, guestLinkCode, handleUpdate, decide, staffAlerts, dailyReminders, dailyReport, notifyManagers: sendManagers };
 }
 
 module.exports = { createBot, webhookSecret, safeEq, parseDate, todayVN, FRONT, LIMITS, STAFF_COMMANDS, GUEST_COMMANDS, GUEST_COMMANDS_EN };

@@ -520,6 +520,17 @@ await check("default language only accepts vi or en", setDoc(doc(mgr, "settings/
 await check("reception CANNOT change the default language", setDoc(doc(rec, "settings/app"), { defaultLang: "vi" }, { merge: true }), false);
 await check("anyone reads the app settings (default language)", getDoc(doc(anon, "settings/app")), true);
 
+// ----- Trả phòng sớm -----
+const stay = { roomId: "r1", guestName: "X", phone: "1", checkIn: "2026-06-01", checkOut: "2026-06-05", guests: 1, total: 1, note: "", source: "staff", createdBy: "mgr1" };
+const seedStay = async (id, extra = {}) => env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "bookings", id), { ...stay, status: "checked_in", ...extra }); });
+await seedStay("ec1"); await seedStay("ec2"); await seedStay("ec3"); await seedStay("ec4");
+await check("reception checks out early: shortens check-out and keeps the planned date", updateDoc(doc(rec, "bookings/ec1"), { status: "checked_out", checkOut: "2026-06-03", plannedCheckOut: "2026-06-05", earlyCheckout: true }), true);
+await check("early check-out cannot extend the stay", updateDoc(doc(rec, "bookings/ec2"), { status: "checked_out", checkOut: "2026-06-09", plannedCheckOut: "2026-06-05", earlyCheckout: true }), false);
+await check("early check-out cannot end before check-in", updateDoc(doc(rec, "bookings/ec3"), { status: "checked_out", checkOut: "2026-05-30", plannedCheckOut: "2026-06-05", earlyCheckout: true }), false);
+await check("early check-out must record the true planned date", updateDoc(doc(rec, "bookings/ec4"), { status: "checked_out", checkOut: "2026-06-03", plannedCheckOut: "2026-06-04", earlyCheckout: true }), false);
+await check("reception CANNOT change dates without checking out", updateDoc(doc(rec, "bookings/ec4"), { checkOut: "2026-06-03", plannedCheckOut: "2026-06-05", earlyCheckout: true }), false);
+await check("reception CANNOT slip other fields into an early check-out", updateDoc(doc(rec, "bookings/ec4"), { status: "checked_out", checkOut: "2026-06-03", plannedCheckOut: "2026-06-05", earlyCheckout: true, total: 0 }), false);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

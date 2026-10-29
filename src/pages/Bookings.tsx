@@ -137,6 +137,23 @@ export default function Bookings() {
     if (status === "checked_out") { const b = bookings.find((x) => x.id === id); if (b) await markRoomDirty(b.roomId, { uid: user?.uid ?? "", name: user?.displayName || user?.email || "" }); }
   };
 
+  // Trả phòng (luôn hỏi lại cho khỏi bấm nhầm). Trả SỚM hơn ngày dự kiến thì rút ngày trả về hôm nay để phòng được nhả cho khách khác ngay;
+  // tiền phòng giữ nguyên, chủ/quản lý chỉnh giá hoặc hoàn tiền sau nếu cần.
+  const checkOutNow = async (b: Booking) => {
+    const day = todayStr();
+    const early = b.checkOut > day;
+    const room = roomName(b.roomId);
+    const msg = early
+      ? (lang === "vi"
+        ? `${b.guestName} (${room}) trả phòng SỚM: dự kiến ${fmtDate(b.checkOut)}, hôm nay ${fmtDate(day)}.\n\nPhòng sẽ được nhả cho khách khác từ hôm nay. Tiền phòng giữ nguyên (${b.total.toLocaleString("vi-VN")} VNĐ); nếu cần giảm giá hay hoàn tiền, chủ/quản lý xử lý ở “Sửa giá” / “Hoàn tiền”.\n\nXác nhận trả phòng?`
+        : `${b.guestName} (${room}) is checking out EARLY: planned ${fmtDate(b.checkOut)}, today ${fmtDate(day)}.\n\nThe room will be released for other guests from today. The room charge stays unchanged (${b.total.toLocaleString("en-US")} VND); the owner/manager can adjust the price or refund afterwards.\n\nConfirm check-out?`)
+      : (lang === "vi" ? `Xác nhận trả phòng cho ${b.guestName} (${room})?` : `Confirm check-out for ${b.guestName} (${room})?`);
+    if (!confirm(msg)) return;
+    if (!early) return setStatus(b.id, "checked_out");
+    await updateDoc(doc(db, "bookings", b.id), { status: "checked_out", checkOut: day > b.checkIn ? day : b.checkIn, plannedCheckOut: b.checkOut, earlyCheckout: true });
+    await markRoomDirty(b.roomId, { uid: user?.uid ?? "", name: user?.displayName || user?.email || "" });
+  };
+
   // Khách đã xác nhận nhưng không đến: hủy với lý do "không đến" (cọc đã nhận vẫn nằm trong sổ để xử lý theo chính sách).
   const markNoShow = async (b: Booking) => {
     if (!confirm(t("sureNoShow"))) return;
@@ -145,7 +162,7 @@ export default function Bookings() {
 
   // Xác nhận / nhận phòng một yêu cầu đang "Chờ xác nhận": không được trùng với đặt phòng đã xác nhận / đang ở / đã trả của cùng phòng.
   const hasClash = (b: Booking) => bookings.some((o) => o.id !== b.id && o.roomId === b.roomId
-    && ["confirmed", "checked_in", "checked_out"].includes(o.status) && overlaps(o.checkIn, o.checkOut, b.checkIn, b.checkOut));
+    && ["confirmed", "checked_in"].includes(o.status) && overlaps(o.checkIn, o.checkOut, b.checkIn, b.checkOut)); // khách đã trả phòng thì phòng trống, không tính trùng
 
   const hasProfile = (b: Booking) => guests.some((x) => x.bookingId === b.id);
 
@@ -160,6 +177,7 @@ export default function Bookings() {
       return;
     }
     if (target === "pending" && !confirm(t("sure"))) return;
+    if (target === "checked_in" && !confirm(lang === "vi" ? `Xác nhận nhận phòng cho ${b.guestName} (${roomName(b.roomId)})?` : `Confirm check-in for ${b.guestName} (${roomName(b.roomId)})?`)) return;
     await setStatus(b.id, target);
   };
 
@@ -237,7 +255,7 @@ export default function Bookings() {
                   </button>
                 ))}
               </div>
-              {b.status === "checked_in" && <button onClick={() => setStatus(b.id, "checked_out")}>{t("doCheckOut")}</button>}
+              {b.status === "checked_in" && <button onClick={() => checkOutNow(b)}>{t("doCheckOut")}</button>}
               {b.status === "confirmed" && b.checkIn < today && <button className="ghost danger" onClick={() => markNoShow(b)}>🚫 {t("doNoShow")}</button>}
               {(b.deposit ?? 0) > 0 && (b.paid ?? 0) < b.deposit! && b.status !== "cancelled" && (
                 <button onClick={() => confirm(`${P.depositReceived}: ${b.deposit! - (b.paid ?? 0)} VNĐ?`) && recordPayment(b, b.deposit! - (b.paid ?? 0), "Đặt cọc")}>💰 {P.depositReceived}</button>

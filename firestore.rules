@@ -213,6 +213,11 @@ service cloud.firestore {
         || (isFront() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid', 'payLog']))
         || (!(resource.data.status in ['checked_out', 'cancelled']) && (isAdmin()
           || (isFront() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason']))
+          // Trả phòng SỚM: lễ tân được rút ngày trả về ngày thực tế (không sớm hơn ngày nhận) kèm ngày dự kiến ban đầu để nhả phòng.
+          || (isFront() && resource.data.status == 'checked_in' && request.resource.data.status == 'checked_out'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'checkOut', 'plannedCheckOut', 'earlyCheckout'])
+            && request.resource.data.checkOut >= resource.data.checkIn && request.resource.data.checkOut < resource.data.checkOut
+            && request.resource.data.plannedCheckOut == resource.data.checkOut && request.resource.data.earlyCheckout == true)
           || (signedIn()
             && resource.data.createdBy == request.auth.uid
             && resource.data.source == 'online'

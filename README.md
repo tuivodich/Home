@@ -108,3 +108,8 @@ Mọi ô ngày dùng `src/components/DateInput.tsx`: gõ tay **dd/mm/yyyy** (t�
 ## Ngôn ngữ website
 - **Ngôn ngữ mặc định**: chủ/quản lý chọn ở trang quản trị → Tổng quan → *Ngôn ngữ mặc định của website* (ô nằm trên ô tỷ giá; lưu `settings/app.defaultLang`). Khách vào lần đầu thấy ngôn ngữ này; ai đã tự bấm nút VI/EN thì giữ lựa chọn của họ (lưu trên trình duyệt). Email và bot Telegram vẫn bằng tiếng Việt.
 - **Chi tiết giá** của đặt phòng (đêm, cuối tuần, giảm ở dài ngày, phụ thu, mã giảm giá…) lưu cả nhãn tiếng Việt (`label`) và tiếng Anh (`labelEn`); hộp Xác nhận đặt phòng và hóa đơn hiển thị theo ngôn ngữ đang xem (đặt phòng cũ chỉ có tiếng Việt thì hiện tiếng Việt). Tên mùa/ngày lễ do chủ đặt nên giữ nguyên.
+
+## Trả phòng sớm
+- Bấm **Trả phòng** (và **Nhận phòng**) luôn hỏi xác nhận để tránh bấm nhầm.
+- Khách trả **sớm hơn ngày dự kiến**: hộp thoại nêu rõ ngày dự kiến/ngày thực tế; sau khi xác nhận, `checkOut` được rút về hôm nay (giữ ngày ban đầu ở `plannedCheckOut`, đặt `earlyCheckout`), nên **phòng trống lại cho khách khác ngay** trên website, bot Telegram và khi xác nhận đặt phòng. Khách đã trả phòng không còn giữ phòng ở bất cứ đêm nào (trước đây các đêm còn lại vẫn bị coi là bận).
+- Tiền phòng giữ nguyên; chủ/quản lý chỉnh bằng *Sửa giá* hoặc *Hoàn tiền* nếu muốn giảm/hoàn. Lịch sử hiển thị "Trả phòng sớm (dự kiến …)"; chủ *Hoàn tác trả phòng* sẽ khôi phục ngày dự kiến nếu phòng chưa bị đặt các đêm đó.

@@ -18,7 +18,7 @@ const LABELS: Record<string, [string, string]> = {
   "booking.create": ["Tạo đặt phòng", "Booking created"], "booking.noshow": ["Khách không đến", "No-show"], "booking.expire": ["Đặt phòng hết hạn", "Booking expired"],
   "booking.status": ["Đổi trạng thái đặt phòng", "Booking status"], "expense.add": ["Thêm chi phí", "Expense added"], "price.coupon": ["Mã giảm giá", "Coupon"],
   "price.edit": ["Sửa giá", "Price edit"], "room.delete": ["Xóa phòng", "Room deleted"], "settings.pricing": ["Giá & chính sách", "Prices & policy"],
-  "tier.config": ["Cấu hình hạng", "Tier settings"], "audit.toggle": ["Bật/tắt nhật ký", "Logging switch"], "audit.purge": ["Xóa nhật ký", "Log purge"], "tier.set": ["Đặt hạng khách", "Tier set"],
+  "tier.config": ["Cấu hình hạng", "Tier settings"], "payment.in": ["Thu tiền", "Payment in"], "payment.refund": ["Hoàn tiền", "Refund"], "settings.ical": ["Đồng bộ iCal", "iCal sync"], "settings.bankhook": ["Webhook ngân hàng", "Bank webhook"], "audit.toggle": ["Bật/tắt nhật ký", "Logging switch"], "audit.purge": ["Xóa nhật ký", "Log purge"], "tier.set": ["Đặt hạng khách", "Tier set"],
 };
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
 

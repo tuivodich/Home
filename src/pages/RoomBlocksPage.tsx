@@ -88,7 +88,7 @@ export default function RoomBlocksPage() {
         {upcoming.map((b) => (
           <div className="row between" key={b.id}>
             <span><b>{roomName(b.roomId)}</b> · {fmtDate(b.from)} → {fmtDate(addDays(b.to, -1))}{b.from <= today && <span className="overdue"> · {T("đang khóa", "active")}</span>}{b.reason && <small> · {b.reason}</small>}</span>
-            <button type="button" className="ghost danger" onClick={() => remove(b)}>{T("Mở khóa", "Unblock")}</button>
+            {b.source === "ical" ? <small>{T("Tự đồng bộ từ", "Synced from")} {b.sourceName || "iCal"}</small> : <button type="button" className="ghost danger" onClick={() => remove(b)}>{T("Mở khóa", "Unblock")}</button>}
           </div>
         ))}
       </div>

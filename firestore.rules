@@ -41,8 +41,8 @@ service cloud.firestore {
     // Cài đặt chung (tỷ giá, giao diện website…): ai cũng đọc, chỉ chủ/quản lý ghi.
     // Giao diện: chỉ nhận các mã hợp lệ, hiệu ứng / tự động theo mùa là true/false.
     match /settings/{id} {
-      allow read: if !(id in ['bank', 'mail', 'mailState', 'housekeeping']);
-      allow write: if isAdmin() && !(id in ['contact', 'pricing', 'booking', 'bank', 'loyalty', 'backup', 'backupStatus', 'mail', 'mailState', 'audit', 'housekeeping'])
+      allow read: if !(id in ['bank', 'mail', 'mailState', 'housekeeping', 'ical', 'icalState', 'bankhook']);
+      allow write: if isAdmin() && !(id in ['contact', 'pricing', 'booking', 'bank', 'loyalty', 'backup', 'backupStatus', 'mail', 'mailState', 'audit', 'housekeeping', 'ical', 'icalState', 'bankhook'])
         && (!('theme' in request.resource.data) || request.resource.data.theme in ['night', 'mist', 'dusk', 'noel'])
         && (!('themeAuto' in request.resource.data) || request.resource.data.themeAuto is bool)
         && (!('defaultLang' in request.resource.data) || request.resource.data.defaultLang in ['vi', 'en'])
@@ -53,6 +53,31 @@ service cloud.firestore {
     match /settings/audit {
       allow read: if isStaff();
       allow write: if isOwner() && request.resource.data.keys().hasOnly(['enabled']) && request.resource.data.enabled is bool;
+    }
+    // Đồng bộ lịch iCal: mã bí mật của đường dẫn xuất lịch + danh sách nguồn nhập. Chủ/quản lý xem và sửa; trạng thái lần chạy do Cloud Functions ghi.
+    match /settings/ical {
+      allow read: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['token', 'feeds'])
+        && request.resource.data.token is string && request.resource.data.token.matches('^[A-Za-z0-9]{16,64}$')
+        && request.resource.data.feeds is list && request.resource.data.feeds.size() <= 20;
+    }
+    match /settings/icalState {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    // Mã bí mật của webhook báo biến động số dư ngân hàng: chỉ chủ.
+    match /settings/bankhook {
+      allow read: if isOwner();
+      allow write: if isOwner() && request.resource.data.keys().hasOnly(['token']) && request.resource.data.token.matches('^[A-Za-z0-9]{24,64}$');
+    }
+    // Giao dịch ngân hàng do webhook ghi; chủ/quản lý xem và gán thủ công giao dịch chưa khớp.
+    match /bankTx/{id} {
+      allow read: if isAdmin();
+      allow create, delete: if false;
+      allow update: if isAdmin() && resource.data.matched == false
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['matched', 'bookingId', 'reason', 'assignedBy'])
+        && request.resource.data.matched == true && request.resource.data.assignedBy == request.auth.uid;
     }
     // Danh sách kiểm tra dọn phòng và việc định kỳ: nhân viên xem; chủ/quản lý sửa.
     match /settings/housekeeping {

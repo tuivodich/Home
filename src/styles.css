@@ -233,3 +233,4 @@ select option, select optgroup { background-color: var(--card); color: var(--fg)
 table.cal td.blocked { background: repeating-linear-gradient(45deg, #9a9a9a, #9a9a9a 6px, #b3b3b3 6px, #b3b3b3 12px); color: #222; font-size: .7rem; text-align: center; }
 .hk-check { display: grid; gap: .15rem; padding: .35rem 0; } .hk-item { display: flex; align-items: center; gap: .4rem; font-size: .92rem; }
 .hk-note { background: rgba(216,155,18,.14); border-radius: 6px; padding: .2rem .4rem; }
+.ical-url { word-break: break-all; }

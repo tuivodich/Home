@@ -14,6 +14,8 @@ const { createBackup } = require("./backup");
 const { getStorage } = require("firebase-admin/storage");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { sitemapXml } = require("./sitemap");
+const { createIcal } = require("./ical");
+const { createBankHook } = require("./bankhook");
 
 initializeApp();
 const TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
@@ -169,6 +171,41 @@ exports.bookingSweep = onSchedule({ ...schedOpts, schedule: "0 6-22/3 * * *" }, 
     const r = await g.sweep();
     console.log("bookingSweep", JSON.stringify({ ...r, stale }));
   } catch (e) { console.error("bookingSweep", e); }
+});
+
+/** Báo cho chủ/quản lý qua Telegram (dùng cho iCal và đối soát ngân hàng). */
+const managersNotifier = () => { const bot = botFor(); return (text, extra) => bot.notifyManagers(text, extra); };
+
+/** Lịch iCal của từng phòng cho các kênh bán phòng (Airbnb, Booking.com…): /ical/<phòng>.ics?k=<mã bí mật> (hosting chuyển tiếp tới đây). */
+exports.ical = onRequest(opts, async (req, res) => {
+  const m = /^\/ical\/([A-Za-z0-9_-]{1,64})\.ics$/.exec(req.path);
+  if (req.method !== "GET" || !m) { res.status(404).send("not found"); return; }
+  try {
+    const r = await createIcal({ db: getFirestore() }).exportFor(m[1], String(req.query.k ?? ""));
+    res.set("Cache-Control", "no-store").type(r.status === 200 ? "text/calendar; charset=utf-8" : "text/plain").status(r.status).send(r.body);
+  } catch (e) { console.error("ical export", e); res.status(500).send("error"); }
+});
+
+/** Nhập lịch từ các nguồn iCal mỗi giờ. */
+exports.icalSync = onSchedule({ ...schedOpts, schedule: "25 * * * *" }, async () => {
+  try { console.log("ical", JSON.stringify(await createIcal({ db: getFirestore(), notify: managersNotifier() }).syncAll())); } catch (e) { console.error("icalSync", e); }
+});
+
+/** Chủ/quản lý bấm “Đồng bộ ngay”. */
+exports.icalSyncNow = onCall(opts, async (req) => {
+  const uid = needAuth(req);
+  const role = (await getFirestore().doc(`users/${uid}`).get()).data()?.role;
+  if (!["owner", "manager"].includes(role)) throw new HttpsError("permission-denied", "Chỉ chủ hoặc quản lý.");
+  try { return await createIcal({ db: getFirestore(), notify: managersNotifier() }).syncAll(); } catch (e) { throw asHttpsError(e); }
+});
+
+/** Webhook báo biến động số dư (SePay, Casso…): tự ghi nhận tiền cọc theo mã NHAGO trong nội dung chuyển khoản. */
+exports.bankHook = onRequest(opts, async (req, res) => {
+  if (req.method !== "POST") { res.status(405).send("method not allowed"); return; }
+  try {
+    const r = await createBankHook({ db: getFirestore(), notify: managersNotifier() }).handle(req.body, { authorization: req.get("authorization"), "secure-token": req.get("secure-token") });
+    res.status(r.status).json(r.json);
+  } catch (e) { console.error("bankHook", e); res.status(500).json({ success: false, error: 1 }); }
 });
 
 /** /sitemap.xml (hosting chuyển tiếp tới đây): danh sách trang công khai gồm từng phòng. */

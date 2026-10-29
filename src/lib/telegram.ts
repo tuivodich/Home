@@ -30,3 +30,6 @@ export interface BackupStatus { at: string; ok: boolean; file?: string; bytes?: 
 export const backupNow = () => call<void, BackupStatus>("backupNow")().then((r) => r.data);
 export const backupList = () => call<void, { files: { name: string; bytes: number }[] }>("backupList")().then((r) => r.data.files);
 export const backupGet = (name: string) => call<{ name: string }, { name: string; json: string }>("backupGet")({ name }).then((r) => r.data.json);
+
+/** Đồng bộ lịch iCal ngay (chủ/quản lý): nhập từ các kênh bán phòng đã cấu hình. */
+export const icalSyncNow = () => call<void, { feeds: number; added: number; removed: number; conflicts: number }>("icalSyncNow")().then((r) => r.data);

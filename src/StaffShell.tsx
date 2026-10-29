@@ -23,6 +23,8 @@ import HousekeepingPage from "./pages/HousekeepingPage";
 import BackupPage from "./pages/BackupPage";
 import ResidencePage from "./pages/ResidencePage";
 import RoomBlocksPage from "./pages/RoomBlocksPage";
+import IcalPage from "./pages/IcalPage";
+import BankSyncPage from "./pages/BankSyncPage";
 import AuditPage from "./pages/AuditPage";
 import EmailSettingsPage from "./pages/EmailSettingsPage";
 import EmailSendPage from "./pages/EmailSendPage";
@@ -47,7 +49,7 @@ export default function StaffShell() {
   // Menu gọn: các mục liên quan gom vào nhóm thả xuống.
   const bookingItems: DdItem[] = [
     { label: t("bookings"), to: "/app/bookings" },
-    ...(admin ? [{ label: t("menuRooms"), to: "/app/rooms" }, { label: lang === "vi" ? "Giá & chính sách" : "Prices & policies", to: "/app/pricing" }, { label: lang === "vi" ? "Khóa phòng theo ngày" : "Block rooms", to: "/app/blocks" }] : []),
+    ...(admin ? [{ label: t("menuRooms"), to: "/app/rooms" }, { label: lang === "vi" ? "Giá & chính sách" : "Prices & policies", to: "/app/pricing" }, { label: lang === "vi" ? "Khóa phòng theo ngày" : "Block rooms", to: "/app/blocks" }, { label: lang === "vi" ? "Đồng bộ lịch (iCal)" : "Calendar sync (iCal)", to: "/app/ical" }] : []),
     { label: t("history"), to: "/app/history" },
     ...(admin ? [{ label: t("coupons"), to: "/app/coupons" }] : []),
   ];
@@ -63,6 +65,7 @@ export default function StaffShell() {
   const financeItems: DdItem[] = [
     { label: lang === "vi" ? "Báo cáo doanh thu" : "Revenue report", to: "/app/reports" },
     { label: lang === "vi" ? "Chi phí & công nợ" : "Expenses & debts", to: "/app/expenses" },
+    ...(admin ? [{ label: lang === "vi" ? "Đối soát chuyển khoản" : "Bank reconciliation", to: "/app/bank" }] : []),
   ];
   const contentItems: DdItem[] = [
     { label: t("reviewsAdmin"), to: "/app/reviews" },
@@ -86,10 +89,10 @@ export default function StaffShell() {
       </header>
       <nav>
         <NavLink to="/app" end>{t("dashboard")}</NavLink>
-        {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/rooms", "/app/pricing", "/app/blocks", "/app/history", "/app/coupons")} />}
+        {front && <Dropdown className="st-dd" label={t("menuBooking")} items={bookingItems} active={isIn("/app/bookings", "/app/rooms", "/app/pricing", "/app/blocks", "/app/ical", "/app/history", "/app/coupons")} />}
         {front && <Dropdown className="st-dd" label={t("guests")} items={customerItems} active={isIn("/app/guests", "/app/loyalty", "/app/residence")} />}
         <NavLink to="/app/housekeeping">{lang === "vi" ? "Dọn phòng" : "Cleaning"}</NavLink>
-        {admin && <Dropdown className="st-dd" label={lang === "vi" ? "Tài chính" : "Finance"} items={financeItems} active={isIn("/app/reports", "/app/expenses")} />}
+        {admin && <Dropdown className="st-dd" label={lang === "vi" ? "Tài chính" : "Finance"} items={financeItems} active={isIn("/app/reports", "/app/expenses", "/app/bank")} />}
         {admin
           ? <Dropdown className="st-dd" label={H.menu} items={hrItems} active={isIn("/app/accounts", "/app/attendance", "/app/roster", "/app/timesheet", "/app/audit")} />
           : <NavLink to="/app/attendance">{H.attendance}</NavLink>}
@@ -113,6 +116,8 @@ export default function StaffShell() {
           {admin && <Route path="rooms" element={<Rooms />} />}
           {admin && <Route path="pricing" element={<PricingPage />} />}
           {admin && <Route path="blocks" element={<RoomBlocksPage />} />}
+          {admin && <Route path="ical" element={<IcalPage />} />}
+          {admin && <Route path="bank" element={<BankSyncPage />} />}
           {admin && <Route path="audit" element={<AuditPage />} />}
           {admin && <Route path="loyalty" element={<LoyaltyPage />} />}
           {admin && <Route path="email/settings" element={<EmailSettingsPage />} />}

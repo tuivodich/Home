@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 // Chạy: npm run test:rules (Firestore Emulator do firebase emulators:exec dựng lên, địa chỉ lấy từ FIRESTORE_EMULATOR_HOST).
 const [EMU_HOST, EMU_PORT] = (process.env.FIRESTORE_EMULATOR_HOST ?? "127.0.0.1:8089").split(":");
 const RULES = fileURLToPath(new URL("../firestore.rules", import.meta.url));
-import { serverTimestamp, Timestamp, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, collection, getDocs, query, where } from "firebase/firestore";
+import { addDoc, serverTimestamp, Timestamp, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, collection, getDocs, query, where } from "firebase/firestore";
 
 const env = await initializeTestEnvironment({
   projectId: "demo-test",
@@ -530,6 +530,31 @@ await check("early check-out cannot end before check-in", updateDoc(doc(rec, "bo
 await check("early check-out must record the true planned date", updateDoc(doc(rec, "bookings/ec4"), { status: "checked_out", checkOut: "2026-06-03", plannedCheckOut: "2026-06-04", earlyCheckout: true }), false);
 await check("reception CANNOT change dates without checking out", updateDoc(doc(rec, "bookings/ec4"), { checkOut: "2026-06-03", plannedCheckOut: "2026-06-05", earlyCheckout: true }), false);
 await check("reception CANNOT slip other fields into an early check-out", updateDoc(doc(rec, "bookings/ec4"), { status: "checked_out", checkOut: "2026-06-03", plannedCheckOut: "2026-06-05", earlyCheckout: true, total: 0 }), false);
+
+// ----- Nhật ký hoạt động, khóa phòng, email xin đánh giá -----
+const logDoc = (o = {}) => ({ at: serverTimestamp(), by: "recep1", byName: "LT", role: "reception", action: "booking.status", summary: "x", targetType: "booking", targetId: "b", ...o });
+await check("staff appends an audit entry under their own uid", addDoc(collection(rec, "auditLog"), logDoc()), true);
+await check("audit entry cannot be forged for another user", addDoc(collection(rec, "auditLog"), logDoc({ by: "mgr1" })), false);
+await check("audit entry timestamp must be the server time", addDoc(collection(rec, "auditLog"), logDoc({ at: Timestamp.fromDate(new Date("2020-01-01")) })), false);
+await check("audit entry rejects extra fields", addDoc(collection(rec, "auditLog"), logDoc({ extra: 1 })), false);
+await check("customer CANNOT write audit entries", addDoc(collection(c1, "auditLog"), logDoc({ by: "cust1" })), false);
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "auditLog/a1"), logDoc({ at: Timestamp.now() })); });
+await check("manager reads the audit log", getDoc(doc(mgr, "auditLog/a1")), true);
+await check("reception CANNOT read the audit log", getDoc(doc(rec, "auditLog/a1")), false);
+await check("audit entries cannot be edited", updateDoc(doc(own, "auditLog/a1"), { summary: "đã sửa" }), false);
+await check("audit entries cannot be deleted (even by the owner)", deleteDoc(doc(own, "auditLog/a1")), false);
+const blk = { roomId: "r1", from: "2026-12-01", to: "2026-12-05", reason: "Sửa mái", createdBy: "mgr1", createdByName: "QL", createdAt: serverTimestamp() };
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "rooms/r1"), { name: "P1", type: "wood", capacity: 2, price: 1, status: "active" }); });
+await check("manager blocks a room for a date range", setDoc(doc(mgr, "roomBlocks/k1"), blk), true);
+await check("reception reads blocks but CANNOT create them", setDoc(doc(rec, "roomBlocks/k2"), blk), false);
+await check("reception reads room blocks", getDoc(doc(rec, "roomBlocks/k1")), true);
+await check("block needs from < to", setDoc(doc(mgr, "roomBlocks/k3"), { ...blk, from: "2026-12-05" }), false);
+await check("block needs an existing room", setDoc(doc(mgr, "roomBlocks/k4"), { ...blk, roomId: "nope" }), false);
+await check("customer CANNOT read room blocks", getDoc(doc(c1, "roomBlocks/k1")), false);
+await check("blocks cannot be edited, only deleted", updateDoc(doc(mgr, "roomBlocks/k1"), { reason: "x" }), false);
+await check("manager unblocks the room", deleteDoc(doc(mgr, "roomBlocks/k1")), true);
+await check("owner toggles the review-request email", setDoc(doc(own, "settings/mail"), { enabled: true, reviewRequest: false }), true);
+await check("review-request flag must be boolean", setDoc(doc(own, "settings/mail"), { enabled: true, reviewRequest: "no" }), false);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();

@@ -4,6 +4,7 @@ import { db } from "./firebase";
 import { useCollection } from "./useCollection";
 import { todayStr } from "./format";
 import type { Booking, Busy, Room } from "./types";
+import { BLOCK_PREFIX } from "./blocks";
 
 /** Khe giữ chỗ cho yêu cầu đang chờ: `pend/{uid}_{n}` (xem firestore.rules). */
 export interface PendSlot { id: string; uid: string; n: number; bookingId: string }
@@ -63,7 +64,7 @@ export function useBusySync(enabled: boolean) {
         ops.push(setDoc(doc(db, "busy", b.id), want));
       }
     }
-    for (const id of byId.keys()) ops.push(deleteDoc(doc(db, "busy", id))); // đặt phòng đã bị xóa
+    for (const id of byId.keys()) if (!id.startsWith(BLOCK_PREFIX)) ops.push(deleteDoc(doc(db, "busy", id))); // đặt phòng đã bị xóa (bản sao khóa phòng `blk_…` giữ nguyên)
     if (ops.length) Promise.all(ops).catch((e) => console.error("busy sync", e));
   }, [enabled, bookings, busy, l1, l2, autoReject, autoNoShow]);
 }

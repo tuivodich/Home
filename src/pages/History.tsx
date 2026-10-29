@@ -7,6 +7,7 @@ import { useMoney } from "../lib/useRate";
 import { useI18n } from "../i18n";
 import { fmtDate, nightsBetween, normName, overlaps } from "../lib/format";
 import type { Booking, BookingStatus, Guest, Room } from "../lib/types";
+import { useAudit } from "../lib/audit";
 
 type Filter = "all" | "checked_out" | "cancelled";
 
@@ -15,6 +16,7 @@ const monthOf = (b: Booking) => (b.status === "checked_out" ? b.checkOut : b.che
 
 export default function History() {
   const { t, lang } = useI18n();
+  const audit = useAudit();
   const { money } = useMoney();
   const { profile } = useAuth();
   const isOwner = profile?.role === "owner"; // chỉ chủ được hoàn tác trả phòng / khôi phục đặt phòng đã hủy
@@ -55,6 +57,7 @@ export default function History() {
   // Hoàn tác trả phòng: nếu đã trả sớm thì cố khôi phục ngày dự kiến, trừ khi phòng đã có người đặt các đêm đó.
   const undoCheckOut = async (b: Booking) => {
     if (!confirm(t("sure"))) return;
+    audit("booking.status", `Hoàn tác trả phòng: ${b.guestName} (${roomName(b.roomId)})`, { type: "booking", id: b.id });
     if (b.earlyCheckout && b.plannedCheckOut) {
       const clash = bookings.some((o) => o.id !== b.id && o.roomId === b.roomId && ["confirmed", "checked_in", "pending"].includes(o.status) && overlaps(o.checkIn, o.checkOut, b.checkIn, b.plannedCheckOut!));
       if (clash) {
@@ -73,6 +76,7 @@ export default function History() {
     if (clash) return alert(t("confirmClash"));
     if (!confirm(t("sure"))) return;
     await updateDoc(doc(db, "bookings", b.id), { status: "confirmed", cancelReason: deleteField() });
+    audit("booking.status", `Khôi phục đặt phòng đã hủy: ${b.guestName} (${roomName(b.roomId)})`, { type: "booking", id: b.id });
   };
 
   return (

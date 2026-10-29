@@ -8,7 +8,7 @@ import { mailStatus, mailTest } from "../lib/telegram";
 export default function MailSettings({ isOwner }: { isOwner: boolean }) {
   const { lang } = useI18n();
   const vi = lang === "vi";
-  const [cfg, setCfg] = useState({ enabled: false, fromName: "", replyTo: "" });
+  const [cfg, setCfg] = useState({ enabled: false, fromName: "", replyTo: "", reviewRequest: true });
   const [draft, setDraft] = useState(cfg);
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [to, setTo] = useState("");
@@ -18,7 +18,7 @@ export default function MailSettings({ isOwner }: { isOwner: boolean }) {
 
   useEffect(() => onSnapshot(doc(db, "settings", "mail"), (s) => {
     const d = s.data();
-    const v = { enabled: d?.enabled === true, fromName: String(d?.fromName ?? ""), replyTo: String(d?.replyTo ?? "") };
+    const v = { enabled: d?.enabled === true, fromName: String(d?.fromName ?? ""), replyTo: String(d?.replyTo ?? ""), reviewRequest: d?.reviewRequest !== false };
     setCfg(v); setDraft(v);
   }, () => {}), []);
   useEffect(() => { mailStatus().then((r) => setConfigured(r.configured)).catch(() => setConfigured(null)); }, []);
@@ -26,7 +26,7 @@ export default function MailSettings({ isOwner }: { isOwner: boolean }) {
   const dirty = JSON.stringify(draft) !== JSON.stringify(cfg);
   const save = async () => {
     setBusy(true); setMsg(""); setErr("");
-    try { await setDoc(doc(db, "settings", "mail"), { enabled: draft.enabled, fromName: draft.fromName.trim(), replyTo: draft.replyTo.trim() }); setMsg(vi ? "Đã lưu cấu hình email." : "Email settings saved."); }
+    try { await setDoc(doc(db, "settings", "mail"), { enabled: draft.enabled, fromName: draft.fromName.trim(), replyTo: draft.replyTo.trim(), reviewRequest: draft.reviewRequest }); setMsg(vi ? "Đã lưu cấu hình email." : "Email settings saved."); }
     catch (ex) { console.error("save mail", ex); setErr(vi ? "Không lưu được. Vui lòng thử lại." : "Could not save."); } finally { setBusy(false); }
   };
   const test = async () => {
@@ -43,6 +43,7 @@ export default function MailSettings({ isOwner }: { isOwner: boolean }) {
         : "When on, guests get emails: request received, confirmed (with deposit / VietQR details), no longer valid, and a reminder the day before check-in. Needs a sender account (e.g. Gmail app password) in GitHub secrets SMTP_USER, SMTP_PASS — see docs/email.md."}</small>
       <p className={configured ? "ok-msg" : "warn"}>{configured === null ? "…" : configured ? (vi ? "✅ Đã có tài khoản gửi email." : "✅ A sender account is configured.") : (vi ? "⚠ Chưa có tài khoản gửi email (SMTP_USER / SMTP_PASS)." : "⚠ No sender account yet (SMTP_USER / SMTP_PASS).")}</p>
       <label className="check"><input type="checkbox" disabled={!isOwner} checked={draft.enabled} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} /><span>{vi ? "Gửi email cho khách" : "Send emails to guests"}</span></label>
+      <label className="check"><input type="checkbox" disabled={!isOwner} checked={draft.reviewRequest} onChange={(e) => setDraft({ ...draft, reviewRequest: e.target.checked })} /><span>{vi ? "Gửi email xin đánh giá sau khi khách trả phòng (1–3 ngày sau, chỉ khách chưa viết cảm nhận)" : "Ask for a review after check-out (1–3 days later, only guests who haven't reviewed)"}</span></label>
       <label>{vi ? "Tên người gửi" : "Sender name"}<input disabled={!isOwner} maxLength={60} placeholder="Nhà Gỗ Homestay" value={draft.fromName} onChange={(e) => setDraft({ ...draft, fromName: e.target.value })} /></label>
       <label>{vi ? "Email nhận trả lời của khách (tùy chọn)" : "Reply-to email (optional)"}<input disabled={!isOwner} type="email" maxLength={200} value={draft.replyTo} onChange={(e) => setDraft({ ...draft, replyTo: e.target.value })} /></label>
       {isOwner ? (

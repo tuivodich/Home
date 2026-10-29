@@ -81,6 +81,10 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
   const get = async (path) => { const s = await db.doc(path).get(); return s.exists ? { id: s.id, ...s.data() } : null; };
 
   const roomName = async (id) => (await get(`rooms/${id}`))?.name ?? "?";
+  /** Nhật ký hoạt động (cùng bộ sưu tập auditLog với trang quản trị); lỗi ghi nhật ký không làm hỏng thao tác chính. */
+  const audit = (by, action, summary, target) => db.collection("auditLog").add({
+    at: FieldValue.serverTimestamp(), by, byName: by, role: "telegram", action, summary: String(summary).slice(0, 300), targetType: target?.type ?? "", targetId: target?.id ?? "",
+  }).catch((e) => console.error("audit", e.message));
   const staffChats = async () => {
     const snap = await db.collection("tgChats").get();
     return snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((c) => FRONT.includes(c.role));
@@ -178,11 +182,14 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
       const all = (await db.collection("bookings").where("roomId", "==", b.roomId).get()).docs;
       const clash = all.find((d) => d.id !== id && LIVE.includes(d.data().status) && overlaps(d.data().checkIn, d.data().checkOut, b.checkIn, b.checkOut));
       if (clash) return { ok: false, text: "⚠️ Trùng lịch với một đặt phòng đã xác nhận cùng phòng. Hãy xử lý trên trang quản trị." };
+      const blocked = (await db.collection("roomBlocks").where("roomId", "==", b.roomId).get()).docs.find((d) => overlaps(d.data().from, d.data().to, b.checkIn, b.checkOut));
+      if (blocked) return { ok: false, text: "⚠️ Phòng đang bị khóa trong khoảng ngày này (Đặt phòng → Khóa phòng theo ngày)." };
       const w = db.batch();
       w.update(db.doc(`bookings/${id}`), { status: "confirmed" });
       w.set(db.doc(`busy/${id}`), { roomId: b.roomId, checkIn: b.checkIn, checkOut: b.checkOut, status: "confirmed" });
       if (b.slotId) w.delete(db.doc(`pend/${b.slotId}`));
       await w.commit();
+      audit(`telegram:${actor}`, "booking.status", `${b.guestName}: pending → confirmed (qua Telegram)`, { type: "booking", id });
       if (guest) guest.dispatch(id, "confirmed").catch((e) => console.error("guest confirmed", e));
       return { ok: true, text: `✅ Đã xác nhận bởi ${esc(actor)}` };
     }
@@ -191,6 +198,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     w.delete(db.doc(`busy/${id}`));
     if (b.slotId) w.delete(db.doc(`pend/${b.slotId}`));
     await w.commit();
+    audit(`telegram:${actor}`, "booking.status", `${b.guestName}: pending → cancelled (từ chối qua Telegram)`, { type: "booking", id });
     if (guest) guest.dispatch(id, "cancelled").catch((e) => console.error("guest cancelled", e));
     return { ok: true, text: `❌ Đã từ chối bởi ${esc(actor)}` };
   }
@@ -204,6 +212,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     const amount = b.deposit - paid;
     const { Timestamp } = require("firebase-admin/firestore");
     await db.doc(`bookings/${id}`).update({ paid: paid + amount, payLog: [...(b.payLog ?? []), { amount, at: Timestamp.fromDate(now()), by: `telegram:${actor}`, note: "Đặt cọc" }] });
+    audit(`telegram:${actor}`, "payment.in", `Thu cọc ${money(amount)} — ${b.guestName} (qua Telegram)`, { type: "booking", id });
     return { ok: true, text: `💰 Đã ghi nhận cọc ${money(amount)} bởi ${esc(actor)}` };
   }
 
@@ -216,6 +225,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     w.update(db.doc(`bookings/${id}`), { status: "cancelled", cancelReason: "noshow", noShowAt: FieldValue.serverTimestamp() });
     w.delete(db.doc(`busy/${id}`));
     await w.commit();
+    audit(`telegram:${actor}`, "booking.noshow", `Khách không đến: ${b.guestName} (qua Telegram)${(b.paid ?? 0) > 0 ? ` · cọc ${money(b.paid)} giữ trong sổ` : ""}`, { type: "booking", id });
     return { ok: true, text: `🚫 Đã đánh dấu khách không đến bởi ${esc(actor)}${(b.paid ?? 0) > 0 ? ` (cọc ${money(b.paid)} giữ trong sổ)` : ""}` };
   }
 
@@ -342,6 +352,7 @@ function createBot({ db, tg, now = () => new Date(), randomCode, mem = new Map()
     w.set(ref, { roomId: room.id, guestName: name, phone, email: "", checkIn: d1, checkOut: d2, guests, total: q.total, note: "Tạo qua Telegram", code, lines: pricing.quoteLines(q, room.name), ...(q.deposit > 0 ? { deposit: q.deposit } : {}), status: "confirmed", source: "staff", createdBy: uid });
     w.set(db.doc(`busy/${ref.id}`), { roomId: room.id, checkIn: d1, checkOut: d2, status: "confirmed" });
     await w.commit();
+    audit(`telegram:${uid}`, "booking.create", `Tạo đặt phòng ${code} qua Telegram: ${name} · ${room.name} · ${fmtDate(d1)}→${fmtDate(d2)} · ${money(q.total)}`, { type: "booking", id: ref.id });
     return tg.sendMessage(chatId, [`✅ <b>Đã tạo đặt phòng ${esc(code)}</b>`, `👤 ${esc(name)} · ${esc(phone)}`, `🛏 ${esc(room.name)} · ${fmtDate(d1)} → ${fmtDate(d2)} (${n} đêm) · ${guests} khách`, `💰 ${money(q.total)}${q.deposit ? ` · cọc ${money(q.deposit)}` : ""}`, "", "Nhớ bổ sung hồ sơ khách trên trang quản trị trước khi nhận phòng."].join("\n"));
   }
 

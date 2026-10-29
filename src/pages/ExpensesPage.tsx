@@ -25,7 +25,7 @@ const blank = () => ({ date: todayStr(), category: "electric" as Cat, amount: 0,
 export default function ExpensesPage() {
   const { lang } = useI18n();
   const T = (vi: string, en: string) => (lang === "vi" ? vi : en);
-  const { money } = useMoney();
+  const { money, moneyText } = useMoney();
   const { user } = useAuth();
   const { data: expenses } = useCollection<Expense>("expenses");
   const { data: bookings } = useCollection<Booking>("bookings");
@@ -99,7 +99,7 @@ export default function ExpensesPage() {
                 <button className="ghost" onClick={() => downloadCsv(`chi-phi-${month}.csv`, [[T("Ngày", "Date"), T("Loại", "Category"), T("Số tiền", "Amount"), T("Nơi chi", "Vendor"), T("Ghi chú", "Note"), T("Đã thanh toán", "Paid")], ...list.map((e) => [fmtDate(e.date), CAT[e.category][lang === "vi" ? 0 : 1], e.amount, e.vendor, e.note, e.paid ? "x" : ""])])}>⬇ CSV</button>
               </div>
             </div>
-            {byCat.length > 0 && <small>{byCat.map((x) => `${CAT[x.c][lang === "vi" ? 0 : 1]}: ${money(x.v)}`).join(" · ")}</small>}
+            {byCat.length > 0 && <small>{byCat.map((x) => `${CAT[x.c][lang === "vi" ? 0 : 1]}: ${moneyText(x.v)}`).join(" · ")}</small>}
             {list.length === 0 && <p>{T("Chưa có chi phí trong tháng này.", "No expenses this month.")}</p>}
             {list.map((e) => (
               <div className="row between" key={e.id}>

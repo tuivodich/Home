@@ -188,11 +188,11 @@ export default function Account() {
               {b.status === "checked_in" && b.earlyCheckoutRequest && <div className="lp-small lp-ok">⏰ {L.account.earlySent.replace("{d}", fmtDate(b.earlyCheckoutRequest.date))}</div>}
               {pres.some((p) => p.id === b.id) && <div className="lp-small lp-ok">✓ {G.checkinSent}</div>}
               {b.status === "confirmed" && !stale && (
-                <details className="lp-qr">
-                  <summary>{G.qrTitle}</summary>
+                <div className="lp-qr">
+                  <strong className="lp-qr-title">{G.qrTitle}</strong>
                   <QrCode value={`${window.location.origin}/app/bookings?b=${b.id}`} label={G.qrTitle} />
                   <span className="lp-muted lp-small">{G.qrHint} · {bookingCode(b.id)}</span>
-                </details>
+                </div>
               )}
             </div>
             <div className="lp-booking-side">

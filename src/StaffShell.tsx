@@ -2,7 +2,9 @@ import { Link, NavLink, Navigate, Route, Routes, useLocation } from "react-route
 import { useAuth } from "./lib/auth";
 import { useI18n } from "./i18n";
 import { useBusySync, useLegacyRoomNames } from "./lib/useBusySync";
-import { isFrontRole, isStaffRole } from "./lib/types";
+import { isFrontRole, isStaffRole, type Booking } from "./lib/types";
+import { useCollection } from "./lib/useCollection";
+import { todayStr } from "./lib/format";
 import Dropdown, { type DdItem } from "./components/Dropdown";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
@@ -37,6 +39,9 @@ export default function StaffShell() {
   const H = useHr();
   const front = isFrontRole(profile?.role);
   useBusySync(front);
+  const { data: allBookings } = useCollection<Booking>("bookings", front);
+  // Yêu cầu đặt phòng mới chưa xử lý (còn hiệu lực): hiện “(Mới)” đỏ ở menu; nhân viên xác nhận hoặc từ chối thì tự mất.
+  const newRequests = front ? allBookings.filter((b) => b.status === "pending" && b.checkIn >= todayStr()).length : 0;
   useLegacyRoomNames(profile?.role === "owner" || profile?.role === "manager");
 
   if (loading) return <div className="center">{t("loading")}</div>;
@@ -48,7 +53,7 @@ export default function StaffShell() {
 
   // Menu gọn: các mục liên quan gom vào nhóm thả xuống.
   const bookingItems: DdItem[] = [
-    { label: t("bookings"), to: "/app/bookings" },
+    { label: t("bookings"), to: "/app/bookings", badge: newRequests > 0 ? (lang === "vi" ? "(Mới)" : "(New)") : undefined },
     ...(admin ? [{ label: t("menuRooms"), to: "/app/rooms" }, { label: lang === "vi" ? "Giá & chính sách" : "Prices & policies", to: "/app/pricing" }, { label: lang === "vi" ? "Khóa phòng theo ngày" : "Block rooms", to: "/app/blocks" }, { label: lang === "vi" ? "Đồng bộ lịch (iCal)" : "Calendar sync (iCal)", to: "/app/ical" }] : []),
     { label: t("history"), to: "/app/history" },
     ...(admin ? [{ label: t("coupons"), to: "/app/coupons" }] : []),

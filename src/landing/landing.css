@@ -695,7 +695,7 @@ html { scroll-behavior: smooth; }
 .qrbox { background: #fff; border-radius: 10px; padding: 6px; box-sizing: content-box; line-height: 0; }
 .qrbox svg { width: 100%; height: 100%; display: block; }
 .lp-qr { display: grid; gap: 6px; justify-items: start; margin-top: 8px; }
-.lp-qr summary { cursor: pointer; color: var(--gold); font-weight: 600; }
+.lp-qr-title { color: var(--gold); font-weight: 600; }
 
 /* Danh sách thả xuống: nền đặc và chữ tương phản theo giao diện (nền ô chọn trong suốt khiến trình duyệt vẽ nền trắng với chữ sáng). */
 .landing select option, .landing select optgroup, .lp-modal select option, .lm-modal select option { background-color: var(--paper); color: var(--ink); }

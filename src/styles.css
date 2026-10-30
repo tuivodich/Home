@@ -235,3 +235,5 @@ table.cal td.blocked { background: repeating-linear-gradient(45deg, #9a9a9a, #9a
 .hk-note { background: rgba(216,155,18,.14); border-radius: 6px; padding: .2rem .4rem; }
 .ical-url { word-break: break-all; }
 .invoice-btns { display: flex; gap: 8px; }
+.dd-new { margin-left: 8px; color: #e0302a; font-weight: 700; font-size: .85em; white-space: nowrap; }
+.dd-dot { width: 8px; height: 8px; border-radius: 50%; background: #e0302a; box-shadow: 0 0 0 2px var(--card, #fff); display: inline-block; }
